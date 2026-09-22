@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>새봄이·새별이 영어 교실 — 자동 생성기</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <h1>🌷 새봄이·새별이 영어 교실</h1>
+      <p>회차를 고르고 [인쇄하기]를 누르면 오늘의 교재가 완성돼요</p>
+    </header>
+
+    <div class="student-tabs">
+      <button class="student-tab" data-student="saebom">🌸 새봄이 (초2)</button>
+      <button class="student-tab" data-student="saebyul">⭐ 새별이 (6세)</button>
+    </div>
+
+    <div class="panel">
+      <h3>진도 현황 (탭해서 원하는 회차를 볼 수 있어요)</h3>
+      <div id="chapterList"></div>
+    </div>
+
+    <div class="toolbar">
+      <button id="printBtn">🖨️ 인쇄 / PDF 저장</button>
+      <button id="completeBtn">이 회차 완료 표시하기</button>
+      <button id="resetBtn">진도 초기화</button>
+    </div>
+
+    <div id="worksheet"></div>
+  </div>
+
+  <script src="js/characters.js"></script>
+  <script src="js/curriculum-saebom.js"></script>
+  <script src="js/curriculum-saebyul.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
