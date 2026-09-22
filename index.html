@@ -20,8 +20,21 @@
     </div>
 
     <div class="panel">
-      <h3>진도 현황 (탭해서 원하는 회차를 볼 수 있어요)</h3>
-      <div id="chapterList"></div>
+      <h3>📋 학습 현황판 (카드를 탭하면 그 회차를 볼 수 있어요)</h3>
+      <div class="dashboard">
+        <div class="dash-col">
+          <h4>✅ 지난 회차</h4>
+          <div class="dash-list" id="pastList"></div>
+        </div>
+        <div class="dash-col dash-today">
+          <h4>▶ 오늘의 회차</h4>
+          <div id="todayCard"></div>
+        </div>
+        <div class="dash-col">
+          <h4>🔒 앞으로 남은 회차</h4>
+          <div class="dash-list" id="upcomingList"></div>
+        </div>
+      </div>
     </div>
 
     <div class="toolbar">

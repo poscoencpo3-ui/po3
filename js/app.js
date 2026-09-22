@@ -1,17 +1,23 @@
-/* 자동 생성기 로직: 학생 선택, 진도 관리(localStorage), 회차 교재 렌더링, 인쇄 */
+/* 자동 생성기 로직: 학생 선택, 진도/인쇄 이력 관리(localStorage), 현황판, 회차 교재 렌더링, 인쇄 */
 
 const STUDENTS = {
   saebom: { name: "새봄", data: CURRICULUM_SAEBOM, kind: "elementary" },
   saebyul: { name: "새별", data: CURRICULUM_SAEBYUL, kind: "kinder" },
 };
 
-const PROGRESS_KEY = "po3-progress";
+const PROGRESS_KEY = "po3-progress-v2";
+
+function emptyProgress() {
+  return { saebom: {}, saebyul: {} };
+}
 
 function loadProgress() {
   try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || { saebom: 0, saebyul: 0 };
+    const raw = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+    if (raw && typeof raw.saebom === "object" && typeof raw.saebyul === "object") return raw;
+    return emptyProgress();
   } catch (e) {
-    return { saebom: 0, saebyul: 0 };
+    return emptyProgress();
   }
 }
 
@@ -27,47 +33,105 @@ let progress = loadProgress();
 let currentStudent = "saebom";
 let currentChapterIndex = 0;
 
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+function fmtDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-function renderProgressList() {
-  const wrap = document.getElementById("chapterList");
+function chapterRecord(studentKey, chapterId) {
+  return progress[studentKey][chapterId] || {};
+}
+
+function nextChapterIndex(studentKey) {
+  const data = STUDENTS[studentKey].data;
+  const idx = data.findIndex((ch) => !chapterRecord(studentKey, ch.id).completedAt);
+  return idx === -1 ? data.length - 1 : idx;
+}
+
+function renderDashboard() {
   const student = STUDENTS[currentStudent];
-  wrap.innerHTML = student.data
-    .map((ch, i) => {
-      const done = i < progress[currentStudent];
-      const isNext = i === progress[currentStudent];
-      return `<button class="chip ${done ? "done" : ""} ${isNext ? "next" : ""}" data-idx="${i}">
-        ${done ? "✅" : isNext ? "▶" : "🔒"} ${ch.title}
-      </button>`;
-    })
-    .join("");
-  wrap.querySelectorAll(".chip").forEach((btn) => {
+  const nextIdx = nextChapterIndex(currentStudent);
+
+  const past = [];
+  const upcoming = [];
+  student.data.forEach((ch, i) => {
+    const rec = chapterRecord(currentStudent, ch.id);
+    if (i === nextIdx) return;
+    if (rec.completedAt) past.push({ ch, i, rec });
+    else upcoming.push({ ch, i, rec });
+  });
+
+  const pastList = document.getElementById("pastList");
+  const upcomingList = document.getElementById("upcomingList");
+  const todayCard = document.getElementById("todayCard");
+
+  pastList.innerHTML =
+    past
+      .map(
+        ({ ch, i, rec }) => `
+      <button class="dash-item done" data-idx="${i}">
+        <span class="dash-item-title">✅ ${ch.title}</span>
+        <span class="dash-item-meta">완료 ${fmtDate(rec.completedAt)}${rec.printedAt ? " · 🖨️ 인쇄함" : ""}</span>
+      </button>`
+      )
+      .join("") || `<p class="dash-empty">아직 완료한 회차가 없어요.</p>`;
+
+  upcomingList.innerHTML =
+    upcoming
+      .map(
+        ({ ch, i }) => `
+      <button class="dash-item locked" data-idx="${i}">
+        <span class="dash-item-title">🔒 ${ch.title}</span>
+      </button>`
+      )
+      .join("") || `<p class="dash-empty">모든 회차를 완료했어요! 🎉</p>`;
+
+  const nextCh = student.data[nextIdx];
+  const nextRec = chapterRecord(currentStudent, nextCh.id);
+  todayCard.innerHTML = `
+    <button class="dash-item today" data-idx="${nextIdx}">
+      <span class="dash-item-title">▶ ${nextCh.title}</span>
+      <span class="dash-item-meta">${nextRec.printedAt ? "🖨️ " + fmtDate(nextRec.printedAt) + "에 인쇄함 (다시 인쇄 가능)" : "아직 진행 전이에요"}</span>
+    </button>`;
+
+  document.querySelectorAll(".dash-item").forEach((btn) => {
     btn.addEventListener("click", () => {
       currentChapterIndex = Number(btn.dataset.idx);
       renderWorksheet();
+      document.getElementById("worksheet").scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
 
 function switchStudent(key) {
   currentStudent = key;
-  currentChapterIndex = Math.min(progress[key], STUDENTS[key].data.length - 1);
+  currentChapterIndex = nextChapterIndex(key);
   document.querySelectorAll(".student-tab").forEach((b) => b.classList.toggle("active", b.dataset.student === key));
-  renderProgressList();
+  renderDashboard();
   renderWorksheet();
 }
 
 function markComplete() {
   const student = STUDENTS[currentStudent];
-  if (currentChapterIndex >= progress[currentStudent]) {
-    progress[currentStudent] = Math.min(currentChapterIndex + 1, student.data.length);
-    saveProgress(progress);
-    renderProgressList();
-    renderWorksheet();
-  }
+  const chapterId = student.data[currentChapterIndex].id;
+  const rec = chapterRecord(currentStudent, chapterId);
+  rec.completedAt = new Date().toISOString();
+  progress[currentStudent][chapterId] = rec;
+  saveProgress(progress);
+  currentChapterIndex = nextChapterIndex(currentStudent);
+  renderDashboard();
+  renderWorksheet();
+}
+
+function markPrinted() {
+  const student = STUDENTS[currentStudent];
+  const chapterId = student.data[currentChapterIndex].id;
+  const rec = chapterRecord(currentStudent, chapterId);
+  rec.printedAt = new Date().toISOString();
+  progress[currentStudent][chapterId] = rec;
+  saveProgress(progress);
+  renderDashboard();
 }
 
 function vocabGridHTML(vocab) {
@@ -211,26 +275,30 @@ function renderSaebyulWorksheet(chapter) {
 function renderWorksheet() {
   const student = STUDENTS[currentStudent];
   const chapter = student.data[currentChapterIndex];
+  const rec = chapterRecord(currentStudent, chapter.id);
   const container = document.getElementById("worksheet");
   container.innerHTML = currentStudent === "saebom" ? renderSaebomWorksheet(chapter) : renderSaebyulWorksheet(chapter);
 
-  document.getElementById("completeBtn").textContent =
-    currentChapterIndex < progress[currentStudent] ? "✅ 완료된 회차입니다" : "이 회차 완료 표시하기";
-  document.getElementById("completeBtn").disabled = currentChapterIndex < progress[currentStudent];
+  const completeBtn = document.getElementById("completeBtn");
+  completeBtn.textContent = rec.completedAt ? "✅ 완료된 회차입니다" : "이 회차 완료 표시하기";
+  completeBtn.disabled = Boolean(rec.completedAt);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".student-tab").forEach((btn) => {
     btn.addEventListener("click", () => switchStudent(btn.dataset.student));
   });
-  document.getElementById("printBtn").addEventListener("click", () => window.print());
+  document.getElementById("printBtn").addEventListener("click", () => {
+    markPrinted();
+    window.print();
+  });
   document.getElementById("completeBtn").addEventListener("click", markComplete);
   document.getElementById("resetBtn").addEventListener("click", () => {
-    if (confirm("정말 진도를 처음부터 다시 시작할까요?")) {
-      progress[currentStudent] = 0;
+    if (confirm("정말 진도와 인쇄 기록을 처음부터 다시 시작할까요?")) {
+      progress[currentStudent] = {};
       saveProgress(progress);
       currentChapterIndex = 0;
-      renderProgressList();
+      renderDashboard();
       renderWorksheet();
     }
   });
