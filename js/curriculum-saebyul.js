@@ -13,6 +13,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Cc", sound: "크", word: "cat", emoji: "🐱" },
     ],
     tracing: ["A", "a", "B", "b", "C", "c"],
+    vocab: [
+      { word: "yes", meaning: "네", emoji: "🙆" },
+      { word: "no", meaning: "아니요", emoji: "🙅" },
+      { word: "mom", meaning: "엄마", emoji: "👩" },
+    ],
     speaking: {
       chant: "A a apple! B b ball! C c cat! 🎵",
       dialogue: [
@@ -40,6 +45,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Ff", sound: "프", word: "fish", emoji: "🐟" },
     ],
     tracing: ["D", "d", "E", "e", "F", "f"],
+    vocab: [
+      { word: "dad", meaning: "아빠", emoji: "👨" },
+      { word: "big", meaning: "큰", emoji: "🐋" },
+      { word: "small", meaning: "작은", emoji: "🐜" },
+    ],
     speaking: {
       chant: "D d dog! E e elephant! F f fish! 🎵",
       dialogue: [
@@ -67,6 +77,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Ii", sound: "이", word: "ice cream", emoji: "🍦" },
     ],
     tracing: ["G", "g", "H", "h", "I", "i"],
+    vocab: [
+      { word: "happy", meaning: "행복한", emoji: "😊" },
+      { word: "sad", meaning: "슬픈", emoji: "😢" },
+      { word: "run", meaning: "달리다", emoji: "🏃" },
+    ],
     speaking: {
       chant: "G g giraffe! H h hat! I i ice cream! 🎵",
       dialogue: [
@@ -94,6 +109,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Ll", sound: "르", word: "lion", emoji: "🦁" },
     ],
     tracing: ["J", "j", "K", "k", "L", "l"],
+    vocab: [
+      { word: "red", meaning: "빨간색", emoji: "🔴" },
+      { word: "blue", meaning: "파란색", emoji: "🔵" },
+      { word: "yellow", meaning: "노란색", emoji: "🟡" },
+    ],
     speaking: {
       chant: "J j juice! K k kite! L l lion! 🎵",
       dialogue: [
@@ -121,6 +141,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Oo", sound: "아", word: "orange", emoji: "🍊" },
     ],
     tracing: ["M", "m", "N", "n", "O", "o"],
+    vocab: [
+      { word: "one", meaning: "하나", emoji: "1️⃣" },
+      { word: "two", meaning: "둘", emoji: "2️⃣" },
+      { word: "three", meaning: "셋", emoji: "3️⃣" },
+    ],
     speaking: {
       chant: "M m monkey! N n nest! O o orange! 🎵",
       dialogue: [
@@ -148,6 +173,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Rr", sound: "르", word: "rabbit", emoji: "🐰" },
     ],
     tracing: ["P", "p", "Q", "q", "R", "r"],
+    vocab: [
+      { word: "hot", meaning: "더운", emoji: "🥵" },
+      { word: "cold", meaning: "추운", emoji: "🥶" },
+      { word: "good", meaning: "좋은", emoji: "👍" },
+    ],
     speaking: {
       chant: "P p pig! Q q queen! R r rabbit! 🎵",
       dialogue: [
@@ -175,6 +205,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Uu", sound: "어", word: "umbrella", emoji: "☂️" },
     ],
     tracing: ["S", "s", "T", "t", "U", "u"],
+    vocab: [
+      { word: "up", meaning: "위로", emoji: "⬆️" },
+      { word: "down", meaning: "아래로", emoji: "⬇️" },
+      { word: "jump", meaning: "뛰다", emoji: "🤸" },
+    ],
     speaking: {
       chant: "S s sun! T t tiger! U u umbrella! 🎵",
       dialogue: [
@@ -204,6 +239,11 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Zz", sound: "즈", word: "zebra", emoji: "🦓" },
     ],
     tracing: ["V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"],
+    vocab: [
+      { word: "love", meaning: "사랑하다", emoji: "❤️" },
+      { word: "friend", meaning: "친구", emoji: "🧑‍🤝‍🧑" },
+      { word: "fun", meaning: "재미있는", emoji: "🎉" },
+    ],
     speaking: {
       chant: "V v violin! W w watermelon! X, box! Y y yo-yo! Z z zebra! 🎵",
       dialogue: [

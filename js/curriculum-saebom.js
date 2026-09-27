@@ -1,5 +1,5 @@
 /* 새봄이 커리큘럼 (초등 2학년, 파닉스 완료 · 읽기 가능)
-   회차마다: 단어 / 문법(be동사 인칭 변화 반복 드릴) / 한 문장 쓰기 / 회화(대화문+롤플레이)
+   회차마다: 단어(10개) / 문법(be동사 인칭 변화 반복 드릴) / 쓰기(문장완성+단어로 문장만들기+자유작문) / 회화(대화문+롤플레이)
    2일에 1회차 진행 기준, 총 8회차(약 16일) */
 const CURRICULUM_SAEBOM = [
   {
@@ -11,8 +11,12 @@ const CURRICULUM_SAEBOM = [
       { word: "mom", meaning: "엄마", emoji: "👩" },
       { word: "dad", meaning: "아빠", emoji: "👨" },
       { word: "sister", meaning: "언니(여동생)", emoji: "👧" },
+      { word: "brother", meaning: "오빠(남동생)", emoji: "👦" },
+      { word: "baby", meaning: "아기", emoji: "👶" },
       { word: "happy", meaning: "행복한", emoji: "😊" },
       { word: "friend", meaning: "친구", emoji: "🤝" },
+      { word: "love", meaning: "사랑하다", emoji: "❤️" },
+      { word: "hello", meaning: "안녕", emoji: "👋" },
     ],
     grammar: {
       topic: "Be동사 현재형 ① — I am / You are",
@@ -24,8 +28,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["I ___ a student.", "You ___ kind.", "I ___ seven years old."],
     },
     writing: {
-      example: "I am happy.",
-      prompt: "위 문장을 따라 쓰고, 나만의 문장을 한 개 더 만들어 보세요. (I am ___.)",
+      sentenceCompletion: [
+        { prompt: "You ___ my sister. (are)", answer: "You are my sister." },
+        { prompt: "I ___ a good friend. (am)", answer: "I am a good friend." },
+        { prompt: "You ___ happy today. (are)", answer: "You are happy today." },
+      ],
+      wordSentences: ["family", "love", "hello"],
+      freeWrite: {
+        example: "I am happy.",
+        prompt: "위 문장을 따라 쓰고, 나만의 문장을 한 개 더 만들어 보세요. (I am ___.)",
+      },
     },
     speaking: {
       dialogue: [
@@ -48,6 +60,10 @@ const CURRICULUM_SAEBOM = [
       { word: "chair", meaning: "의자", emoji: "🪑" },
       { word: "teacher", meaning: "선생님", emoji: "🧑‍🏫" },
       { word: "classroom", meaning: "교실", emoji: "🏫" },
+      { word: "ruler", meaning: "자", emoji: "📏" },
+      { word: "scissors", meaning: "가위", emoji: "✂️" },
+      { word: "student", meaning: "학생", emoji: "🧑‍🎓" },
+      { word: "clock", meaning: "시계", emoji: "🕐" },
     ],
     grammar: {
       topic: "Be동사 현재형 ② — He/She/It is, We/They are",
@@ -59,8 +75,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["She ___ a teacher.", "It ___ my bag.", "We ___ classmates."],
     },
     writing: {
-      example: "It is a book.",
-      prompt: "위 문장을 따라 쓰고, 교실 물건으로 나만의 문장을 만들어 보세요. (It is a/an ___.)",
+      sentenceCompletion: [
+        { prompt: "He ___ my classmate. (is)", answer: "He is my classmate." },
+        { prompt: "The ruler ___ on the desk. (is)", answer: "The ruler is on the desk." },
+        { prompt: "They ___ good students. (are)", answer: "They are good students." },
+      ],
+      wordSentences: ["teacher", "classroom", "clock"],
+      freeWrite: {
+        example: "It is a book.",
+        prompt: "위 문장을 따라 쓰고, 교실 물건으로 나만의 문장을 만들어 보세요. (It is a/an ___.)",
+      },
     },
     speaking: {
       dialogue: [
@@ -83,6 +107,10 @@ const CURRICULUM_SAEBOM = [
       { word: "hungry", meaning: "배고픈", emoji: "🍽️" },
       { word: "excited", meaning: "신난", emoji: "🤩" },
       { word: "okay", meaning: "괜찮은", emoji: "🙂" },
+      { word: "scared", meaning: "무서운", emoji: "😨" },
+      { word: "surprised", meaning: "놀란", emoji: "😲" },
+      { word: "bored", meaning: "지루한", emoji: "🥱" },
+      { word: "calm", meaning: "차분한", emoji: "😌" },
     ],
     grammar: {
       topic: "Be동사 부정문 — am not / isn't / aren't",
@@ -95,8 +123,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["I ___ (am not) angry.", "He ___ (isn't) okay.", "They ___ (aren't) excited."],
     },
     writing: {
-      example: "I am not sad. I am happy.",
-      prompt: "오늘 기분을 부정문과 긍정문으로 각각 한 문장씩 써 보세요.",
+      sentenceCompletion: [
+        { prompt: "I ___ scared. (am not)", answer: "I am not scared." },
+        { prompt: "She ___ bored. (isn't)", answer: "She isn't bored." },
+        { prompt: "We ___ surprised. (aren't)", answer: "We aren't surprised." },
+      ],
+      wordSentences: ["calm", "tired", "hungry"],
+      freeWrite: {
+        example: "I am not sad. I am happy.",
+        prompt: "오늘 기분을 부정문과 긍정문으로 각각 한 문장씩 써 보세요.",
+      },
     },
     speaking: {
       dialogue: [
@@ -118,6 +154,10 @@ const CURRICULUM_SAEBOM = [
       { word: "bird", meaning: "새", emoji: "🐦" },
       { word: "cute", meaning: "귀여운", emoji: "🥰" },
       { word: "big", meaning: "큰", emoji: "🐘" },
+      { word: "lion", meaning: "사자", emoji: "🦁" },
+      { word: "elephant", meaning: "코끼리", emoji: "🐘" },
+      { word: "fish", meaning: "물고기", emoji: "🐟" },
+      { word: "small", meaning: "작은", emoji: "🤏" },
     ],
     grammar: {
       topic: "Be동사 의문문 — Am I~? / Are you~? / Is he~?",
@@ -130,8 +170,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["___ it a rabbit? (Is)", "___ you happy? (Are)", "___ the dog big? (Is)"],
     },
     writing: {
-      example: "Is it a cat? Yes, it is.",
-      prompt: "좋아하는 동물로 질문 문장과 대답 문장을 각각 써 보세요.",
+      sentenceCompletion: [
+        { prompt: "___ it a lion? (Is)", answer: "Is it a lion?" },
+        { prompt: "___ the fish small? (Is)", answer: "Is the fish small?" },
+        { prompt: "___ you scared of dogs? (Are)", answer: "Are you scared of dogs?" },
+      ],
+      wordSentences: ["elephant", "cute", "big"],
+      freeWrite: {
+        example: "Is it a cat? Yes, it is.",
+        prompt: "좋아하는 동물로 질문 문장과 대답 문장을 각각 써 보세요.",
+      },
     },
     speaking: {
       dialogue: [
@@ -154,6 +202,10 @@ const CURRICULUM_SAEBOM = [
       { word: "busy", meaning: "바쁜", emoji: "🏃" },
       { word: "sick", meaning: "아픈", emoji: "🤒" },
       { word: "fun", meaning: "재미있는", emoji: "🎉" },
+      { word: "today", meaning: "오늘", emoji: "📆" },
+      { word: "late", meaning: "늦은", emoji: "⏰" },
+      { word: "early", meaning: "이른", emoji: "🌅" },
+      { word: "alone", meaning: "혼자", emoji: "🧍" },
     ],
     grammar: {
       topic: "Be동사 과거형 ① — I was / You were",
@@ -165,8 +217,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["I ___ at home yesterday.", "You ___ sick last week.", "I ___ so tired."],
     },
     writing: {
-      example: "I was at the park yesterday.",
-      prompt: "어제 어디에 있었는지 was를 사용해 한 문장을 써 보세요.",
+      sentenceCompletion: [
+        { prompt: "I ___ late today. (was)", answer: "I was late today." },
+        { prompt: "You ___ early yesterday. (were)", answer: "You were early yesterday." },
+        { prompt: "I ___ alone at home. (was)", answer: "I was alone at home." },
+      ],
+      wordSentences: ["busy", "fun", "park"],
+      freeWrite: {
+        example: "I was at the park yesterday.",
+        prompt: "어제 어디에 있었는지 was를 사용해 한 문장을 써 보세요.",
+      },
     },
     speaking: {
       dialogue: [
@@ -189,6 +249,10 @@ const CURRICULUM_SAEBOM = [
       { word: "hot", meaning: "더운", emoji: "🥵" },
       { word: "cloudy", meaning: "흐린", emoji: "☁️" },
       { word: "windy", meaning: "바람 부는", emoji: "💨" },
+      { word: "snowy", meaning: "눈 오는", emoji: "🌨️" },
+      { word: "warm", meaning: "따뜻한", emoji: "🌤️" },
+      { word: "foggy", meaning: "안개 낀", emoji: "🌫️" },
+      { word: "storm", meaning: "폭풍", emoji: "⛈️" },
     ],
     grammar: {
       topic: "Be동사 과거형 ② — He/She/It was, We/They were",
@@ -200,8 +264,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["It ___ cold yesterday.", "We ___ at the park.", "They ___ tired."],
     },
     writing: {
-      example: "It was sunny yesterday.",
-      prompt: "어제 날씨를 was를 사용해서 한 문장으로 써 보세요.",
+      sentenceCompletion: [
+        { prompt: "It ___ snowy yesterday. (was)", answer: "It was snowy yesterday." },
+        { prompt: "We ___ warm inside. (were)", answer: "We were warm inside." },
+        { prompt: "They ___ at school. (were)", answer: "They were at school." },
+      ],
+      wordSentences: ["cloudy", "windy", "hot"],
+      freeWrite: {
+        example: "It was sunny yesterday.",
+        prompt: "어제 날씨를 was를 사용해서 한 문장으로 써 보세요.",
+      },
     },
     speaking: {
       dialogue: [
@@ -224,6 +296,10 @@ const CURRICULUM_SAEBOM = [
       { word: "sweet", meaning: "달콤한", emoji: "🍬" },
       { word: "full", meaning: "배부른", emoji: "🙂" },
       { word: "hungry", meaning: "배고픈", emoji: "😋" },
+      { word: "soup", meaning: "수프", emoji: "🍲" },
+      { word: "bread", meaning: "빵", emoji: "🍞" },
+      { word: "spicy", meaning: "매운", emoji: "🌶️" },
+      { word: "salty", meaning: "짠", emoji: "🧂" },
     ],
     grammar: {
       topic: "Be동사 과거 부정문 — wasn't / weren't",
@@ -235,8 +311,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["It ___ (wasn't) spicy.", "We ___ (weren't) late.", "I ___ (wasn't) sad."],
     },
     writing: {
-      example: "The pizza wasn't spicy. It was delicious.",
-      prompt: "어제 먹은 음식에 대해 부정문 한 문장을 써 보세요.",
+      sentenceCompletion: [
+        { prompt: "The soup ___ salty. (wasn't)", answer: "The soup wasn't salty." },
+        { prompt: "I ___ full. (wasn't)", answer: "I wasn't full." },
+        { prompt: "We ___ hungry. (weren't)", answer: "We weren't hungry." },
+      ],
+      wordSentences: ["bread", "delicious", "rice"],
+      freeWrite: {
+        example: "The pizza wasn't spicy. It was delicious.",
+        prompt: "어제 먹은 음식에 대해 부정문 한 문장을 써 보세요.",
+      },
     },
     speaking: {
       dialogue: [
@@ -258,6 +342,10 @@ const CURRICULUM_SAEBOM = [
       { word: "swim", meaning: "수영하다", emoji: "🏊" },
       { word: "draw", meaning: "그리다", emoji: "🖍️" },
       { word: "read", meaning: "읽다", emoji: "📖" },
+      { word: "sing", meaning: "노래하다", emoji: "🎤" },
+      { word: "dance", meaning: "춤추다", emoji: "💃" },
+      { word: "play", meaning: "놀다", emoji: "🎮" },
+      { word: "run", meaning: "달리다", emoji: "🏃" },
     ],
     grammar: {
       topic: "종합 복습 + 일반동사 맛보기 — I like / I have",
@@ -270,8 +358,16 @@ const CURRICULUM_SAEBOM = [
       drill: ["I ___ (like) reading.", "She ___ (likes) drawing.", "I ___ (have) a pencil."],
     },
     writing: {
-      example: "I like drawing.",
-      prompt: "내가 좋아하는 것을 like를 사용해서 한 문장 써 보세요. (I like ___.)",
+      sentenceCompletion: [
+        { prompt: "I ___ singing. (like)", answer: "I like singing." },
+        { prompt: "She ___ dancing. (likes)", answer: "She likes dancing." },
+        { prompt: "I ___ a new book. (have)", answer: "I have a new book." },
+      ],
+      wordSentences: ["hobby", "draw", "read"],
+      freeWrite: {
+        example: "I like drawing.",
+        prompt: "내가 좋아하는 것을 like를 사용해서 한 문장 써 보세요. (I like ___.)",
+      },
     },
     speaking: {
       dialogue: [

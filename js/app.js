@@ -71,8 +71,8 @@ function renderDashboard() {
       .map(
         ({ ch, i, rec }) => `
       <button class="dash-item done" data-idx="${i}">
-        <span class="dash-item-title">✅ ${ch.title}</span>
-        <span class="dash-item-meta">완료 ${fmtDate(rec.completedAt)}${rec.printedAt ? " · 🖨️ 인쇄함" : ""}</span>
+        <span class="dash-item-title">${ch.title}</span>
+        <span class="dash-item-meta">완료 ${fmtDate(rec.completedAt)}${rec.printedAt ? " · 인쇄함" : ""}</span>
       </button>`
       )
       .join("") || `<p class="dash-empty">아직 완료한 회차가 없어요.</p>`;
@@ -82,17 +82,17 @@ function renderDashboard() {
       .map(
         ({ ch, i }) => `
       <button class="dash-item locked" data-idx="${i}">
-        <span class="dash-item-title">🔒 ${ch.title}</span>
+        <span class="dash-item-title">${ch.title}</span>
       </button>`
       )
-      .join("") || `<p class="dash-empty">모든 회차를 완료했어요! 🎉</p>`;
+      .join("") || `<p class="dash-empty">모든 회차를 완료했어요.</p>`;
 
   const nextCh = student.data[nextIdx];
   const nextRec = chapterRecord(currentStudent, nextCh.id);
   todayCard.innerHTML = `
     <button class="dash-item today" data-idx="${nextIdx}">
-      <span class="dash-item-title">▶ ${nextCh.title}</span>
-      <span class="dash-item-meta">${nextRec.printedAt ? "🖨️ " + fmtDate(nextRec.printedAt) + "에 인쇄함 (다시 인쇄 가능)" : "아직 진행 전이에요"}</span>
+      <span class="dash-item-title">${nextCh.title}</span>
+      <span class="dash-item-meta">${nextRec.printedAt ? fmtDate(nextRec.printedAt) + "에 인쇄함 (다시 인쇄 가능)" : "아직 진행 전이에요"}</span>
     </button>`;
 
   document.querySelectorAll(".dash-item").forEach((btn) => {
@@ -150,23 +150,23 @@ function vocabGridHTML(vocab) {
 
 function renderSaebomWorksheet(chapter) {
   return `
-  <section class="sheet">
+  <section class="sheet sheet-saebom">
     <header class="sheet-header">
       <div class="sheet-avatar">${saebomAvatar(64)}</div>
       <div>
-        <h1>새봄이의 영어 교실</h1>
+        <h1>새봄 영어 워크북</h1>
         <p class="sheet-sub">${chapter.title} &middot; ${chapter.theme}</p>
       </div>
       <div class="sheet-date">날짜: ______ 월 ______ 일</div>
     </header>
 
     <section class="block">
-      <h2>📚 오늘의 단어</h2>
+      <h2>오늘의 단어</h2>
       ${vocabGridHTML(chapter.vocab)}
     </section>
 
     <section class="block">
-      <h2>✏️ 오늘의 문법 &mdash; ${chapter.grammar.topic}</h2>
+      <h2>오늘의 문법 &mdash; ${chapter.grammar.topic}</h2>
       <table class="grammar-table">
         <tbody>
           ${chapter.grammar.table.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join("")}
@@ -180,42 +180,61 @@ function renderSaebomWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>📝 한 문장 쓰기</h2>
-      <p class="writing-example">예문: <em>${chapter.writing.example}</em></p>
-      <p class="writing-prompt">${chapter.writing.prompt}</p>
+      <h2>쓰기 연습</h2>
+      <p class="sec-label">1. 문장 완성하기 <span class="sec-hint">빈칸을 채워 문장 전체를 쓰세요</span></p>
+      <ol class="write-fill-list">
+        ${chapter.writing.sentenceCompletion
+          .map(
+            (item) => `<li>
+              <span class="fill-prompt">${item.prompt}</span>
+              <span class="answer-hint">예: ${item.answer}</span>
+              <div class="write-line-sm"></div>
+            </li>`
+          )
+          .join("")}
+      </ol>
+      <p class="sec-label">2. 단어로 문장 만들기</p>
+      <ol class="write-fill-list">
+        ${chapter.writing.wordSentences
+          .map((w) => `<li><strong class="word-tag">${w}</strong><div class="write-line-sm"></div></li>`)
+          .join("")}
+      </ol>
+      <p class="sec-label">3. 나만의 문장 쓰기</p>
+      <p class="writing-example">예문: <em>${chapter.writing.freeWrite.example}</em></p>
+      <p class="writing-prompt">${chapter.writing.freeWrite.prompt}</p>
       <div class="write-line"></div>
       <div class="write-line"></div>
     </section>
 
     <section class="block">
-      <h2>💬 오늘의 회화 &amp; 롤플레이</h2>
+      <h2>오늘의 회화 &amp; 롤플레이</h2>
       <div class="speech-wrap">
         ${chapter.speaking.dialogue.map((d) => speechLineHTML(d.speaker, d.line)).join("")}
       </div>
-      <p class="roleplay-note">🎭 ${chapter.speaking.roleplay}</p>
+      <p class="roleplay-note">${chapter.speaking.roleplay}</p>
     </section>
 
     <footer class="sheet-footer">
-      <span>오늘도 잘했어요! 🌟</span>
-      <span>부모님 확인: ______________</span>
+      <span>부모님 확인</span>
+      <span>서명: ______________</span>
     </footer>
   </section>`;
 }
 
 function renderSaebyulWorksheet(chapter) {
   return `
-  <section class="sheet">
+  <section class="sheet sheet-saebyul">
     <header class="sheet-header">
       <div class="sheet-avatar">${saebyulAvatar(64)}</div>
       <div>
-        <h1>새별이의 영어 교실</h1>
+        <h1>새별 영어 워크북</h1>
         <p class="sheet-sub">${chapter.title}</p>
       </div>
       <div class="sheet-date">날짜: ______ 월 ______ 일</div>
     </header>
 
     <section class="block">
-      <h2>🔤 오늘의 파닉스</h2>
+      <h2>오늘의 파닉스</h2>
       <div class="phonics-grid">
         ${chapter.phonics
           .map(
@@ -231,7 +250,7 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>✍️ 알파벳 따라쓰기</h2>
+      <h2>알파벳 따라쓰기</h2>
       <div class="tracing-row">
         ${chapter.tracing.map((l) => `<span class="trace-letter">${l}</span>`).join("")}
       </div>
@@ -240,7 +259,12 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>🖍️ 그림 보고 단어 찾기</h2>
+      <h2>오늘의 단어</h2>
+      ${vocabGridHTML(chapter.vocab)}
+    </section>
+
+    <section class="block">
+      <h2>그림 보고 단어 찾기</h2>
       <div class="matching-grid">
         ${chapter.matching.items
           .map(
@@ -257,17 +281,17 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>🎵 듣고 따라 말하기</h2>
+      <h2>듣고 따라 말하기</h2>
       <p class="chant">${chapter.speaking.chant}</p>
       <div class="speech-wrap">
         ${chapter.speaking.dialogue.map((d) => speechLineHTML(d.speaker, d.line)).join("")}
       </div>
-      <p class="roleplay-note">🎧 ${chapter.speaking.instruction}</p>
+      <p class="roleplay-note">${chapter.speaking.instruction}</p>
     </section>
 
     <footer class="sheet-footer">
-      <span>오늘도 잘했어요! 🌟</span>
-      <span>부모님 확인: ______________</span>
+      <span>부모님 확인</span>
+      <span>서명: ______________</span>
     </footer>
   </section>`;
 }
