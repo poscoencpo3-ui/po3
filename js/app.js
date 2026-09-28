@@ -167,12 +167,16 @@ function renderSaebomWorksheet(chapter) {
 
     <section class="block">
       <h2>오늘의 문법 &mdash; ${chapter.grammar.topic}</h2>
+      <ul class="grammar-explain">
+        ${chapter.grammar.explain.map((e) => `<li>${e}</li>`).join("")}
+      </ul>
       <table class="grammar-table">
         <tbody>
           ${chapter.grammar.table.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join("")}
         </tbody>
       </table>
       <p class="examples">${chapter.grammar.examples.join(" &nbsp;/&nbsp; ")}</p>
+      <p class="grammar-tip">${chapter.grammar.tip}</p>
       <p class="drill-title">빈칸 채우기</p>
       <ol class="drill-list">
         ${chapter.grammar.drill.map((d) => `<li>${d}</li>`).join("")}
