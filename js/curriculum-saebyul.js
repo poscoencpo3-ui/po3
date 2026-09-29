@@ -1,14 +1,20 @@
-/* 새별이 커리큘럼 (7~8세 수준, 파닉스 진행 중 · 듣고 따라 말하기 가능)
-   회차마다: 파닉스(알파벳 소리) / 단어 5개(그림+간단 매칭) / 알파벳 따라쓰기 /
-   사이트워드 3개(Dolch pre-primer 단어) / 오늘의 문장 2개(패턴 문장 따라쓰기 — 기본 문장 +
-   조금 더 길고 복잡한 문장) / 빈칸 채우기(단어은행에서 골라 문장 완성) / 챈트+대화(듣고 따라 말하기) /
-   그림 보고 단어 찾기 5개
-   미국 유치원~1학년 교재(Handwriting Without Tears 글자→단어→문장 따라쓰기 순서, Dolch 사이트워드,
-   "I see a ___." 류 패턴리더 문장)를 참고하되, 7~8세 수준에 맞게 단어량과 문장 길이·문형(있다/가지다,
-   전치사구 포함 문장 등)을 늘려 문법 용어 없이도 더 풍부한 문장을 읽고 쓰도록 구성했습니다.
+/* 새별이 커리큘럼 (7~8세 수준, 파닉스 완성 과정 · 듣고 따라 말하기 가능)
+   회차마다: 파닉스 / 단어 5개(그림+간단 매칭) / 알파벳·단어 따라쓰기 /
+   사이트워드 3개(Dolch 단어) / 오늘의 문장 2개(기본 문장 + 조금 더 길고 복잡한 확장 문장) /
+   빈칸 채우기(단어은행에서 골라 문장 완성) / 챈트+대화(듣고 따라 말하기) / 그림 보고 단어 찾기 5개
+
+   전체 20회차(2일 1회차 기준 약 40일)를 5단계로 구성해 시중 인기 파닉스 교재
+   (Smart Phonics, 기적의 파닉스, Explode the Code 등)의 표준 진행 순서를 따라
+   "파닉스 완성"까지 이어지도록 설계했습니다:
+   1단계(1~8회차) 알파벳 소리(A~Z, 3~5자씩) →
+   2단계(9~13회차) 단모음 + CVC 단어(word family: -at/-ap/-an, -et/-en/-ed 등, a·e·i·o·u) →
+   3단계(14~16회차) 자음 블렌드(bl·cl·fl / cr·dr·tr / sp·st·sw) →
+   4단계(17~18회차) 이중자음/디그래프(sh·ch·wh / th·ck) →
+   5단계(19~20회차) 매직 e·묵음(silent e: a_e·i_e·o_e·u_e — 단어 끝 e는 소리 나지 않고
+   앞 모음이 알파벳 이름으로 소리 남을 배우고, 20회차에서 전체 파닉스 총복습으로 마무리).
+   그림 중심 카드와 짧은 챈트·대화로 문법 용어 없이 소리 규칙을 익히도록 했습니다.
    ※ 파닉스 시작 지점은 A부터로 기본 설정했습니다. 이미 진행한 알파벳이 있다면 말씀해주시면
-     시작 회차를 조정해 드릴게요.
-   2일에 1회차 진행 기준, 총 8회차(약 16일) */
+     시작 회차를 조정해 드릴게요. */
 const CURRICULUM_SAEBYUL = [
   {
     id: 1,
@@ -482,6 +488,719 @@ const CURRICULUM_SAEBYUL = [
         { emoji: "🦓", options: ["zebra", "box"], answer: "zebra" },
         { emoji: "🎶", options: ["music", "stripes"], answer: "music" },
         { emoji: "〰️", options: ["stripes", "music"], answer: "stripes" },
+      ],
+    },
+  },
+  {
+    id: 9,
+    title: "9회차 · 단모음 a (CVC 단어)",
+    phonics: [
+      { letter: "-at", sound: "앳", word: "cat", emoji: "🐱" },
+      { letter: "-ap", sound: "앱", word: "map", emoji: "🗺️" },
+      { letter: "-an", sound: "앤", word: "fan", emoji: "🪭" },
+    ],
+    tracing: ["cat", "map", "fan"],
+    vocab: [
+      { word: "bag", meaning: "가방", emoji: "🎒" },
+      { word: "bat", meaning: "박쥐", emoji: "🦇" },
+      { word: "can", meaning: "캔, ~할 수 있다", emoji: "🥫" },
+      { word: "ant", meaning: "개미", emoji: "🐜" },
+      { word: "jam", meaning: "잼", emoji: "🍓" },
+    ],
+    sightWords: [
+      { word: "here", meaning: "여기", emoji: "👇" },
+      { word: "to", meaning: "~으로", emoji: "➡️" },
+      { word: "play", meaning: "놀다", emoji: "🤾" },
+    ],
+    pattern: {
+      sentence: "I see a cat and a fan.",
+      korean: "나는 고양이와 부채를 봐요.",
+      emoji: "🐱🪭",
+    },
+    pattern2: {
+      sentence: "The cat can play with the bag.",
+      korean: "그 고양이는 가방을 가지고 놀 수 있어요.",
+      emoji: "🐱🎒",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["cat", "map", "fan"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🐱", answer: "cat" },
+        { sentence: "I have a ___.", emoji: "🪭", answer: "fan" },
+      ],
+    },
+    speaking: {
+      chant: "C-a-t, cat! M-a-p, map! F-a-n, fan! 단모음 a는 애 소리! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Cat, cat, I see a cat!" },
+        { speaker: "새봄", line: "Map, map, look at the map!" },
+        { speaker: "새별", line: "Fan, fan, a big fan!" },
+      ],
+      instruction: "단모음 a가 들어간 단어는 모두 '애' 소리가 나요. 소리 내어 비교해 보아요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🐱", options: ["cat", "map"], answer: "cat" },
+        { emoji: "🗺️", options: ["map", "fan"], answer: "map" },
+        { emoji: "🪭", options: ["fan", "cat"], answer: "fan" },
+        { emoji: "🎒", options: ["bag", "ant"], answer: "bag" },
+        { emoji: "🐜", options: ["ant", "bag"], answer: "ant" },
+      ],
+    },
+  },
+  {
+    id: 10,
+    title: "10회차 · 단모음 e (CVC 단어)",
+    phonics: [
+      { letter: "-et", sound: "엣", word: "pet", emoji: "🐾" },
+      { letter: "-en", sound: "엔", word: "hen", emoji: "🐔" },
+      { letter: "-ed", sound: "에드", word: "bed", emoji: "🛏️" },
+    ],
+    tracing: ["pet", "hen", "bed"],
+    vocab: [
+      { word: "leg", meaning: "다리", emoji: "🦵" },
+      { word: "web", meaning: "거미줄", emoji: "🕸️" },
+      { word: "wet", meaning: "젖은", emoji: "💧" },
+      { word: "ten", meaning: "열", emoji: "🔟" },
+      { word: "vet", meaning: "수의사", emoji: "🩺" },
+    ],
+    sightWords: [
+      { word: "get", meaning: "얻다", emoji: "🤲" },
+      { word: "well", meaning: "잘", emoji: "👍" },
+      { word: "said", meaning: "말했다", emoji: "💬" },
+    ],
+    pattern: {
+      sentence: "I see a hen on the bed.",
+      korean: "나는 침대 위에 있는 암탉을 봐요.",
+      emoji: "🐔🛏️",
+    },
+    pattern2: {
+      sentence: "The pet hen is wet.",
+      korean: "그 반려 암탉은 젖었어요.",
+      emoji: "🐔💧",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["pet", "hen", "bed"],
+      items: [
+        { sentence: "I have a ___.", emoji: "🐾", answer: "pet" },
+        { sentence: "I sleep in my ___.", emoji: "🛏️", answer: "bed" },
+      ],
+    },
+    speaking: {
+      chant: "P-e-t, pet! H-e-n, hen! B-e-d, bed! 단모음 e는 에 소리! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Pet, pet, my pet hen!" },
+        { speaker: "새별", line: "Hen, hen, in the bed?" },
+        { speaker: "새봄", line: "No! Hen in the nest, I sleep in the bed!" },
+      ],
+      instruction: "단모음 e가 들어간 단어는 '에' 소리가 나요. 손뼉을 치며 말해보아요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🐾", options: ["pet", "bed"], answer: "pet" },
+        { emoji: "🐔", options: ["hen", "pet"], answer: "hen" },
+        { emoji: "🛏️", options: ["bed", "hen"], answer: "bed" },
+        { emoji: "🦵", options: ["leg", "web"], answer: "leg" },
+        { emoji: "🕸️", options: ["web", "leg"], answer: "web" },
+      ],
+    },
+  },
+  {
+    id: 11,
+    title: "11회차 · 단모음 i (CVC 단어)",
+    phonics: [
+      { letter: "-ig", sound: "이그", word: "pig", emoji: "🐷" },
+      { letter: "-in", sound: "인", word: "pin", emoji: "📌" },
+      { letter: "-it", sound: "잇", word: "sit", emoji: "🪑" },
+    ],
+    tracing: ["pig", "pin", "sit"],
+    vocab: [
+      { word: "lip", meaning: "입술", emoji: "👄" },
+      { word: "six", meaning: "여섯", emoji: "6️⃣" },
+      { word: "milk", meaning: "우유", emoji: "🥛" },
+      { word: "pink", meaning: "분홍색", emoji: "💗" },
+      { word: "kid", meaning: "아이", emoji: "🧒" },
+    ],
+    sightWords: [
+      { word: "did", meaning: "~했다", emoji: "✅" },
+      { word: "she", meaning: "그녀는", emoji: "👧" },
+      { word: "will", meaning: "~할 것이다", emoji: "🔮" },
+    ],
+    pattern: {
+      sentence: "The pig can sit.",
+      korean: "그 돼지는 앉을 수 있어요.",
+      emoji: "🐷",
+    },
+    pattern2: {
+      sentence: "I sit and drink milk.",
+      korean: "나는 앉아서 우유를 마셔요.",
+      emoji: "🪑🥛",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["pig", "pin", "sit"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🐷", answer: "pig" },
+        { sentence: "Please ___ down.", emoji: "🪑", answer: "sit" },
+      ],
+    },
+    speaking: {
+      chant: "P-i-g, pig! P-i-n, pin! S-i-t, sit! 단모음 i는 이 소리! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Pig, pig, a pink pig!" },
+        { speaker: "새봄", line: "Pin, pin, a small pin!" },
+        { speaker: "새별", line: "Sit, sit, let's sit down!" },
+      ],
+      instruction: "단모음 i가 들어간 단어는 '이' 소리가 나요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🐷", options: ["pig", "pin"], answer: "pig" },
+        { emoji: "📌", options: ["pin", "sit"], answer: "pin" },
+        { emoji: "🪑", options: ["sit", "pig"], answer: "sit" },
+        { emoji: "👄", options: ["lip", "milk"], answer: "lip" },
+        { emoji: "🥛", options: ["milk", "lip"], answer: "milk" },
+      ],
+    },
+  },
+  {
+    id: 12,
+    title: "12회차 · 단모음 o (CVC 단어)",
+    phonics: [
+      { letter: "-og", sound: "오그", word: "dog", emoji: "🐶" },
+      { letter: "-ot", sound: "앗", word: "pot", emoji: "🍲" },
+      { letter: "-op", sound: "압", word: "top", emoji: "🔝" },
+    ],
+    tracing: ["dog", "pot", "top"],
+    vocab: [
+      { word: "box", meaning: "상자", emoji: "📦" },
+      { word: "sock", meaning: "양말", emoji: "🧦" },
+      { word: "frog", meaning: "개구리", emoji: "🐸" },
+      { word: "lock", meaning: "자물쇠", emoji: "🔒" },
+      { word: "rock", meaning: "바위", emoji: "🪨" },
+    ],
+    sightWords: [
+      { word: "on", meaning: "~위에", emoji: "📍" },
+      { word: "not", meaning: "~아니다", emoji: "🚫" },
+      { word: "got", meaning: "얻었다", emoji: "🤲" },
+    ],
+    pattern: {
+      sentence: "The dog sits on the rock.",
+      korean: "그 개는 바위 위에 앉아요.",
+      emoji: "🐶🪨",
+    },
+    pattern2: {
+      sentence: "I put the pot on top.",
+      korean: "나는 냄비를 위에 놓아요.",
+      emoji: "🍲🔝",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["dog", "pot", "top"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🐶", answer: "dog" },
+        { sentence: "Put it on ___.", emoji: "🔝", answer: "top" },
+      ],
+    },
+    speaking: {
+      chant: "D-o-g, dog! P-o-t, pot! T-o-p, top! 단모음 o는 아 소리! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Dog, dog, a big dog!" },
+        { speaker: "새별", line: "Pot, pot, a hot pot!" },
+        { speaker: "새봄", line: "Top, top, spin the top!" },
+      ],
+      instruction: "단모음 o가 들어간 단어는 '아' 소리가 나요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🐶", options: ["dog", "pot"], answer: "dog" },
+        { emoji: "🍲", options: ["pot", "top"], answer: "pot" },
+        { emoji: "🔝", options: ["top", "dog"], answer: "top" },
+        { emoji: "📦", options: ["box", "sock"], answer: "box" },
+        { emoji: "🧦", options: ["sock", "box"], answer: "sock" },
+      ],
+    },
+  },
+  {
+    id: 13,
+    title: "13회차 · 단모음 u (CVC 단어) + 단모음 총정리",
+    phonics: [
+      { letter: "-ug", sound: "어그", word: "bug", emoji: "🐛" },
+      { letter: "-un", sound: "언", word: "sun", emoji: "☀️" },
+      { letter: "-ut", sound: "엇", word: "cut", emoji: "✂️" },
+    ],
+    tracing: ["bug", "sun", "cut"],
+    vocab: [
+      { word: "cup", meaning: "컵", emoji: "🥤" },
+      { word: "bus", meaning: "버스", emoji: "🚌" },
+      { word: "mud", meaning: "진흙", emoji: "🟤" },
+      { word: "duck", meaning: "오리", emoji: "🦆" },
+      { word: "nut", meaning: "견과", emoji: "🥜" },
+    ],
+    sightWords: [
+      { word: "but", meaning: "그러나", emoji: "↔️" },
+      { word: "us", meaning: "우리를", emoji: "👫" },
+      { word: "must", meaning: "~해야 한다", emoji: "❗" },
+    ],
+    pattern: {
+      sentence: "The bug is in the sun.",
+      korean: "그 벌레는 햇빛 속에 있어요.",
+      emoji: "🐛☀️",
+    },
+    pattern2: {
+      sentence: "The duck runs to the bus.",
+      korean: "오리가 버스로 달려가요.",
+      emoji: "🦆🚌",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["bug", "sun", "cut"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🐛", answer: "bug" },
+        { sentence: "The ___ is hot.", emoji: "☀️", answer: "sun" },
+      ],
+    },
+    speaking: {
+      chant: "B-u-g, bug! S-u-n, sun! C-u-t, cut! 단모음 u는 어 소리! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Bug, bug, a tiny bug!" },
+        { speaker: "새봄", line: "Sun, sun, a big sun!" },
+        { speaker: "새별", line: "Cut, cut, cut it out!" },
+      ],
+      instruction:
+        "오늘로 a, e, i, o, u 다섯 단모음 소리를 모두 배웠어요! 다섯 소리를 이어서 말해보아요: 애-에-이-아-어.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🐛", options: ["bug", "sun"], answer: "bug" },
+        { emoji: "☀️", options: ["sun", "cut"], answer: "sun" },
+        { emoji: "✂️", options: ["cut", "bug"], answer: "cut" },
+        { emoji: "🥤", options: ["cup", "bus"], answer: "cup" },
+        { emoji: "🚌", options: ["bus", "cup"], answer: "bus" },
+      ],
+    },
+  },
+  {
+    id: 14,
+    title: "14회차 · 자음 블렌드 bl · cl · fl",
+    phonics: [
+      { letter: "bl", sound: "블", word: "black", emoji: "⬛" },
+      { letter: "cl", sound: "클", word: "clap", emoji: "👏" },
+      { letter: "fl", sound: "플", word: "flag", emoji: "🚩" },
+    ],
+    tracing: ["black", "clap", "flag"],
+    vocab: [
+      { word: "block", meaning: "블록", emoji: "🧱" },
+      { word: "clock", meaning: "시계", emoji: "🕐" },
+      { word: "flower", meaning: "꽃", emoji: "🌸" },
+      { word: "plane", meaning: "비행기", emoji: "✈️" },
+      { word: "glass", meaning: "유리잔", emoji: "🥛" },
+    ],
+    sightWords: [
+      { word: "put", meaning: "놓다", emoji: "👇" },
+      { word: "fast", meaning: "빠른", emoji: "💨" },
+      { word: "now", meaning: "지금", emoji: "⏰" },
+    ],
+    pattern: {
+      sentence: "Clap your hands fast!",
+      korean: "손뼉을 빠르게 쳐요!",
+      emoji: "👏",
+    },
+    pattern2: {
+      sentence: "The black flag is on the plane.",
+      korean: "그 검은 깃발은 비행기 위에 있어요.",
+      emoji: "🚩✈️",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["black", "clap", "flag"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🚩", answer: "flag" },
+        { sentence: "___ your hands!", emoji: "👏", answer: "Clap" },
+      ],
+    },
+    speaking: {
+      chant: "Bl-bl-black! Cl-cl-clap! Fl-fl-flag! 자음 두 개가 만나 하나의 소리로! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Black, black, I see black!" },
+        { speaker: "새별", line: "Clap, clap, let's clap!" },
+        { speaker: "새봄", line: "Flag, flag, wave the flag!" },
+      ],
+      instruction: "bl, cl, fl처럼 자음 두 개가 붙으면 두 소리를 빠르게 이어서 발음해요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "⬛", options: ["black", "clap"], answer: "black" },
+        { emoji: "👏", options: ["clap", "flag"], answer: "clap" },
+        { emoji: "🚩", options: ["flag", "black"], answer: "flag" },
+        { emoji: "🧱", options: ["block", "clock"], answer: "block" },
+        { emoji: "🕐", options: ["clock", "block"], answer: "clock" },
+      ],
+    },
+  },
+  {
+    id: 15,
+    title: "15회차 · 자음 블렌드 cr · dr · tr",
+    phonics: [
+      { letter: "cr", sound: "크르", word: "crab", emoji: "🦀" },
+      { letter: "dr", sound: "드르", word: "drum", emoji: "🥁" },
+      { letter: "tr", sound: "트르", word: "truck", emoji: "🚚" },
+    ],
+    tracing: ["crab", "drum", "truck"],
+    vocab: [
+      { word: "tree", meaning: "나무", emoji: "🌳" },
+      { word: "dress", meaning: "원피스", emoji: "👗" },
+      { word: "cry", meaning: "울다", emoji: "😭" },
+      { word: "train", meaning: "기차", emoji: "🚂" },
+      { word: "brush", meaning: "빗", emoji: "🪥" },
+    ],
+    sightWords: [
+      { word: "away", meaning: "멀리", emoji: "🏃" },
+      { word: "ride", meaning: "타다", emoji: "🚲" },
+      { word: "off", meaning: "떨어져", emoji: "⛔" },
+    ],
+    pattern: {
+      sentence: "The crab plays the drum.",
+      korean: "그 게는 드럼을 연주해요.",
+      emoji: "🦀🥁",
+    },
+    pattern2: {
+      sentence: "The truck and the train go fast.",
+      korean: "트럭과 기차가 빠르게 가요.",
+      emoji: "🚚🚂",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["crab", "drum", "truck"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🦀", answer: "crab" },
+        { sentence: "I play the ___.", emoji: "🥁", answer: "drum" },
+      ],
+    },
+    speaking: {
+      chant: "Cr-cr-crab! Dr-dr-drum! Tr-tr-truck! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Crab, crab, a red crab!" },
+        { speaker: "새봄", line: "Drum, drum, beat the drum!" },
+        { speaker: "새별", line: "Truck, truck, a big truck!" },
+      ],
+      instruction: "cr, dr, tr 소리를 혀를 굴리듯 빠르게 이어 발음해 보아요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🦀", options: ["crab", "drum"], answer: "crab" },
+        { emoji: "🥁", options: ["drum", "truck"], answer: "drum" },
+        { emoji: "🚚", options: ["truck", "crab"], answer: "truck" },
+        { emoji: "🌳", options: ["tree", "dress"], answer: "tree" },
+        { emoji: "👗", options: ["dress", "tree"], answer: "dress" },
+      ],
+    },
+  },
+  {
+    id: 16,
+    title: "16회차 · 자음 블렌드 sp · st · sw",
+    phonics: [
+      { letter: "sp", sound: "스프", word: "spoon", emoji: "🥄" },
+      { letter: "st", sound: "스트", word: "star", emoji: "⭐" },
+      { letter: "sw", sound: "스워", word: "swim", emoji: "🏊" },
+    ],
+    tracing: ["spoon", "star", "swim"],
+    vocab: [
+      { word: "stop", meaning: "멈추다", emoji: "🛑" },
+      { word: "snow", meaning: "눈", emoji: "❄️" },
+      { word: "spider", meaning: "거미", emoji: "🕷️" },
+      { word: "sweet", meaning: "달콤한", emoji: "🍬" },
+      { word: "stair", meaning: "계단", emoji: "🪜" },
+    ],
+    sightWords: [
+      { word: "may", meaning: "~해도 된다", emoji: "🙋" },
+      { word: "want", meaning: "원하다", emoji: "🙏" },
+      { word: "like", meaning: "좋아하다", emoji: "❤️" },
+    ],
+    pattern: {
+      sentence: "I want to swim under the stars.",
+      korean: "나는 별빛 아래에서 수영하고 싶어요.",
+      emoji: "🏊⭐",
+    },
+    pattern2: {
+      sentence: "Stop! I see a spider on the spoon.",
+      korean: "멈춰! 숟가락 위에 거미가 있어요.",
+      emoji: "🕷️🥄",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["spoon", "star", "swim"],
+      items: [
+        { sentence: "I see a ___.", emoji: "⭐", answer: "star" },
+        { sentence: "I can ___.", emoji: "🏊", answer: "swim" },
+      ],
+    },
+    speaking: {
+      chant: "Sp-sp-spoon! St-st-star! Sw-sw-swim! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Spoon, spoon, a big spoon!" },
+        { speaker: "새별", line: "Star, star, a bright star!" },
+        { speaker: "새봄", line: "Swim, swim, let's swim!" },
+      ],
+      instruction: "s로 시작하는 블렌드는 s 소리를 살짝 세게 발음해요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🥄", options: ["spoon", "star"], answer: "spoon" },
+        { emoji: "⭐", options: ["star", "swim"], answer: "star" },
+        { emoji: "🏊", options: ["swim", "spoon"], answer: "swim" },
+        { emoji: "🛑", options: ["stop", "snow"], answer: "stop" },
+        { emoji: "❄️", options: ["snow", "stop"], answer: "snow" },
+      ],
+    },
+  },
+  {
+    id: 17,
+    title: "17회차 · 이중자음 sh · ch · wh",
+    phonics: [
+      { letter: "sh", sound: "쉬", word: "ship", emoji: "🚢" },
+      { letter: "ch", sound: "취", word: "chair", emoji: "🪑" },
+      { letter: "wh", sound: "위", word: "wheel", emoji: "🎡" },
+    ],
+    tracing: ["ship", "chair", "wheel"],
+    vocab: [
+      { word: "shell", meaning: "조개껍데기", emoji: "🐚" },
+      { word: "cheese", meaning: "치즈", emoji: "🧀" },
+      { word: "whale", meaning: "고래", emoji: "🐳" },
+      { word: "shoe", meaning: "신발", emoji: "👟" },
+      { word: "chick", meaning: "병아리", emoji: "🐥" },
+    ],
+    sightWords: [
+      { word: "what", meaning: "무엇", emoji: "❓" },
+      { word: "who", meaning: "누구", emoji: "🙋" },
+      { word: "why", meaning: "왜", emoji: "❔" },
+    ],
+    pattern: {
+      sentence: "I see a big whale by the ship.",
+      korean: "나는 배 옆에 큰 고래를 봐요.",
+      emoji: "🐳🚢",
+    },
+    pattern2: {
+      sentence: "The chick sits on the chair.",
+      korean: "병아리가 의자에 앉아요.",
+      emoji: "🐥🪑",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["ship", "chair", "wheel"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🚢", answer: "ship" },
+        { sentence: "I sit on the ___.", emoji: "🪑", answer: "chair" },
+      ],
+    },
+    speaking: {
+      chant: "Sh-sh-ship! Ch-ch-chair! Wh-wh-wheel! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Ship, ship, a big ship!" },
+        { speaker: "새봄", line: "Chair, chair, sit on the chair!" },
+        { speaker: "새별", line: "Wheel, wheel, round wheel!" },
+      ],
+      instruction: "sh, ch, wh처럼 두 글자가 만나 새로운 소리 하나를 만드는 것을 이중자음(digraph)이라고 해요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🚢", options: ["ship", "chair"], answer: "ship" },
+        { emoji: "🪑", options: ["chair", "wheel"], answer: "chair" },
+        { emoji: "🎡", options: ["wheel", "ship"], answer: "wheel" },
+        { emoji: "🐚", options: ["shell", "cheese"], answer: "shell" },
+        { emoji: "🧀", options: ["cheese", "shell"], answer: "cheese" },
+      ],
+    },
+  },
+  {
+    id: 18,
+    title: "18회차 · 이중자음 th · ck (복습)",
+    phonics: [
+      { letter: "th", sound: "뜨(무성)", word: "think", emoji: "🤔" },
+      { letter: "th", sound: "드(유성)", word: "this", emoji: "👉" },
+      { letter: "ck", sound: "크", word: "duck", emoji: "🦆" },
+    ],
+    tracing: ["think", "this", "duck"],
+    vocab: [
+      { word: "thumb", meaning: "엄지손가락", emoji: "👍" },
+      { word: "bath", meaning: "목욕", emoji: "🛁" },
+      { word: "sick", meaning: "아픈", emoji: "🤒" },
+      { word: "kick", meaning: "차다", emoji: "⚽" },
+      { word: "rock", meaning: "바위", emoji: "🪨" },
+    ],
+    sightWords: [
+      { word: "that", meaning: "그것", emoji: "👉" },
+      { word: "then", meaning: "그러면", emoji: "➡️" },
+      { word: "soon", meaning: "곧", emoji: "⏳" },
+    ],
+    pattern: {
+      sentence: "I think this duck is sick.",
+      korean: "나는 이 오리가 아프다고 생각해요.",
+      emoji: "🤔🦆",
+    },
+    pattern2: {
+      sentence: "This duck needs a bath.",
+      korean: "이 오리는 목욕이 필요해요.",
+      emoji: "🦆🛁",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["think", "this", "duck"],
+      items: [
+        { sentence: "I ___ it is fun.", emoji: "🤔", answer: "think" },
+        { sentence: "I see a ___.", emoji: "🦆", answer: "duck" },
+      ],
+    },
+    speaking: {
+      chant: "Th-th-think! Th-th-this! Ck-ck-duck! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Think, think, what do you think?" },
+        { speaker: "새별", line: "This, this, look at this!" },
+        { speaker: "새봄", line: "Duck, duck, a yellow duck!" },
+      ],
+      instruction: "오늘은 sh·ch·wh·th·ck 이중자음을 모두 복습해요. 지난 회차 단어도 함께 소리 내어 읽어보아요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🤔", options: ["think", "this"], answer: "think" },
+        { emoji: "👉", options: ["this", "duck"], answer: "this" },
+        { emoji: "🦆", options: ["duck", "think"], answer: "duck" },
+        { emoji: "👍", options: ["thumb", "bath"], answer: "thumb" },
+        { emoji: "🛁", options: ["bath", "thumb"], answer: "bath" },
+      ],
+    },
+  },
+  {
+    id: 19,
+    title: "19회차 · 매직 e (a_e · i_e) — 묵음 e",
+    phonics: [
+      { letter: "a_e", sound: "에이 (e는 묵음)", word: "cake", emoji: "🎂" },
+      { letter: "a_e", sound: "에이 (e는 묵음)", word: "gate", emoji: "🚪" },
+      { letter: "i_e", sound: "아이 (e는 묵음)", word: "bike", emoji: "🚲" },
+    ],
+    tracing: ["cake", "gate", "bike"],
+    vocab: [
+      { word: "cave", meaning: "동굴", emoji: "🕳️" },
+      { word: "kite", meaning: "연", emoji: "🪁" },
+      { word: "five", meaning: "다섯", emoji: "5️⃣" },
+      { word: "nine", meaning: "아홉", emoji: "9️⃣" },
+      { word: "smile", meaning: "미소", emoji: "😊" },
+    ],
+    sightWords: [
+      { word: "make", meaning: "만들다", emoji: "🛠️" },
+      { word: "ride", meaning: "타다", emoji: "🚲" },
+      { word: "name", meaning: "이름", emoji: "🏷️" },
+    ],
+    pattern: {
+      sentence: "I ride my bike to the gate.",
+      korean: "나는 자전거를 타고 대문으로 가요.",
+      emoji: "🚲🚪",
+    },
+    pattern2: {
+      sentence: "Nine kids make a cake and smile.",
+      korean: "아홉 명의 아이들이 케이크를 만들고 웃어요.",
+      emoji: "🎂😊",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["cake", "gate", "bike"],
+      items: [
+        { sentence: "I see a ___.", emoji: "🎂", answer: "cake" },
+        { sentence: "I ride my ___.", emoji: "🚲", answer: "bike" },
+      ],
+    },
+    speaking: {
+      chant: "Cake, cake! e는 소리 나지 않고 a가 '에이'! Gate, gate! Bike, bike, i가 '아이'! 🎵",
+      dialogue: [
+        { speaker: "새별", line: "Cake, cake, a sweet cake!" },
+        { speaker: "새봄", line: "Gate, gate, open the gate!" },
+        { speaker: "새별", line: "Bike, bike, ride the bike!" },
+      ],
+      instruction:
+        "단어 끝에 오는 e는 소리가 나지 않는 '묵음'이에요! 대신 앞의 모음이 알파벳 이름 그대로 소리 나요 " +
+        "(a는 '에이', i는 '아이'). cat과 cake을 비교해서 읽어보아요.",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🎂", options: ["cake", "gate"], answer: "cake" },
+        { emoji: "🚪", options: ["gate", "bike"], answer: "gate" },
+        { emoji: "🚲", options: ["bike", "cake"], answer: "bike" },
+        { emoji: "🕳️", options: ["cave", "kite"], answer: "cave" },
+        { emoji: "🪁", options: ["kite", "cave"], answer: "kite" },
+      ],
+    },
+  },
+  {
+    id: 20,
+    title: "20회차 · 매직 e (o_e · u_e) + 파닉스 총복습 🎓",
+    phonics: [
+      { letter: "o_e", sound: "오우 (e는 묵음)", word: "home", emoji: "🏠" },
+      { letter: "o_e", sound: "오우 (e는 묵음)", word: "bone", emoji: "🦴" },
+      { letter: "u_e", sound: "유 (e는 묵음)", word: "cute", emoji: "🥰" },
+    ],
+    tracing: ["home", "bone", "cute"],
+    vocab: [
+      { word: "rose", meaning: "장미", emoji: "🌹" },
+      { word: "nose", meaning: "코", emoji: "👃" },
+      { word: "tube", meaning: "튜브", emoji: "🧴" },
+      { word: "cube", meaning: "정육면체", emoji: "🎲" },
+      { word: "stone", meaning: "돌", emoji: "🪨" },
+    ],
+    sightWords: [
+      { word: "home", meaning: "집", emoji: "🏠" },
+      { word: "over", meaning: "~위로", emoji: "🔝" },
+      { word: "today", meaning: "오늘", emoji: "📅" },
+    ],
+    pattern: {
+      sentence: "My dog has a bone at home.",
+      korean: "우리 강아지는 집에서 뼈다귀를 가지고 있어요.",
+      emoji: "🦴🏠",
+    },
+    pattern2: {
+      sentence: "The cute dog smells the rose with its nose.",
+      korean: "그 귀여운 강아지는 코로 장미 냄새를 맡아요.",
+      emoji: "🥰🌹",
+    },
+    fillBlank: {
+      instruction: "단어은행에서 알맞은 단어를 골라 문장을 완성하세요.",
+      wordBank: ["home", "bone", "cute"],
+      items: [
+        { sentence: "I go ___.", emoji: "🏠", answer: "home" },
+        { sentence: "The dog has a ___.", emoji: "🦴", answer: "bone" },
+      ],
+    },
+    speaking: {
+      chant: "Home, home, o가 '오우'! Bone, bone! Cute, cute, u가 '유'! e는 여전히 묵음! 🎵",
+      dialogue: [
+        { speaker: "새봄", line: "Home, home, go back home!" },
+        { speaker: "새별", line: "Bone, bone, a big bone!" },
+        { speaker: "새봄", line: "Cute, cute, so cute!" },
+      ],
+      instruction:
+        "오늘로 단모음-블렌드-이중자음-매직 e까지 모두 배웠어요! 지금까지 배운 단어를 처음부터 끝까지 " +
+        "다 함께 읽어보며 파닉스를 완성해요. 🎉",
+    },
+    matching: {
+      instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
+      items: [
+        { emoji: "🏠", options: ["home", "bone"], answer: "home" },
+        { emoji: "🦴", options: ["bone", "cute"], answer: "bone" },
+        { emoji: "🥰", options: ["cute", "home"], answer: "cute" },
+        { emoji: "🌹", options: ["rose", "nose"], answer: "rose" },
+        { emoji: "👃", options: ["nose", "rose"], answer: "nose" },
       ],
     },
   },
