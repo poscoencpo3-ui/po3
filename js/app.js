@@ -375,6 +375,21 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
+      <h2>오늘의 사이트워드</h2>
+      ${vocabGridHTML(chapter.sightWords)}
+      <p class="sec-hint">사이트워드는 소리 내어 여러 번 읽으며 통째로 외우는 단어예요.</p>
+    </section>
+
+    <section class="block">
+      <h2>오늘의 문장 따라쓰기</h2>
+      <p class="pattern-sentence">${chapter.pattern.emoji} ${chapter.pattern.sentence}</p>
+      <p class="pattern-korean">${chapter.pattern.korean}</p>
+      <p class="trace-sentence">${chapter.pattern.sentence}</p>
+      <div class="write-line"></div>
+      <div class="write-line"></div>
+    </section>
+
+    <section class="block">
       <h2>그림 보고 단어 찾기</h2>
       <div class="matching-grid">
         ${chapter.matching.items

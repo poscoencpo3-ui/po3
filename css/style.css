@@ -351,6 +351,16 @@ body {
   -webkit-text-stroke: 1px #b5b5b5;
 }
 
+.pattern-sentence { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+.pattern-korean { font-size: 14px; color: var(--sub); margin: 0 0 12px; }
+.trace-sentence {
+  font-size: 30px;
+  font-weight: 700;
+  color: #e0e0e0;
+  -webkit-text-stroke: 0.6px #b5b5b5;
+  margin: 0 0 6px;
+}
+
 .matching-card { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 9px; text-align: center; }
 .matching-emoji { font-size: 30px; margin-bottom: 6px; }
 .matching-options { display: flex; gap: 6px; justify-content: center; }

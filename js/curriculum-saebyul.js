@@ -1,5 +1,8 @@
 /* 새별이 커리큘럼 (6세, 파닉스 진행 중 · 듣고 따라 말하기 가능)
-   회차마다: 파닉스(알파벳 소리) / 단어(그림+간단 매칭) / 알파벳 따라쓰기 / 챈트+대화(듣고 따라 말하기)
+   회차마다: 파닉스(알파벳 소리) / 단어(그림+간단 매칭) / 알파벳 따라쓰기 /
+   사이트워드(Dolch pre-primer 단어) / 오늘의 문장(패턴 문장 따라쓰기) / 챈트+대화(듣고 따라 말하기)
+   미국 유치원~킨더 교재(Handwriting Without Tears 글자→단어→문장 따라쓰기 순서, Dolch 사이트워드,
+   "I see a ___." 류 패턴리더 문장)를 참고해 문법 용어 없이 쉬운 문장 패턴 반복으로 쓰기를 시작합니다.
    ※ 파닉스 시작 지점은 A부터로 기본 설정했습니다. 이미 진행한 알파벳이 있다면 말씀해주시면
      시작 회차를 조정해 드릴게요.
    2일에 1회차 진행 기준, 총 8회차(약 16일) */
@@ -18,6 +21,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "no", meaning: "아니요", emoji: "🙅" },
       { word: "mom", meaning: "엄마", emoji: "👩" },
     ],
+    sightWords: [
+      { word: "I", meaning: "나는", emoji: "🙋" },
+      { word: "see", meaning: "보다", emoji: "👀" },
+    ],
+    pattern: {
+      sentence: "I see a cat.",
+      korean: "나는 고양이를 봐요.",
+      emoji: "🐱",
+    },
     speaking: {
       chant: "A a apple! B b ball! C c cat! 🎵",
       dialogue: [
@@ -50,6 +62,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "big", meaning: "큰", emoji: "🐋" },
       { word: "small", meaning: "작은", emoji: "🐜" },
     ],
+    sightWords: [
+      { word: "a", meaning: "하나의", emoji: "🔤" },
+      { word: "the", meaning: "그(특정한 것)", emoji: "👉" },
+    ],
+    pattern: {
+      sentence: "I see the dog.",
+      korean: "나는 그 강아지를 봐요.",
+      emoji: "🐶",
+    },
     speaking: {
       chant: "D d dog! E e elephant! F f fish! 🎵",
       dialogue: [
@@ -82,6 +103,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "sad", meaning: "슬픈", emoji: "😢" },
       { word: "run", meaning: "달리다", emoji: "🏃" },
     ],
+    sightWords: [
+      { word: "like", meaning: "좋아하다", emoji: "❤️" },
+      { word: "my", meaning: "나의", emoji: "🙋" },
+    ],
+    pattern: {
+      sentence: "I like my hat.",
+      korean: "나는 내 모자를 좋아해요.",
+      emoji: "🎩",
+    },
     speaking: {
       chant: "G g giraffe! H h hat! I i ice cream! 🎵",
       dialogue: [
@@ -114,6 +144,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "blue", meaning: "파란색", emoji: "🔵" },
       { word: "yellow", meaning: "노란색", emoji: "🟡" },
     ],
+    sightWords: [
+      { word: "is", meaning: "~이다", emoji: "🟰" },
+      { word: "big", meaning: "큰", emoji: "📏" },
+    ],
+    pattern: {
+      sentence: "The lion is big.",
+      korean: "그 사자는 커요.",
+      emoji: "🦁",
+    },
     speaking: {
       chant: "J j juice! K k kite! L l lion! 🎵",
       dialogue: [
@@ -146,6 +185,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "two", meaning: "둘", emoji: "2️⃣" },
       { word: "three", meaning: "셋", emoji: "3️⃣" },
     ],
+    sightWords: [
+      { word: "and", meaning: "그리고", emoji: "➕" },
+      { word: "little", meaning: "작은", emoji: "🤏" },
+    ],
+    pattern: {
+      sentence: "I see a little monkey.",
+      korean: "나는 작은 원숭이를 봐요.",
+      emoji: "🐵",
+    },
     speaking: {
       chant: "M m monkey! N n nest! O o orange! 🎵",
       dialogue: [
@@ -178,6 +226,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "cold", meaning: "추운", emoji: "🥶" },
       { word: "good", meaning: "좋은", emoji: "👍" },
     ],
+    sightWords: [
+      { word: "can", meaning: "~할 수 있다", emoji: "✅" },
+      { word: "you", meaning: "너는", emoji: "🫵" },
+    ],
+    pattern: {
+      sentence: "Can you see the rabbit?",
+      korean: "너는 그 토끼가 보이니?",
+      emoji: "🐰",
+    },
     speaking: {
       chant: "P p pig! Q q queen! R r rabbit! 🎵",
       dialogue: [
@@ -210,6 +267,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "down", meaning: "아래로", emoji: "⬇️" },
       { word: "jump", meaning: "뛰다", emoji: "🤸" },
     ],
+    sightWords: [
+      { word: "we", meaning: "우리는", emoji: "👫" },
+      { word: "go", meaning: "가다", emoji: "🏃" },
+    ],
+    pattern: {
+      sentence: "We go to see the sun.",
+      korean: "우리는 해를 보러 가요.",
+      emoji: "☀️",
+    },
     speaking: {
       chant: "S s sun! T t tiger! U u umbrella! 🎵",
       dialogue: [
@@ -244,6 +310,15 @@ const CURRICULUM_SAEBYUL = [
       { word: "friend", meaning: "친구", emoji: "🧑‍🤝‍🧑" },
       { word: "fun", meaning: "재미있는", emoji: "🎉" },
     ],
+    sightWords: [
+      { word: "look", meaning: "보다", emoji: "🔍" },
+      { word: "up", meaning: "위로", emoji: "⬆️" },
+    ],
+    pattern: {
+      sentence: "Look up! I see a zebra.",
+      korean: "위를 봐! 나는 얼룩말이 보여.",
+      emoji: "🦓",
+    },
     speaking: {
       chant: "V v violin! W w watermelon! X, box! Y y yo-yo! Z z zebra! 🎵",
       dialogue: [
