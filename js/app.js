@@ -134,6 +134,36 @@ function markPrinted() {
   renderDashboard();
 }
 
+function mcListHTML(items) {
+  return `<ol class="mc-list">
+    ${items
+      .map(
+        (m, i) => `<li>
+          <span class="mc-q">${i + 1}. ${m.q}</span>
+          <span class="mc-options">
+            ${m.options
+              .map((o, oi) => `<span class="mc-opt ${oi === m.answerIndex ? "correct" : ""}">${String.fromCharCode(65 + oi)}) ${o}</span>`)
+              .join("")}
+          </span>
+        </li>`
+      )
+      .join("")}
+  </ol>`;
+}
+
+function transformListHTML(items) {
+  return `<ol class="transform-list">
+    ${items
+      .map(
+        (t, i) => `<li>
+          <span class="tf-prompt">${i + 1}. ${t.prompt}</span>
+          <span class="answer-hint">정답: ${t.answer}</span>
+        </li>`
+      )
+      .join("")}
+  </ol>`;
+}
+
 function vocabGridHTML(vocab) {
   return `<div class="vocab-grid">
     ${vocab
@@ -184,6 +214,14 @@ function renderSaebomWorksheet(chapter) {
     </section>
 
     <section class="block">
+      <h2>문법 연습</h2>
+      <p class="sec-label">객관식 고르기</p>
+      ${mcListHTML(chapter.grammar.practice.multipleChoice)}
+      <p class="sec-label">${chapter.grammar.practice.secondType}</p>
+      ${transformListHTML(chapter.grammar.practice.secondItems)}
+    </section>
+
+    <section class="block">
       <h2>쓰기 연습</h2>
       <p class="sec-label">1. 문장 완성하기 <span class="sec-hint">빈칸을 채워 문장 전체를 쓰세요</span></p>
       <ol class="write-fill-list">
@@ -216,6 +254,51 @@ function renderSaebomWorksheet(chapter) {
         ${chapter.speaking.dialogue.map((d) => speechLineHTML(d.speaker, d.line)).join("")}
       </div>
       <p class="roleplay-note">${chapter.speaking.roleplay}</p>
+    </section>
+
+    <footer class="sheet-footer">
+      <span>부모님 확인</span>
+      <span>서명: ______________</span>
+    </footer>
+  </section>`;
+}
+
+function renderSaebomReview(chapter) {
+  return `
+  <section class="sheet sheet-saebom">
+    <header class="sheet-header">
+      <div class="sheet-avatar">${saebomAvatar(64)}</div>
+      <div>
+        <h1>새봄 영어 워크북 · Review Test</h1>
+        <p class="sheet-sub">${chapter.title} &middot; ${chapter.covers} 총정리</p>
+      </div>
+      <div class="sheet-date">날짜: ______ 월 ______ 일</div>
+    </header>
+
+    <section class="block">
+      <h2>핵심 문법 총정리</h2>
+      <table class="grammar-table">
+        <tbody>
+          ${chapter.recap.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h2>객관식 (10문제)</h2>
+      ${mcListHTML(chapter.multipleChoice)}
+    </section>
+
+    <section class="block">
+      <h2>문장 전환 / 어순 배열 (5문제)</h2>
+      ${transformListHTML(chapter.transform)}
+    </section>
+
+    <section class="block">
+      <h2>서술형</h2>
+      <p class="writing-prompt">${chapter.freeWrite.prompt}</p>
+      <div class="write-line"></div>
+      <div class="write-line"></div>
     </section>
 
     <footer class="sheet-footer">
@@ -305,7 +388,11 @@ function renderWorksheet() {
   const chapter = student.data[currentChapterIndex];
   const rec = chapterRecord(currentStudent, chapter.id);
   const container = document.getElementById("worksheet");
-  container.innerHTML = currentStudent === "saebom" ? renderSaebomWorksheet(chapter) : renderSaebyulWorksheet(chapter);
+  if (currentStudent === "saebom") {
+    container.innerHTML = chapter.type === "review" ? renderSaebomReview(chapter) : renderSaebomWorksheet(chapter);
+  } else {
+    container.innerHTML = renderSaebyulWorksheet(chapter);
+  }
 
   const completeBtn = document.getElementById("completeBtn");
   completeBtn.textContent = rec.completedAt ? "✅ 완료된 회차입니다" : "이 회차 완료 표시하기";

@@ -1,6 +1,8 @@
 /* 새봄이 커리큘럼 (초등 2학년, 파닉스 완료 · 읽기 가능)
-   회차마다: 단어 / 문법(설명+표+예문+빈칸연습) / 쓰기(문장완성+단어로 문장만들기+자유작문) / 회화(대화문+롤플레이)
-   2일에 1회차 진행 기준, 총 30회차(약 60일)로 초등 기초 문법 한 사이클을 완주하도록 구성 */
+   회차마다: 단어 / 문법(설명+표+예문+빈칸연습+객관식/어순배열·문장전환) /
+   쓰기(문장완성+단어로 문장만들기+자유작문) / 회화(대화문+롤플레이)
+   5개 학습 회차마다 Review Test 1회 삽입 (총 30개 학습 회차 + 6개 Review Test = 36회차)
+   2일에 1회차 진행 기준, 총 36회차(약 72일)로 초등 기초 문법 한 사이클을 완주 + 정기 복습 */
 const CURRICULUM_SAEBOM = [
   {
     id: 1,
@@ -32,6 +34,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: I are (X) → I am (O) / You am (X) → You are (O)",
       examples: ["I am Saebom.", "You are my friend.", "I am happy."],
       drill: ["I ___ a student.", "You ___ kind.", "I ___ seven years old."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ happy.", options: ["is", "am", "are", "be"], answerIndex: 1 },
+          { q: "You ___ my friend.", options: ["am", "is", "are", "be"], answerIndex: 2 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(am / I / Saebom)", answer: "I am Saebom." },
+          { prompt: "(are / friend / you / my)", answer: "You are my friend." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -85,6 +98,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: He are (X) → He is (O) / They is (X) → They are (O)",
       examples: ["He is my friend.", "It is a book.", "They are pencils."],
       drill: ["She ___ a teacher.", "It ___ my bag.", "We ___ classmates."],
+      practice: {
+        multipleChoice: [
+          { q: "He ___ my teacher.", options: ["am", "is", "are", "be"], answerIndex: 1 },
+          { q: "They ___ pencils.", options: ["is", "am", "are", "be"], answerIndex: 2 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / book / a / it)", answer: "It is a book." },
+          { prompt: "(are / students / good / they)", answer: "They are good students." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -139,6 +163,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: amn't 라는 말은 없어요! am not은 그대로 써요.",
       examples: ["I am not sad.", "She isn't tired.", "We aren't hungry."],
       drill: ["I ___ (am not) angry.", "He ___ (isn't) okay.", "They ___ (aren't) excited."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ sad. (부정문)", options: ["am not", "isn't", "aren't", "not am"], answerIndex: 0 },
+          { q: "She ___ tired. (부정문)", options: ["am not", "isn't", "aren't", "don't"], answerIndex: 1 },
+        ],
+        secondType: "문장 전환 — 긍정문을 부정문으로 바꾸세요",
+        secondItems: [
+          { prompt: "I am angry.", answer: "I am not angry." },
+          { prompt: "We are hungry.", answer: "We aren't hungry." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -192,6 +227,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: Is you~? (X) → Are you~? (O) — you는 항상 are와 짝이에요.",
       examples: ["Is it a cat?", "Are you okay?", "Am I right?"],
       drill: ["___ it a rabbit? (Is)", "___ you happy? (Are)", "___ the dog big? (Is)"],
+      practice: {
+        multipleChoice: [
+          { q: "___ you okay?", options: ["Am", "Is", "Are", "Be"], answerIndex: 2 },
+          { q: "___ it a cat?", options: ["Am", "Is", "Are", "Do"], answerIndex: 1 },
+        ],
+        secondType: "문장 전환 — 평서문을 의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "You are happy.", answer: "Are you happy?" },
+          { prompt: "It is big.", answer: "Is it big?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -245,6 +291,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: I were (X) → I was (O) / You was (X) → You were (O)",
       examples: ["I was at the park.", "You were busy yesterday.", "I was happy."],
       drill: ["I ___ at home yesterday.", "You ___ sick last week.", "I ___ so tired."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ at home yesterday.", options: ["am", "was", "were", "is"], answerIndex: 1 },
+          { q: "You ___ busy last week.", options: ["was", "were", "am", "are"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(was / I / late / today)", answer: "I was late today." },
+          { prompt: "(were / early / you / yesterday)", answer: "You were early yesterday." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -270,7 +327,40 @@ const CURRICULUM_SAEBOM = [
   },
   {
     id: 6,
-    title: "6회차 · He/She/It was, We/They were",
+    type: "review",
+    title: "6회차 · Review Test 1 (1~5회차 총정리)",
+    covers: "1~5회차",
+    recap: [
+      ["I am / You are", "현재형 기본"],
+      ["He/She/It is, We/They are", "현재형 3인칭·복수"],
+      ["am not / isn't / aren't", "현재 부정문"],
+      ["Am/Is/Are ~?", "현재 의문문"],
+      ["I was / You were", "과거형 기본"],
+    ],
+    multipleChoice: [
+      { q: "I ___ a student.", options: ["is", "am", "are", "be"], answerIndex: 1 },
+      { q: "They ___ my friends.", options: ["is", "am", "are", "be"], answerIndex: 2 },
+      { q: "He ___ happy.", options: ["am", "is", "are", "be"], answerIndex: 1 },
+      { q: "We ___ classmates.", options: ["am", "is", "are", "be"], answerIndex: 2 },
+      { q: "I ___ tired. (부정문)", options: ["am not", "isn't", "aren't", "don't"], answerIndex: 0 },
+      { q: "She ___ hungry. (부정문)", options: ["am not", "isn't", "aren't", "don't"], answerIndex: 1 },
+      { q: "___ you okay?", options: ["Am", "Is", "Are", "Do"], answerIndex: 2 },
+      { q: "___ it a cat?", options: ["Am", "Is", "Are", "Do"], answerIndex: 1 },
+      { q: "I ___ at home yesterday.", options: ["am", "is", "was", "were"], answerIndex: 2 },
+      { q: "You ___ busy last week.", options: ["was", "were", "am", "are"], answerIndex: 1 },
+    ],
+    transform: [
+      { prompt: "You are my friend. (의문문으로)", answer: "Are you my friend?" },
+      { prompt: "It is a book. (부정문으로)", answer: "It isn't a book." },
+      { prompt: "I am scared. (부정문으로)", answer: "I am not scared." },
+      { prompt: "It is a cat. (의문문으로)", answer: "Is it a cat?" },
+      { prompt: "You were busy. (의문문으로)", answer: "Were you busy?" },
+    ],
+    freeWrite: { prompt: "1~5회차에서 배운 문법 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
+  },
+  {
+    id: 7,
+    title: "7회차 · He/She/It was, We/They were",
     theme: "날씨",
     vocab: [
       { word: "sunny", meaning: "화창한", emoji: "☀️" },
@@ -298,6 +388,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: It were (X) → It was (O) / We was (X) → We were (O)",
       examples: ["It was sunny.", "We were at school.", "They were happy."],
       drill: ["It ___ cold yesterday.", "We ___ at the park.", "They ___ tired."],
+      practice: {
+        multipleChoice: [
+          { q: "It ___ sunny yesterday.", options: ["was", "were", "is", "am"], answerIndex: 0 },
+          { q: "They ___ happy.", options: ["was", "were", "is", "am"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(was / cold / it / yesterday)", answer: "It was cold yesterday." },
+          { prompt: "(were / we / happy)", answer: "We were happy." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -322,8 +423,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 7,
-    title: "7회차 · 과거 부정문 (wasn't / weren't)",
+    id: 8,
+    title: "8회차 · 과거 부정문 (wasn't / weren't)",
     theme: "음식",
     vocab: [
       { word: "pizza", meaning: "피자", emoji: "🍕" },
@@ -351,6 +452,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: 발음이 비슷한 wasn't[워즌트]와 weren't[워런트]를 헷갈리지 않게 큰 소리로 연습해보세요.",
       examples: ["It wasn't sweet.", "I wasn't hungry.", "They weren't full."],
       drill: ["It ___ (wasn't) spicy.", "We ___ (weren't) late.", "I ___ (wasn't) sad."],
+      practice: {
+        multipleChoice: [
+          { q: "It ___ spicy.", options: ["wasn't", "weren't", "isn't", "didn't"], answerIndex: 0 },
+          { q: "We ___ late.", options: ["wasn't", "weren't", "aren't", "don't"], answerIndex: 1 },
+        ],
+        secondType: "문장 전환 — 긍정문을 부정문으로 바꾸세요",
+        secondItems: [
+          { prompt: "It was sweet.", answer: "It wasn't sweet." },
+          { prompt: "They were full.", answer: "They weren't full." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -374,8 +486,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 8,
-    title: "8회차 · 종합 복습 + like/have 살짝 맛보기",
+    id: 9,
+    title: "9회차 · 종합 복습 + like/have 살짝 맛보기",
     theme: "취미",
     vocab: [
       { word: "like", meaning: "좋아하다", emoji: "❤️" },
@@ -404,6 +516,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗be동사와 일반동사는 한 문장에 절대 같이 쓰지 않아요. (I am like drawing. → X)",
       examples: ["I like drawing.", "I have a book.", "She likes swimming."],
       drill: ["I ___ (like) reading.", "She ___ (likes) drawing.", "I ___ (have) a pencil."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ drawing.", options: ["am", "like", "likes", "is"], answerIndex: 1 },
+          { q: "She ___ a book.", options: ["have", "has", "am", "is"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(like / drawing / I)", answer: "I like drawing." },
+          { prompt: "(has / book / a / she)", answer: "She has a book." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -428,8 +551,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 9,
-    title: "9회차 · Be동사 과거 의문문 (Was I~? Were you~?)",
+    id: 10,
+    title: "10회차 · Be동사 과거 의문문 (Was I~? Were you~?)",
     theme: "지난 주말",
     vocab: [
       { word: "weekend", meaning: "주말", emoji: "🗓️" },
@@ -457,6 +580,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: Was you~? (X) → Were you~? (O)",
       examples: ["Was it fun?", "Were you at the party?", "Was he there, too?"],
       drill: ["___ you at the beach? (Were)", "___ it fun? (Was)", "___ they there? (Were)"],
+      practice: {
+        multipleChoice: [
+          { q: "___ you at the party?", options: ["Was", "Were", "Is", "Are"], answerIndex: 1 },
+          { q: "___ it fun?", options: ["Was", "Were", "Is", "Did"], answerIndex: 0 },
+        ],
+        secondType: "문장 전환 — 평서문을 의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "You were busy.", answer: "Were you busy?" },
+          { prompt: "It was fun.", answer: "Was it fun?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -481,8 +615,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 10,
-    title: "10회차 · 일반동사 현재형 ① (I/You/We/They + 동사원형)",
+    id: 11,
+    title: "11회차 · 일반동사 현재형 ① (I/You/We/They + 동사원형)",
     theme: "매일 하는 일",
     vocab: [
       { word: "wake up", meaning: "일어나다", emoji: "⏰" },
@@ -505,6 +639,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: I eats (X) → I eat (O) — I/You/We/They 뒤에는 동사에 s를 붙이지 않아요.",
       examples: ["I eat breakfast.", "You study English.", "We walk to school."],
       drill: ["I ___ (go) to school.", "You ___ (study) hard.", "We ___ (walk) together."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ breakfast every day.", options: ["eats", "eat", "am eat", "is eat"], answerIndex: 1 },
+          { q: "We ___ to school together.", options: ["walks", "walk", "walking", "is walk"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(eat / I / breakfast)", answer: "I eat breakfast." },
+          { prompt: "(study / you / hard)", answer: "You study hard." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -529,8 +674,41 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 11,
-    title: "11회차 · 일반동사 현재형 ② (He/She/It + 동사-s)",
+    id: 12,
+    type: "review",
+    title: "12회차 · Review Test 2 (7~11회차 총정리)",
+    covers: "7~11회차",
+    recap: [
+      ["He/She/It was, We/They were", "과거형 3인칭·복수"],
+      ["wasn't / weren't", "과거 부정문"],
+      ["like / have", "일반동사 맛보기"],
+      ["Was I~? / Were you~?", "과거 의문문"],
+      ["I/You/We/They + 동사원형", "일반동사 현재형①"],
+    ],
+    multipleChoice: [
+      { q: "It ___ sunny.", options: ["was", "were", "is", "am"], answerIndex: 0 },
+      { q: "They ___ happy.", options: ["was", "were", "is", "am"], answerIndex: 1 },
+      { q: "It ___ spicy. (부정문)", options: ["wasn't", "weren't", "isn't", "didn't"], answerIndex: 0 },
+      { q: "We ___ late. (부정문)", options: ["wasn't", "weren't", "aren't", "don't"], answerIndex: 1 },
+      { q: "I ___ drawing.", options: ["am", "like", "likes", "is"], answerIndex: 1 },
+      { q: "She ___ a book.", options: ["have", "has", "am", "is"], answerIndex: 1 },
+      { q: "___ you at the party?", options: ["Was", "Were", "Is", "Are"], answerIndex: 1 },
+      { q: "___ it fun?", options: ["Was", "Were", "Is", "Did"], answerIndex: 0 },
+      { q: "I ___ breakfast every day.", options: ["eats", "eat", "ate", "eating"], answerIndex: 1 },
+      { q: "We ___ to school together.", options: ["walks", "walk", "walked", "walking"], answerIndex: 1 },
+    ],
+    transform: [
+      { prompt: "It was sunny. (부정문으로)", answer: "It wasn't sunny." },
+      { prompt: "You were busy. (의문문으로)", answer: "Were you busy?" },
+      { prompt: "(eat / I / breakfast) 어순 배열", answer: "I eat breakfast." },
+      { prompt: "(study / you / hard) 어순 배열", answer: "You study hard." },
+      { prompt: "(walk / we / together) 어순 배열", answer: "We walk together." },
+    ],
+    freeWrite: { prompt: "7~11회차에서 배운 문법 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
+  },
+  {
+    id: 13,
+    title: "13회차 · 일반동사 현재형 ② (He/She/It + 동사-s)",
     theme: "가족의 하루",
     vocab: [
       { word: "work", meaning: "일하다", emoji: "💼" },
@@ -553,6 +731,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: He work (X) → He works (O) — 3인칭 단수는 절대 s를 빼먹지 않도록 조심하세요.",
       examples: ["She cooks dinner.", "He watches TV.", "It fixes the problem."],
       drill: ["She ___ (cook) dinner.", "He ___ (watch) TV.", "My dad ___ (drive) a car."],
+      practice: {
+        multipleChoice: [
+          { q: "She ___ dinner.", options: ["cook", "cooks", "cooking", "is cook"], answerIndex: 1 },
+          { q: "He ___ TV every night.", options: ["watch", "watches", "watching", "is watch"], answerIndex: 1 },
+        ],
+        secondType: "형태 바꾸기 — 주어에 맞게 동사를 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "cook (주어: She)", answer: "cooks" },
+          { prompt: "watch (주어: He)", answer: "watches" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -577,8 +766,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 12,
-    title: "12회차 · 일반동사 부정문 (don't / doesn't)",
+    id: 14,
+    title: "14회차 · 일반동사 부정문 (don't / doesn't)",
     theme: "싫어하는 것",
     vocab: [
       { word: "vegetable", meaning: "야채", emoji: "🥦" },
@@ -604,6 +793,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: He doesn't likes (X) → He doesn't like (O) — doesn't 뒤에는 s를 빼요.",
       examples: ["I don't like spiders.", "She doesn't like the dark.", "We don't like noise."],
       drill: ["I ___ (don't) like vegetables.", "He ___ (doesn't) like ghosts.", "They ___ (don't) like insects."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ like spiders.", options: ["don't", "doesn't", "isn't", "am not"], answerIndex: 0 },
+          { q: "She ___ like the dark.", options: ["don't", "doesn't", "isn't", "aren't"], answerIndex: 1 },
+        ],
+        secondType: "문장 전환 — 긍정문을 부정문으로 바꾸세요",
+        secondItems: [
+          { prompt: "I like spiders.", answer: "I don't like spiders." },
+          { prompt: "She likes ghosts.", answer: "She doesn't like ghosts." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -628,8 +828,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 13,
-    title: "13회차 · 일반동사 의문문 (Do you~? Does he~?)",
+    id: 15,
+    title: "15회차 · 일반동사 의문문 (Do you~? Does he~?)",
     theme: "취향 물어보기",
     vocab: [
       { word: "breakfast", meaning: "아침식사", emoji: "🍳" },
@@ -655,6 +855,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: Does she likes~? (X) → Does she like~? (O) — Does 뒤에서는 동사에 s를 붙이지 않아요.",
       examples: ["Do you like milk?", "Does he like cheese?", "Do they eat breakfast?"],
       drill: ["___ you like snacks? (Do)", "___ she like dessert? (Does)", "___ they eat lunch together? (Do)"],
+      practice: {
+        multipleChoice: [
+          { q: "___ you like milk?", options: ["Do", "Does", "Are", "Is"], answerIndex: 0 },
+          { q: "___ he like cheese?", options: ["Do", "Does", "Is", "Are"], answerIndex: 1 },
+        ],
+        secondType: "문장 전환 — 평서문을 의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "You like snacks.", answer: "Do you like snacks?" },
+          { prompt: "She likes dessert.", answer: "Does she like dessert?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -679,8 +890,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 14,
-    title: "14회차 · 일반동사 과거형 ① (규칙동사 -ed)",
+    id: 16,
+    title: "16회차 · 일반동사 과거형 ① (규칙동사 -ed)",
     theme: "어제 한 일",
     vocab: [
       { word: "played", meaning: "놀았다", emoji: "🎮" },
@@ -708,6 +919,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: He studyed (X) → He studied (O) / He plaied (X) → He played (O)",
       examples: ["I played soccer yesterday.", "She studied English.", "We watched a movie."],
       drill: ["I ___ (play) soccer yesterday.", "She ___ (study) all night.", "We ___ (watch) a movie."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ soccer yesterday.", options: ["play", "plays", "played", "playing"], answerIndex: 2 },
+          { q: "She ___ all night.", options: ["study", "studies", "studied", "studying"], answerIndex: 2 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(played / I / soccer / yesterday)", answer: "I played soccer yesterday." },
+          { prompt: "(watched / movie / we / a)", answer: "We watched a movie." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -732,8 +954,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 15,
-    title: "15회차 · 일반동사 과거형 ② (불규칙동사)",
+    id: 17,
+    title: "17회차 · 일반동사 과거형 ② (불규칙동사)",
     theme: "특별했던 하루",
     vocab: [
       { word: "went", meaning: "갔다 (go)", emoji: "🚶" },
@@ -765,6 +987,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: 표를 소리 내어 여러 번 읽으면서 리듬처럼 외워보세요. go-went, eat-ate, see-saw!",
       examples: ["I went to the zoo.", "She ate pizza.", "We had a great time."],
       drill: ["I ___ (go) to the park yesterday.", "She ___ (eat) ice cream.", "We ___ (have) fun."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ to the zoo.", options: ["go", "goes", "went", "going"], answerIndex: 2 },
+          { q: "She ___ pizza.", options: ["eat", "eats", "ate", "eating"], answerIndex: 2 },
+        ],
+        secondType: "형태 바꾸기 — 현재형을 과거형으로 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "go", answer: "went" },
+          { prompt: "eat", answer: "ate" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -789,8 +1022,41 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 16,
-    title: "16회차 · 일반동사 과거 부정문 (didn't)",
+    id: 18,
+    type: "review",
+    title: "18회차 · Review Test 3 (13~17회차 총정리)",
+    covers: "13~17회차",
+    recap: [
+      ["He/She/It + 동사-s", "일반동사 현재형②"],
+      ["don't / doesn't", "일반동사 부정문"],
+      ["Do/Does ~?", "일반동사 의문문"],
+      ["동사 + ed", "일반동사 과거형(규칙)"],
+      ["go-went 등", "일반동사 과거형(불규칙)"],
+    ],
+    multipleChoice: [
+      { q: "She ___ dinner.", options: ["cook", "cooks", "cooking", "is cook"], answerIndex: 1 },
+      { q: "He ___ TV.", options: ["watch", "watches", "watching", "is watch"], answerIndex: 1 },
+      { q: "I ___ like spiders.", options: ["don't", "doesn't", "isn't", "am not"], answerIndex: 0 },
+      { q: "She ___ like the dark.", options: ["don't", "doesn't", "isn't", "aren't"], answerIndex: 1 },
+      { q: "___ you like milk?", options: ["Do", "Does", "Are", "Is"], answerIndex: 0 },
+      { q: "___ he like cheese?", options: ["Do", "Does", "Is", "Are"], answerIndex: 1 },
+      { q: "I ___ soccer yesterday.", options: ["play", "plays", "played", "playing"], answerIndex: 2 },
+      { q: "She ___ all night.", options: ["study", "studies", "studied", "studying"], answerIndex: 2 },
+      { q: "I ___ to the zoo.", options: ["go", "goes", "went", "going"], answerIndex: 2 },
+      { q: "She ___ pizza.", options: ["eat", "eats", "ate", "eating"], answerIndex: 2 },
+    ],
+    transform: [
+      { prompt: "cook (주어: She) 형태 바꾸기", answer: "cooks" },
+      { prompt: "I like spiders. (부정문으로)", answer: "I don't like spiders." },
+      { prompt: "You like snacks. (의문문으로)", answer: "Do you like snacks?" },
+      { prompt: "(play / I / soccer / yesterday) 어순 배열", answer: "I played soccer yesterday." },
+      { prompt: "go 형태 바꾸기 (과거형)", answer: "went" },
+    ],
+    freeWrite: { prompt: "13~17회차에서 배운 문법 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
+  },
+  {
+    id: 19,
+    title: "19회차 · 일반동사 과거 부정문 (didn't)",
     theme: "안 했던 일",
     vocab: [
       { word: "forget", meaning: "잊다", emoji: "😅" },
@@ -813,6 +1079,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: I didn't went (X) → I didn't go (O) — didn't 뒤에는 원형만!",
       examples: ["I didn't cry.", "She didn't lose the game.", "We didn't finish on time."],
       drill: ["I ___ (didn't) forget.", "He ___ (didn't) break it.", "They ___ (didn't) win."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ cry.", options: ["don't", "doesn't", "didn't", "wasn't"], answerIndex: 2 },
+          { q: "She ___ lose the game.", options: ["don't", "doesn't", "didn't", "wasn't"], answerIndex: 2 },
+        ],
+        secondType: "문장 전환 — 긍정문을 부정문으로 바꾸세요",
+        secondItems: [
+          { prompt: "I cried.", answer: "I didn't cry." },
+          { prompt: "She lost the game.", answer: "She didn't lose the game." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -837,8 +1114,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 17,
-    title: "17회차 · 일반동사 과거 의문문 (Did you~?)",
+    id: 20,
+    title: "20회차 · 일반동사 과거 의문문 (Did you~?)",
     theme: "방학 이야기",
     vocab: [
       { word: "vacation", meaning: "방학", emoji: "🧳" },
@@ -861,6 +1138,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: Did you went~? (X) → Did you go~? (O) — Did 뒤에는 원형만!",
       examples: ["Did you enjoy the trip?", "Did she climb the mountain?", "Did they visit grandma?"],
       drill: ["___ you fly on a plane? (Did)", "___ she enjoy the vacation? (Did)", "___ they climb the hill? (Did)"],
+      practice: {
+        multipleChoice: [
+          { q: "___ you enjoy the trip?", options: ["Do", "Does", "Did", "Was"], answerIndex: 2 },
+          { q: "___ she visit grandma?", options: ["Do", "Does", "Did", "Is"], answerIndex: 2 },
+        ],
+        secondType: "문장 전환 — 평서문을 의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "You enjoyed the trip.", answer: "Did you enjoy the trip?" },
+          { prompt: "She visited grandma.", answer: "Did she visit grandma?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -885,8 +1173,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 18,
-    title: "18회차 · 현재진행형 ① (am/is/are + ~ing)",
+    id: 21,
+    title: "21회차 · 현재진행형 ① (am/is/are + ~ing)",
     theme: "지금 하고 있는 일",
     vocab: [
       { word: "laugh", meaning: "웃다", emoji: "😆" },
@@ -913,6 +1201,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: I am write (X) → I am writing (O) — be동사와 ing를 둘 다 잊지 마세요!",
       examples: ["I am writing a letter.", "She is talking on the phone.", "We are waiting for the bus."],
       drill: ["I ___ (am) reading now.", "He ___ (is) laughing.", "They ___ (are) waiting."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ a letter.", options: ["write", "am writing", "writes", "wrote"], answerIndex: 1 },
+          { q: "She ___ on the phone.", options: ["is talking", "talk", "talks", "talked"], answerIndex: 0 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(writing / am / I / a / letter)", answer: "I am writing a letter." },
+          { prompt: "(talking / is / phone / she / the / on)", answer: "She is talking on the phone." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -937,8 +1236,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 19,
-    title: "19회차 · 현재진행형 부정문/의문문",
+    id: 22,
+    title: "22회차 · 현재진행형 부정문/의문문",
     theme: "지금 안 하는 일",
     vocab: [
       { word: "quiet", meaning: "조용한", emoji: "🤫" },
@@ -964,6 +1263,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: Are you reading? 에 그냥 Yes로만 답하지 말고, Yes, I am.처럼 완전하게 대답하는 연습을 해보세요.",
       examples: ["I am not sleeping.", "Is she reading?", "Are they playing outside?"],
       drill: ["I ___ (am not) sleeping.", "___ she reading? (Is)", "___ they playing? (Are)"],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ sleeping now.", options: ["am not", "isn't", "don't", "not am"], answerIndex: 0 },
+          { q: "___ she reading?", options: ["Do", "Does", "Is", "Are"], answerIndex: 2 },
+        ],
+        secondType: "문장 전환 — 부정문/의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "I am sleeping. (부정문으로)", answer: "I am not sleeping." },
+          { prompt: "He is studying. (의문문으로)", answer: "Is he studying?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -988,8 +1298,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 20,
-    title: "20회차 · There is / There are",
+    id: 23,
+    title: "23회차 · There is / There are",
     theme: "내 방",
     vocab: [
       { word: "bed", meaning: "침대", emoji: "🛏️" },
@@ -1015,6 +1325,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: There is two beds (X) → There are two beds (O) — 복수명사는 항상 are와 짝이에요.",
       examples: ["There is a lamp on the desk.", "There are two windows.", "There is a toy on the bed."],
       drill: ["There ___ (is) a bed in my room.", "There ___ (are) two windows.", "There ___ (is) a lamp on the desk."],
+      practice: {
+        multipleChoice: [
+          { q: "There ___ a lamp on the desk.", options: ["is", "are", "am", "be"], answerIndex: 0 },
+          { q: "There ___ two windows.", options: ["is", "are", "am", "be"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / lamp / a / there / desk / on / the)", answer: "There is a lamp on the desk." },
+          { prompt: "(are / windows / there / two)", answer: "There are two windows." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1039,8 +1360,41 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 21,
-    title: "21회차 · There is/are 부정문·의문문",
+    id: 24,
+    type: "review",
+    title: "24회차 · Review Test 4 (19~23회차 총정리)",
+    covers: "19~23회차",
+    recap: [
+      ["didn't + 동사원형", "일반동사 과거 부정문"],
+      ["Did ~?", "일반동사 과거 의문문"],
+      ["am/is/are + ~ing", "현재진행형"],
+      ["isn't/aren't ~ing, Am/Is/Are ~ing?", "현재진행형 부정/의문"],
+      ["There is/are", "~이 있다"],
+    ],
+    multipleChoice: [
+      { q: "I ___ cry.", options: ["don't", "doesn't", "didn't", "wasn't"], answerIndex: 2 },
+      { q: "___ you enjoy the trip?", options: ["Do", "Does", "Did", "Was"], answerIndex: 2 },
+      { q: "I ___ a letter.", options: ["write", "am writing", "writes", "wrote"], answerIndex: 1 },
+      { q: "She ___ on the phone.", options: ["is talking", "talk", "talks", "talked"], answerIndex: 0 },
+      { q: "I ___ sleeping now.", options: ["am not", "isn't", "don't", "not am"], answerIndex: 0 },
+      { q: "___ she reading?", options: ["Do", "Does", "Is", "Are"], answerIndex: 2 },
+      { q: "There ___ a lamp.", options: ["is", "are", "am", "be"], answerIndex: 0 },
+      { q: "There ___ two windows.", options: ["is", "are", "am", "be"], answerIndex: 1 },
+      { q: "There ___ a plant. (부정문)", options: ["isn't", "aren't", "don't", "not is"], answerIndex: 0 },
+      { q: "___ there a flag?", options: ["Is", "Are", "Do", "Does"], answerIndex: 0 },
+    ],
+    transform: [
+      { prompt: "I cried. (부정문으로)", answer: "I didn't cry." },
+      { prompt: "You enjoyed the trip. (의문문으로)", answer: "Did you enjoy the trip?" },
+      { prompt: "(writing / am / I / a / letter) 어순 배열", answer: "I am writing a letter." },
+      { prompt: "There is a fan. (부정문으로)", answer: "There isn't a fan." },
+      { prompt: "There are computers. (의문문으로)", answer: "Are there computers?" },
+    ],
+    freeWrite: { prompt: "19~23회차에서 배운 문법 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
+  },
+  {
+    id: 25,
+    title: "25회차 · There is/are 부정문·의문문",
     theme: "교실 살펴보기",
     vocab: [
       { word: "board", meaning: "칠판", emoji: "⬛" },
@@ -1066,6 +1420,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: Is there a books? (X) → Are there books? (O) — 복수명사는 Are there로 물어봐요.",
       examples: ["There isn't a plant.", "Are there computers in the classroom?", "Is there a flag?"],
       drill: ["There ___ (isn't) a fan here.", "___ there a map? (Is)", "___ there lockers? (Are)"],
+      practice: {
+        multipleChoice: [
+          { q: "There ___ a plant here. (부정문)", options: ["isn't", "aren't", "don't", "not is"], answerIndex: 0 },
+          { q: "___ there a flag?", options: ["Is", "Are", "Do", "Does"], answerIndex: 0 },
+        ],
+        secondType: "문장 전환 — 긍정문을 부정문/의문문으로 바꾸세요",
+        secondItems: [
+          { prompt: "There is a fan. (부정문으로)", answer: "There isn't a fan." },
+          { prompt: "There are computers. (의문문으로)", answer: "Are there computers?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1090,8 +1455,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 22,
-    title: "22회차 · 지시대명사 this/that",
+    id: 26,
+    title: "26회차 · 지시대명사 this/that",
     theme: "가까운 것, 먼 것",
     vocab: [
       { word: "near", meaning: "가까운", emoji: "📍" },
@@ -1117,6 +1482,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: this=이것(가까이), that=저것(멀리) — 손으로 가리키는 연습을 하면 더 쉽게 기억돼요!",
       examples: ["This is my gift.", "That is your balloon.", "Is this yours?"],
       drill: ["___ (This) is my book.", "___ (That) is your bag.", "Is ___ (this) mine?"],
+      practice: {
+        multipleChoice: [
+          { q: "___ is my gift. (가까운 것)", options: ["This", "That", "These", "Those"], answerIndex: 0 },
+          { q: "___ is your balloon over there. (먼 것)", options: ["This", "That", "These", "Those"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / gift / this / my)", answer: "This is my gift." },
+          { prompt: "(that / balloon / your / is)", answer: "That is your balloon." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1141,8 +1517,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 23,
-    title: "23회차 · 지시대명사 these/those",
+    id: 27,
+    title: "27회차 · 지시대명사 these/those",
     theme: "여러 개 물건",
     vocab: [
       { word: "shoes", meaning: "신발", emoji: "👟" },
@@ -1168,6 +1544,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: These is (X) → These are (O) — these/those는 항상 are와 짝이에요.",
       examples: ["These are my shoes.", "Those are your gloves.", "Are these your socks?"],
       drill: ["___ (These) are my gloves.", "___ (Those) are your shoes.", "Are ___ (these) yours?"],
+      practice: {
+        multipleChoice: [
+          { q: "___ are my shoes. (가까운 여러 개)", options: ["This", "That", "These", "Those"], answerIndex: 2 },
+          { q: "___ are your gloves over there.", options: ["This", "That", "These", "Those"], answerIndex: 3 },
+        ],
+        secondType: "형태 바꾸기 — 단수를 복수로 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "This is my shoe. (복수로)", answer: "These are my shoes." },
+          { prompt: "That is your glove. (복수로)", answer: "Those are your gloves." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1192,8 +1579,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 24,
-    title: "24회차 · 소유격 ① (my/your/his/her/its/our/their)",
+    id: 28,
+    title: "28회차 · 소유격 ① (my/your/his/her/its/our/their)",
     theme: "누구의 물건일까",
     vocab: [
       { word: "hat", meaning: "모자", emoji: "🧢" },
@@ -1224,6 +1611,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: her과 his를 헷갈리기 쉬워요 — her은 여자(그녀), his는 남자(그)예요.",
       examples: ["This is my hat.", "That is her jacket.", "Their backpacks are heavy."],
       drill: ["This is ___ (my) wallet.", "That is ___ (his) watch.", "___ (Their) keys are here."],
+      practice: {
+        multipleChoice: [
+          { q: "This is ___ hat. (나의)", options: ["I", "me", "my", "mine"], answerIndex: 2 },
+          { q: "That is ___ jacket. (그녀의)", options: ["she", "her", "hers", "he"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(my / this / is / backpack)", answer: "This is my backpack." },
+          { prompt: "(her / that / scarf / is)", answer: "That is her scarf." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1248,8 +1646,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 25,
-    title: "25회차 · 소유격 ② ('s)",
+    id: 29,
+    title: "29회차 · 소유격 ② ('s)",
     theme: "누구누구의 것",
     vocab: [
       { word: "name", meaning: "이름", emoji: "📛" },
@@ -1275,6 +1673,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗주의: 's와 소유격 my/her 등을 한 문장에 같이 쓰지 않아요.",
       examples: ["This is Saebom's notebook.", "That is the puppy's toy.", "It's my sister's birthday."],
       drill: ["This is ___ (Saebom's) idea.", "That is ___ (the puppy's) toy.", "It is ___ (my sister's) birthday."],
+      practice: {
+        multipleChoice: [
+          { q: "This is ___ notebook. (새봄의)", options: ["Saebom", "Saebom's", "Saebom is", "of Saebom"], answerIndex: 1 },
+          { q: "That is ___ toy. (강아지의)", options: ["the puppy", "the puppy's", "puppy is", "puppys"], answerIndex: 1 },
+        ],
+        secondType: "형태 바꾸기 — 이름을 's 소유격으로 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "Saebyul + umbrella", answer: "Saebyul's umbrella" },
+          { prompt: "the kitten + toy", answer: "the kitten's toy" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1299,8 +1708,41 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 26,
-    title: "26회차 · 조동사 can ① (능력)",
+    id: 30,
+    type: "review",
+    title: "30회차 · Review Test 5 (25~29회차 총정리)",
+    covers: "25~29회차",
+    recap: [
+      ["There isn't/aren't, Is/Are there~?", "There is/are 부정·의문"],
+      ["this/that", "지시대명사 단수"],
+      ["these/those", "지시대명사 복수"],
+      ["my/your/his/her 등", "소유격 대명사"],
+      ["Saebom's 등", "소유격 's"],
+    ],
+    multipleChoice: [
+      { q: "There ___ a plant here.", options: ["isn't", "aren't", "don't", "not is"], answerIndex: 0 },
+      { q: "___ there a flag?", options: ["Is", "Are", "Do", "Does"], answerIndex: 0 },
+      { q: "___ is my gift.", options: ["This", "That", "These", "Those"], answerIndex: 0 },
+      { q: "___ is your balloon over there.", options: ["This", "That", "These", "Those"], answerIndex: 1 },
+      { q: "___ are my shoes.", options: ["This", "That", "These", "Those"], answerIndex: 2 },
+      { q: "___ are your gloves over there.", options: ["This", "That", "These", "Those"], answerIndex: 3 },
+      { q: "This is ___ hat. (나의)", options: ["I", "me", "my", "mine"], answerIndex: 2 },
+      { q: "That is ___ jacket. (그녀의)", options: ["she", "her", "hers", "he"], answerIndex: 1 },
+      { q: "This is ___ notebook. (새봄의)", options: ["Saebom", "Saebom's", "Saebom is", "of Saebom"], answerIndex: 1 },
+      { q: "That is ___ toy. (강아지의)", options: ["the puppy", "the puppy's", "puppy is", "puppys"], answerIndex: 1 },
+    ],
+    transform: [
+      { prompt: "There is a fan. (부정문으로)", answer: "There isn't a fan." },
+      { prompt: "This is my shoe. (복수로)", answer: "These are my shoes." },
+      { prompt: "(is / gift / this / my) 어순 배열", answer: "This is my gift." },
+      { prompt: "(my / this / is / backpack) 어순 배열", answer: "This is my backpack." },
+      { prompt: "Saebyul + umbrella ('s 소유격으로)", answer: "Saebyul's umbrella" },
+    ],
+    freeWrite: { prompt: "25~29회차에서 배운 문법 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
+  },
+  {
+    id: 31,
+    title: "31회차 · 조동사 can ① (능력)",
     theme: "내가 할 수 있는 것",
     vocab: [
       { word: "jump rope", meaning: "줄넘기", emoji: "🪢" },
@@ -1326,6 +1768,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: can은 he/she/it이 와도 s를 붙이지 않는 특별한 동사예요.",
       examples: ["I can ride a bike.", "She can skate.", "He can't swim."],
       drill: ["I ___ (can) jump rope.", "She ___ (can) paint well.", "He ___ (can't) whistle."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ ride a bike.", options: ["can", "cans", "is can", "am can"], answerIndex: 0 },
+          { q: "He ___ swim. (부정)", options: ["can't", "isn't", "doesn't", "not can"], answerIndex: 0 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(ride / can / I / a / bike)", answer: "I can ride a bike." },
+          { prompt: "(can't / he / whistle)", answer: "He can't whistle." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1350,8 +1803,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 27,
-    title: "27회차 · 조동사 can ② (허가/요청 의문문)",
+    id: 32,
+    title: "32회차 · 조동사 can ② (허가/요청 의문문)",
     theme: "부탁하기",
     vocab: [
       { word: "borrow", meaning: "빌리다", emoji: "🙏" },
@@ -1377,6 +1830,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: 정중하게 부탁할 때는 문장 끝에 please를 붙여보세요. (Can you help me, please?)",
       examples: ["Can I borrow your pencil?", "Can you open the door?", "Can you help me, please?"],
       drill: ["___ (Can) I open the window?", "___ (Can) you pass the salt?", "___ (Can) you help me?"],
+      practice: {
+        multipleChoice: [
+          { q: "___ I borrow your pencil?", options: ["Can", "Do", "Am", "Is"], answerIndex: 0 },
+          { q: "___ you help me?", options: ["Can", "Do", "Am", "Is"], answerIndex: 0 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(I / can / borrow / your / book)", answer: "Can I borrow your book?" },
+          { prompt: "(you / can / close / the / door)", answer: "Can you close the door?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1401,8 +1865,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 28,
-    title: "28회차 · 의문사 의문문 ① (What / Who)",
+    id: 33,
+    title: "33회차 · 의문사 의문문 ① (What / Who)",
     theme: "질문 놀이",
     vocab: [
       { word: "color", meaning: "색깔", emoji: "🎨" },
@@ -1428,6 +1892,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: What/Who 뒤의 문장 순서는 일반 의문문과 똑같아요 — 의문사만 앞에 붙인다고 생각하면 쉬워요.",
       examples: ["What is this?", "Who is she?", "What do you like?"],
       drill: ["___ (What) is your favorite color?", "___ (Who) is your teacher?", "___ (What) do you like?"],
+      practice: {
+        multipleChoice: [
+          { q: "___ is your favorite color?", options: ["What", "Who", "Where", "When"], answerIndex: 0 },
+          { q: "___ is your best friend?", options: ["What", "Who", "Where", "When"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / favorite / what / your / animal)", answer: "What is your favorite animal?" },
+          { prompt: "(who / best / your / friend / is)", answer: "Who is your best friend?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1452,8 +1927,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 29,
-    title: "29회차 · 의문사 의문문 ② (Where / When / Why / How)",
+    id: 34,
+    title: "34회차 · 의문사 의문문 ② (Where / When / Why / How)",
     theme: "여행 계획",
     vocab: [
       { word: "museum", meaning: "박물관", emoji: "🏛️" },
@@ -1481,6 +1956,17 @@ const CURRICULUM_SAEBOM = [
       tip: "❗Tip: 의문사 5총사 What/Who/Where/When/Why/How를 한 문장으로 외워보세요 — '무누어언왜어떻'!",
       examples: ["Where is the museum?", "When is your birthday?", "Why are you happy?", "How are you?"],
       drill: ["___ (Where) do you live?", "___ (When) is the trip?", "___ (How) old are you?"],
+      practice: {
+        multipleChoice: [
+          { q: "___ is the museum?", options: ["Where", "When", "Why", "How"], answerIndex: 0 },
+          { q: "___ are you excited?", options: ["Where", "When", "Why", "How"], answerIndex: 2 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / airport / where / the)", answer: "Where is the airport?" },
+          { prompt: "(is / trip / when / the)", answer: "When is the trip?" },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1505,8 +1991,8 @@ const CURRICULUM_SAEBOM = [
     },
   },
   {
-    id: 30,
-    title: "30회차 · 총정리 복습 — 문법 한 사이클 완성",
+    id: 35,
+    title: "35회차 · 총정리 복습 — 문법 한 사이클 완성",
     theme: "문법 총정리",
     vocab: [
       { word: "review", meaning: "복습하다", emoji: "📝" },
@@ -1535,9 +2021,20 @@ const CURRICULUM_SAEBOM = [
         "8가지 문법 포인트를 모두 배웠다는 건, 초등 기초 영어 문법 한 사이클을 완성했다는 뜻이에요!",
         "헷갈리는 부분이 있다면 해당 회차 교재를 다시 꺼내서 복습해보세요. 반복이 가장 좋은 공부 방법이에요.",
       ],
-      tip: "🎉 축하해요! 30회차 동안 정말 많은 문법을 배웠어요. 이제 다양한 문장을 자신있게 만들 수 있어요!",
+      tip: "🎉 축하해요! 정말 많은 문법을 배웠어요. 다음 회차 Review Test로 최종 점검해봐요!",
       examples: ["I am confident now.", "I studied hard and practiced a lot.", "I can make many sentences now!"],
       drill: ["I ___ (am) proud of myself.", "I ___ (practiced) every day.", "I ___ (can) speak more English now."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ proud of myself.", options: ["am", "is", "are", "be"], answerIndex: 0 },
+          { q: "I ___ make many sentences now.", options: ["can", "cans", "am can", "is can"], answerIndex: 0 },
+        ],
+        secondType: "문장 전환 — 배운 문법으로 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "You are happy. (의문문으로)", answer: "Are you happy?" },
+          { prompt: "I like drawing. (부정문으로)", answer: "I don't like drawing." },
+        ],
+      },
     },
     writing: {
       sentenceCompletion: [
@@ -1548,17 +2045,50 @@ const CURRICULUM_SAEBOM = [
       wordSentences: ["review", "confident", "achieve"],
       freeWrite: {
         example: "I am proud of myself.",
-        prompt: "30회차 동안 배운 것을 돌아보며 나에게 하는 문장을 자유롭게 써 보세요.",
+        prompt: "지금까지 배운 것을 돌아보며 나에게 하는 문장을 자유롭게 써 보세요.",
       },
     },
     speaking: {
       dialogue: [
-        { speaker: "새봄", line: "We finished all 30 lessons!" },
+        { speaker: "새봄", line: "We finished so many lessons!" },
         { speaker: "새별", line: "Yes! I am so proud of us." },
         { speaker: "새봄", line: "We can make so many sentences now." },
         { speaker: "새별", line: "Let's keep practicing every day!" },
       ],
-      roleplay: "지난 30회차 중 가장 기억에 남는 문법을 서로 이야기해 보세요.",
+      roleplay: "지금까지 중 가장 기억에 남는 문법을 서로 이야기해 보세요.",
     },
+  },
+  {
+    id: 36,
+    type: "review",
+    title: "36회차 · Review Test 6 (31~35회차 · 최종 총정리)",
+    covers: "31~35회차 (전체 총정리)",
+    recap: [
+      ["can", "능력, 허가/부탁"],
+      ["의문사", "What/Who/Where/When/Why/How"],
+      ["Be동사 + 일반동사", "현재·과거 종합"],
+      ["현재진행형 + There is/are", "종합"],
+      ["지시대명사 + 소유격", "종합"],
+    ],
+    multipleChoice: [
+      { q: "I ___ ride a bike.", options: ["can", "cans", "is can", "am can"], answerIndex: 0 },
+      { q: "He ___ swim. (부정)", options: ["can't", "isn't", "doesn't", "not can"], answerIndex: 0 },
+      { q: "___ I borrow your pencil?", options: ["Can", "Do", "Am", "Is"], answerIndex: 0 },
+      { q: "___ you help me?", options: ["Can", "Do", "Am", "Is"], answerIndex: 0 },
+      { q: "___ is your favorite color?", options: ["What", "Who", "Where", "When"], answerIndex: 0 },
+      { q: "___ is your best friend?", options: ["What", "Who", "Where", "When"], answerIndex: 1 },
+      { q: "___ is the museum?", options: ["Where", "When", "Why", "How"], answerIndex: 0 },
+      { q: "___ are you excited?", options: ["Where", "When", "Why", "How"], answerIndex: 2 },
+      { q: "I ___ proud of myself.", options: ["am", "is", "are", "be"], answerIndex: 0 },
+      { q: "I ___ make many sentences now.", options: ["can", "cans", "am can", "is can"], answerIndex: 0 },
+    ],
+    transform: [
+      { prompt: "You are happy. (의문문으로)", answer: "Are you happy?" },
+      { prompt: "I like drawing. (부정문으로)", answer: "I don't like drawing." },
+      { prompt: "(ride / can / I / a / bike) 어순 배열", answer: "I can ride a bike." },
+      { prompt: "(I / can / borrow / your / book) 어순 배열", answer: "Can I borrow your book?" },
+      { prompt: "(is / favorite / what / your / animal) 어순 배열", answer: "What is your favorite animal?" },
+    ],
+    freeWrite: { prompt: "36회차 동안 배운 것 중 가장 자신 있는 문법을 하나 골라 문장으로 써 보세요." },
   },
 ];
