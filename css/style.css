@@ -216,7 +216,7 @@ body {
 .sheet-sub { margin: 2px 0 0; color: var(--sub); font-size: 14px; }
 .sheet-date { margin-left: auto; font-size: 14px; color: var(--sub); white-space: nowrap; }
 
-.block { margin-bottom: 19px; }
+.block { margin-bottom: 17px; }
 .block h2 {
   font-size: 17px;
   margin: 0 0 11px;
@@ -343,9 +343,9 @@ body {
 .speech-text { font-size: 15px; }
 .roleplay-note { font-size: 14px; color: var(--sub); margin: 7px 0 0; }
 
-/* 번호 목록 + 한 줄 점선 밑줄 + 필기체 느낌 문장 따라쓰기 */
+/* 번호 목록 + 회색 따라쓰기 문장(인쇄체) + 쓰기 줄 */
 .trace-list { list-style: none; margin: 0; padding: 0; }
-.trace-row { padding: 7px 0 18px; }
+.trace-row { padding: 6px 0 12px; }
 .trace-ko { font-size: 14.5px; color: var(--ink); margin: 0 0 4px; }
 .trace-num { font-weight: 800; color: var(--accent); margin-right: 2px; }
 .trace-en {
@@ -353,34 +353,23 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin: 0;
-  padding-bottom: 7px;
-  border-bottom: 1.5px dashed #c7c7c7;
-  font-family: "Caveat", "Pretendard", cursive;
-  font-weight: 700;
-  font-size: 34px;
-  line-height: 1;
-  color: #b3b3b3;
+  margin: 0 0 3px;
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.2;
+  color: #b8b8b8;
 }
-.trace-emoji { font-size: 30px; flex-shrink: 0; }
+.trace-emoji { font-size: 26px; flex-shrink: 0; }
 
 .trace-list-compact { margin: 4px 0 0; }
-.trace-row-inline {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 2px 0 2px;
-  border-bottom: 1.5px dashed #c7c7c7;
-  margin-bottom: 2px;
-}
+.trace-row-inline { padding: 2px 0; }
+.trace-line-inline { display: flex; align-items: baseline; gap: 6px; margin: 0 0 2px; }
 .trace-row-inline .trace-num { font-size: 11.5px; }
 .trace-ko-inline { font-size: 11.5px; color: var(--sub); white-space: nowrap; }
 .trace-en-inline {
-  font-family: "Caveat", "Pretendard", cursive;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1;
-  color: #b3b3b3;
+  font-weight: 800;
+  font-size: 15.5px;
+  color: #b8b8b8;
   flex: 1;
 }
 .trace-row-inline .trace-emoji { font-size: 14px; }

@@ -192,10 +192,13 @@ function traceListHTML(items, opts) {
       ${items
         .map(
           (item, i) => `<li class="trace-row-inline">
-            <span class="trace-num">${i + 1})</span>
-            <span class="trace-ko-inline">${item.ko}</span>
-            <span class="trace-en-inline">${item.en}</span>
-            ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
+            <p class="trace-line-inline">
+              <span class="trace-num">${i + 1})</span>
+              <span class="trace-ko-inline">${item.ko}</span>
+              <span class="trace-en-inline">${item.en}</span>
+              ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
+            </p>
+            <div class="write-line-sm"></div>
           </li>`
         )
         .join("")}
@@ -210,6 +213,7 @@ function traceListHTML(items, opts) {
             <span>${item.en}</span>
             ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
           </p>
+          <div class="write-line"></div>
         </li>`
       )
       .join("")}
