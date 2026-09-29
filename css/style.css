@@ -216,7 +216,7 @@ body {
 .sheet-sub { margin: 2px 0 0; color: var(--sub); font-size: 14px; }
 .sheet-date { margin-left: auto; font-size: 14px; color: var(--sub); white-space: nowrap; }
 
-.block { margin-bottom: 22px; }
+.block { margin-bottom: 19px; }
 .block h2 {
   font-size: 17px;
   margin: 0 0 11px;
@@ -288,7 +288,6 @@ body {
 
 .grammar-table td:first-child { font-weight: 700; background: #fafafa; width: 40%; }
 
-.examples { font-size: 14px; color: var(--sub); margin: 7px 0 13px; }
 .drill-title, .sec-label { font-weight: 700; font-size: 14.5px; margin: 0 0 7px; color: var(--ink); }
 .sec-hint { font-weight: 400; color: var(--sub); font-size: 13px; margin-left: 6px; }
 .drill-list { margin: 0; padding-left: 21px; font-size: 15px; }
@@ -344,53 +343,47 @@ body {
 .speech-text { font-size: 15px; }
 .roleplay-note { font-size: 14px; color: var(--sub); margin: 7px 0 0; }
 
-.tracing-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
-.trace-letter {
-  font-size: 48px;
-  font-weight: 800;
-  color: #e0e0e0;
-  -webkit-text-stroke: 1px #b5b5b5;
-}
-
-/* 4선 손글씨 연습 가이드: 위 실선(대문자 상단) - 점선(소문자 x-height) - 실선(베이스라인) - 점선(디센더)
-   text-box-trim으로 글자 박스를 캡하이트~베이스라인에 정확히 맞춰, 대문자는 윗선에, 베이스라인은
-   세번째 선에 딱 맞닿도록 계산했습니다 (소문자 x-height는 폰트 비율상 중간 점선에 자연스럽게 맞춰짐). */
-.quad-line {
-  position: relative;
-  height: 44px;
-  margin-bottom: 14px;
-  background-repeat: no-repeat, repeat-x, no-repeat, repeat-x;
-  background-image:
-    linear-gradient(var(--ink), var(--ink)),
-    linear-gradient(to right, #c7c7c7 50%, transparent 50%),
-    linear-gradient(var(--ink), var(--ink)),
-    linear-gradient(to right, #c7c7c7 50%, transparent 50%);
-  background-size: 100% 1.5px, 8px 1px, 100% 1.5px, 8px 1px;
-  background-position: 0 0, 0 33.33%, 0 66.66%, 0 100%;
-}
-.quad-line-text {
-  position: absolute;
-  left: 8px;
-  bottom: 33.34%;
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.5px;
-  color: #d2d2d2;
-  white-space: nowrap;
-  text-box-trim: trim-both;
-  text-box-edge: cap alphabetic;
-}
-
-.pattern-sentence { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
-.pattern-korean { font-size: 14px; color: var(--sub); margin: 0 0 12px; }
-.trace-sentence {
-  font-size: 30px;
+/* 번호 목록 + 한 줄 점선 밑줄 + 필기체 느낌 문장 따라쓰기 */
+.trace-list { list-style: none; margin: 0; padding: 0; }
+.trace-row { padding: 7px 0 18px; }
+.trace-ko { font-size: 14.5px; color: var(--ink); margin: 0 0 4px; }
+.trace-num { font-weight: 800; color: var(--accent); margin-right: 2px; }
+.trace-en {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding-bottom: 7px;
+  border-bottom: 1.5px dashed #d9ab9a;
+  font-family: "Caveat", "Pretendard", cursive;
   font-weight: 700;
-  color: #e0e0e0;
-  -webkit-text-stroke: 0.6px #b5b5b5;
-  margin: 0 0 6px;
+  font-size: 34px;
+  line-height: 1;
+  color: #cd8770;
 }
+.trace-emoji { font-size: 30px; flex-shrink: 0; }
+
+.trace-list-compact { margin: 4px 0 0; }
+.trace-row-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0 2px;
+  border-bottom: 1.5px dashed #d9ab9a;
+  margin-bottom: 2px;
+}
+.trace-row-inline .trace-num { font-size: 11.5px; }
+.trace-ko-inline { font-size: 11.5px; color: var(--sub); white-space: nowrap; }
+.trace-en-inline {
+  font-family: "Caveat", "Pretendard", cursive;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
+  color: #cd8770;
+  flex: 1;
+}
+.trace-row-inline .trace-emoji { font-size: 14px; }
 
 .matching-card { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 9px; text-align: center; }
 .matching-emoji { font-size: 30px; margin-bottom: 6px; }

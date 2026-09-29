@@ -33,7 +33,11 @@ const CURRICULUM_SAEBOM = [
         "'I am'은 짧게 줄여서 I'm 이라고도 써요.",
       ],
       tip: "❗주의: I are (X) → I am (O) / You am (X) → You are (O)",
-      examples: ["I am Saebom.", "You are my friend.", "I am happy."],
+      examples: [
+        { en: "I am Saebom.", ko: "나는 새봄이야." },
+        { en: "You are my friend.", ko: "너는 내 친구야." },
+        { en: "I am happy.", ko: "나는 행복해." },
+      ],
       drill: ["I ___ a student.", "You ___ kind.", "I ___ seven years old."],
       practice: {
         multipleChoice: [
@@ -97,7 +101,11 @@ const CURRICULUM_SAEBOM = [
         "사물이나 동물도 It으로 받아서 is를 사용할 수 있어요. (It is a book.)",
       ],
       tip: "❗주의: He are (X) → He is (O) / They is (X) → They are (O)",
-      examples: ["He is my friend.", "It is a book.", "They are pencils."],
+      examples: [
+        { en: "He is my friend.", ko: "그는 내 친구야." },
+        { en: "It is a book.", ko: "이것은 책이야." },
+        { en: "They are pencils.", ko: "그것들은 연필이야." },
+      ],
       drill: ["She ___ a teacher.", "It ___ my bag.", "We ___ classmates."],
       practice: {
         multipleChoice: [
@@ -162,7 +170,11 @@ const CURRICULUM_SAEBOM = [
         "부정문은 '~가 아니다, ~하지 않다'라는 뜻이 돼요.",
       ],
       tip: "❗주의: amn't 라는 말은 없어요! am not은 그대로 써요.",
-      examples: ["I am not sad.", "She isn't tired.", "We aren't hungry."],
+      examples: [
+        { en: "I am not sad.", ko: "나는 슬프지 않아." },
+        { en: "She isn't tired.", ko: "그녀는 피곤하지 않아." },
+        { en: "We aren't hungry.", ko: "우리는 배고프지 않아." },
+      ],
       drill: ["I ___ (am not) angry.", "He ___ (isn't) okay.", "They ___ (aren't) excited."],
       practice: {
         multipleChoice: [
@@ -226,7 +238,11 @@ const CURRICULUM_SAEBOM = [
         "대답은 Yes/No로 먼저 말하고, 주어+be동사를 다시 한번 써줘요. (Yes, I am. / No, I'm not.)",
       ],
       tip: "❗주의: Is you~? (X) → Are you~? (O) — you는 항상 are와 짝이에요.",
-      examples: ["Is it a cat?", "Are you okay?", "Am I right?"],
+      examples: [
+        { en: "Is it a cat?", ko: "이것은 고양이야?" },
+        { en: "Are you okay?", ko: "너 괜찮아?" },
+        { en: "Am I right?", ko: "내가 맞아?" },
+      ],
       drill: ["___ it a rabbit? (Is)", "___ you happy? (Are)", "___ the dog big? (Is)"],
       practice: {
         multipleChoice: [
@@ -290,7 +306,11 @@ const CURRICULUM_SAEBOM = [
         "yesterday(어제), last week(지난주)처럼 과거를 나타내는 말과 함께 자주 써요.",
       ],
       tip: "❗주의: I were (X) → I was (O) / You was (X) → You were (O)",
-      examples: ["I was at the park.", "You were busy yesterday.", "I was happy."],
+      examples: [
+        { en: "I was at the park.", ko: "나는 공원에 있었어." },
+        { en: "You were busy yesterday.", ko: "너는 어제 바빴어." },
+        { en: "I was happy.", ko: "나는 행복했어." },
+      ],
       drill: ["I ___ at home yesterday.", "You ___ sick last week.", "I ___ so tired."],
       practice: {
         multipleChoice: [
@@ -387,7 +407,11 @@ const CURRICULUM_SAEBOM = [
         "날씨, 기분, 장소를 과거로 표현할 때 아주 많이 사용돼요.",
       ],
       tip: "❗주의: It were (X) → It was (O) / We was (X) → We were (O)",
-      examples: ["It was sunny.", "We were at school.", "They were happy."],
+      examples: [
+        { en: "It was sunny.", ko: "날씨가 화창했어." },
+        { en: "We were at school.", ko: "우리는 학교에 있었어." },
+        { en: "They were happy.", ko: "그들은 행복했어." },
+      ],
       drill: ["It ___ cold yesterday.", "We ___ at the park.", "They ___ tired."],
       practice: {
         multipleChoice: [
@@ -451,7 +475,11 @@ const CURRICULUM_SAEBOM = [
         "'~이 아니었다, ~하지 않았다'라는 뜻이 돼요.",
       ],
       tip: "❗주의: 발음이 비슷한 wasn't[워즌트]와 weren't[워런트]를 헷갈리지 않게 큰 소리로 연습해보세요.",
-      examples: ["It wasn't sweet.", "I wasn't hungry.", "They weren't full."],
+      examples: [
+        { en: "It wasn't sweet.", ko: "그것은 달지 않았어." },
+        { en: "I wasn't hungry.", ko: "나는 배고프지 않았어." },
+        { en: "They weren't full.", ko: "그들은 배부르지 않았어." },
+      ],
       drill: ["It ___ (wasn't) spicy.", "We ___ (weren't) late.", "I ___ (wasn't) sad."],
       practice: {
         multipleChoice: [
@@ -515,7 +543,11 @@ const CURRICULUM_SAEBOM = [
         "he/she/it이 주어일 때 일반동사는 likes, has처럼 모양이 살짝 바뀌는 것도 미리 기억해두세요.",
       ],
       tip: "❗be동사와 일반동사는 한 문장에 절대 같이 쓰지 않아요. (I am like drawing. → X)",
-      examples: ["I like drawing.", "I have a book.", "She likes swimming."],
+      examples: [
+        { en: "I like drawing.", ko: "나는 그림 그리기를 좋아해." },
+        { en: "I have a book.", ko: "나는 책이 있어." },
+        { en: "She likes swimming.", ko: "그녀는 수영을 좋아해." },
+      ],
       drill: ["I ___ (like) reading.", "She ___ (likes) drawing.", "I ___ (have) a pencil."],
       practice: {
         multipleChoice: [
@@ -579,7 +611,11 @@ const CURRICULUM_SAEBOM = [
         "대답할 때 was는 was로, were는 were로 그대로 맞춰서 대답해요.",
       ],
       tip: "❗주의: Was you~? (X) → Were you~? (O)",
-      examples: ["Was it fun?", "Were you at the party?", "Was he there, too?"],
+      examples: [
+        { en: "Was it fun?", ko: "재미있었어?" },
+        { en: "Were you at the party?", ko: "너는 파티에 있었어?" },
+        { en: "Was he there, too?", ko: "그도 거기 있었어?" },
+      ],
       drill: ["___ you at the beach? (Were)", "___ it fun? (Was)", "___ they there? (Were)"],
       practice: {
         multipleChoice: [
@@ -638,7 +674,11 @@ const CURRICULUM_SAEBOM = [
         "한 문장에는 반드시 동사가 하나만 필요해요. be동사와 일반동사를 같이 쓰지 않아요.",
       ],
       tip: "❗주의: I eats (X) → I eat (O) — I/You/We/They 뒤에는 동사에 s를 붙이지 않아요.",
-      examples: ["I eat breakfast.", "You study English.", "We walk to school."],
+      examples: [
+        { en: "I eat breakfast.", ko: "나는 아침을 먹어." },
+        { en: "You study English.", ko: "너는 영어를 공부해." },
+        { en: "We walk to school.", ko: "우리는 학교에 걸어가." },
+      ],
       drill: ["I ___ (go) to school.", "You ___ (study) hard.", "We ___ (walk) together."],
       practice: {
         multipleChoice: [
@@ -730,7 +770,11 @@ const CURRICULUM_SAEBOM = [
         "have는 특별하게 has로 바뀌어요. (He has a car.)",
       ],
       tip: "❗주의: He work (X) → He works (O) — 3인칭 단수는 절대 s를 빼먹지 않도록 조심하세요.",
-      examples: ["She cooks dinner.", "He watches TV.", "It fixes the problem."],
+      examples: [
+        { en: "She cooks dinner.", ko: "그녀는 저녁을 요리해." },
+        { en: "He watches TV.", ko: "그는 TV를 봐." },
+        { en: "It fixes the problem.", ko: "그것은 문제를 고쳐." },
+      ],
       drill: ["She ___ (cook) dinner.", "He ___ (watch) TV.", "My dad ___ (drive) a car."],
       practice: {
         multipleChoice: [
@@ -792,7 +836,11 @@ const CURRICULUM_SAEBOM = [
         "doesn't 뒤에서는 동사에 붙였던 s를 다시 빼고 원래 모양으로 써요! (doesn't likes → doesn't like)",
       ],
       tip: "❗주의: He doesn't likes (X) → He doesn't like (O) — doesn't 뒤에는 s를 빼요.",
-      examples: ["I don't like spiders.", "She doesn't like the dark.", "We don't like noise."],
+      examples: [
+        { en: "I don't like spiders.", ko: "나는 거미를 안 좋아해." },
+        { en: "She doesn't like the dark.", ko: "그녀는 어둠을 안 좋아해." },
+        { en: "We don't like noise.", ko: "우리는 시끄러운 소리를 안 좋아해." },
+      ],
       drill: ["I ___ (don't) like vegetables.", "He ___ (doesn't) like ghosts.", "They ___ (don't) like insects."],
       practice: {
         multipleChoice: [
@@ -854,7 +902,11 @@ const CURRICULUM_SAEBOM = [
         "대답할 때도 do/does를 그대로 사용해서 짧게 대답해요. (Yes, I do. / No, he doesn't.)",
       ],
       tip: "❗주의: Does she likes~? (X) → Does she like~? (O) — Does 뒤에서는 동사에 s를 붙이지 않아요.",
-      examples: ["Do you like milk?", "Does he like cheese?", "Do they eat breakfast?"],
+      examples: [
+        { en: "Do you like milk?", ko: "너는 우유를 좋아해?" },
+        { en: "Does he like cheese?", ko: "그는 치즈를 좋아해?" },
+        { en: "Do they eat breakfast?", ko: "그들은 아침을 먹어?" },
+      ],
       drill: ["___ you like snacks? (Do)", "___ she like dessert? (Does)", "___ they eat lunch together? (Do)"],
       practice: {
         multipleChoice: [
@@ -918,7 +970,11 @@ const CURRICULUM_SAEBOM = [
         "주어가 무엇이든(I/You/He/She/It/We/They) 과거형은 모양이 똑같아요! s를 붙이지 않아요.",
       ],
       tip: "❗주의: He studyed (X) → He studied (O) / He plaied (X) → He played (O)",
-      examples: ["I played soccer yesterday.", "She studied English.", "We watched a movie."],
+      examples: [
+        { en: "I played soccer yesterday.", ko: "나는 어제 축구를 했어." },
+        { en: "She studied English.", ko: "그녀는 영어를 공부했어." },
+        { en: "We watched a movie.", ko: "우리는 영화를 봤어." },
+      ],
       drill: ["I ___ (play) soccer yesterday.", "She ___ (study) all night.", "We ___ (watch) a movie."],
       practice: {
         multipleChoice: [
@@ -986,7 +1042,11 @@ const CURRICULUM_SAEBOM = [
         "불규칙동사도 주어가 무엇이든 모양은 똑같아요. (He go → X, He went → O)",
       ],
       tip: "❗Tip: 표를 소리 내어 여러 번 읽으면서 리듬처럼 외워보세요. go-went, eat-ate, see-saw!",
-      examples: ["I went to the zoo.", "She ate pizza.", "We had a great time."],
+      examples: [
+        { en: "I went to the zoo.", ko: "나는 동물원에 갔어." },
+        { en: "She ate pizza.", ko: "그녀는 피자를 먹었어." },
+        { en: "We had a great time.", ko: "우리는 즐거운 시간을 보냈어." },
+      ],
       drill: ["I ___ (go) to the park yesterday.", "She ___ (eat) ice cream.", "We ___ (have) fun."],
       practice: {
         multipleChoice: [
@@ -1078,7 +1138,11 @@ const CURRICULUM_SAEBOM = [
         "규칙동사든 불규칙동사든 상관없이 똑같은 규칙이 적용돼요.",
       ],
       tip: "❗주의: I didn't went (X) → I didn't go (O) — didn't 뒤에는 원형만!",
-      examples: ["I didn't cry.", "She didn't lose the game.", "We didn't finish on time."],
+      examples: [
+        { en: "I didn't cry.", ko: "나는 울지 않았어." },
+        { en: "She didn't lose the game.", ko: "그녀는 경기에서 지지 않았어." },
+        { en: "We didn't finish on time.", ko: "우리는 제시간에 끝내지 못했어." },
+      ],
       drill: ["I ___ (didn't) forget.", "He ___ (didn't) break it.", "They ___ (didn't) win."],
       practice: {
         multipleChoice: [
@@ -1137,7 +1201,11 @@ const CURRICULUM_SAEBOM = [
         "대답도 did/didn't로 짧게 할 수 있어요. (Yes, I did. / No, I didn't.)",
       ],
       tip: "❗주의: Did you went~? (X) → Did you go~? (O) — Did 뒤에는 원형만!",
-      examples: ["Did you enjoy the trip?", "Did she climb the mountain?", "Did they visit grandma?"],
+      examples: [
+        { en: "Did you enjoy the trip?", ko: "너는 여행이 즐거웠어?" },
+        { en: "Did she climb the mountain?", ko: "그녀는 산에 올랐어?" },
+        { en: "Did they visit grandma?", ko: "그들은 할머니를 찾아뵀어?" },
+      ],
       drill: ["___ you fly on a plane? (Did)", "___ she enjoy the vacation? (Did)", "___ they climb the hill? (Did)"],
       practice: {
         multipleChoice: [
@@ -1200,7 +1268,11 @@ const CURRICULUM_SAEBOM = [
         "be동사는 항상 주어에 맞게 골라야 해요 — I am, He/She/It is, You/We/They are는 바뀌지 않아요.",
       ],
       tip: "❗주의: I am write (X) → I am writing (O) — be동사와 ing를 둘 다 잊지 마세요!",
-      examples: ["I am writing a letter.", "She is talking on the phone.", "We are waiting for the bus."],
+      examples: [
+        { en: "I am writing a letter.", ko: "나는 편지를 쓰고 있어." },
+        { en: "She is talking on the phone.", ko: "그녀는 전화 통화를 하고 있어." },
+        { en: "We are waiting for the bus.", ko: "우리는 버스를 기다리고 있어." },
+      ],
       drill: ["I ___ (am) reading now.", "He ___ (is) laughing.", "They ___ (are) waiting."],
       practice: {
         multipleChoice: [
@@ -1262,7 +1334,11 @@ const CURRICULUM_SAEBOM = [
         "대답은 Yes/No + 주어 + be동사로 짧게 할 수 있어요.",
       ],
       tip: "❗Tip: Are you reading? 에 그냥 Yes로만 답하지 말고, Yes, I am.처럼 완전하게 대답하는 연습을 해보세요.",
-      examples: ["I am not sleeping.", "Is she reading?", "Are they playing outside?"],
+      examples: [
+        { en: "I am not sleeping.", ko: "나는 자고 있지 않아." },
+        { en: "Is she reading?", ko: "그녀는 책을 읽고 있어?" },
+        { en: "Are they playing outside?", ko: "그들은 밖에서 놀고 있어?" },
+      ],
       drill: ["I ___ (am not) sleeping.", "___ she reading? (Is)", "___ they playing? (Are)"],
       practice: {
         multipleChoice: [
@@ -1324,7 +1400,11 @@ const CURRICULUM_SAEBOM = [
         "우리말은 '방에 침대가 있다'처럼 장소가 먼저 오지만, 영어는 There is/are가 먼저 온다는 점이 달라요.",
       ],
       tip: "❗주의: There is two beds (X) → There are two beds (O) — 복수명사는 항상 are와 짝이에요.",
-      examples: ["There is a lamp on the desk.", "There are two windows.", "There is a toy on the bed."],
+      examples: [
+        { en: "There is a lamp on the desk.", ko: "책상 위에 램프가 있어." },
+        { en: "There are two windows.", ko: "창문이 두 개 있어." },
+        { en: "There is a toy on the bed.", ko: "침대 위에 장난감이 있어." },
+      ],
       drill: ["There ___ (is) a bed in my room.", "There ___ (are) two windows.", "There ___ (is) a lamp on the desk."],
       practice: {
         multipleChoice: [
@@ -1419,7 +1499,11 @@ const CURRICULUM_SAEBOM = [
         "대답은 Yes, there is(are). / No, there isn't(aren't).로 짧게 할 수 있어요.",
       ],
       tip: "❗주의: Is there a books? (X) → Are there books? (O) — 복수명사는 Are there로 물어봐요.",
-      examples: ["There isn't a plant.", "Are there computers in the classroom?", "Is there a flag?"],
+      examples: [
+        { en: "There isn't a plant.", ko: "화분이 없어." },
+        { en: "Are there computers in the classroom?", ko: "교실에 컴퓨터가 있어?" },
+        { en: "Is there a flag?", ko: "깃발이 있어?" },
+      ],
       drill: ["There ___ (isn't) a fan here.", "___ there a map? (Is)", "___ there lockers? (Are)"],
       practice: {
         multipleChoice: [
@@ -1481,7 +1565,11 @@ const CURRICULUM_SAEBOM = [
         "질문할 때는 Is this~? / Is that~?처럼 be동사와 함께 써요.",
       ],
       tip: "❗Tip: this=이것(가까이), that=저것(멀리) — 손으로 가리키는 연습을 하면 더 쉽게 기억돼요!",
-      examples: ["This is my gift.", "That is your balloon.", "Is this yours?"],
+      examples: [
+        { en: "This is my gift.", ko: "이건 내 선물이야." },
+        { en: "That is your balloon.", ko: "저건 네 풍선이야." },
+        { en: "Is this yours?", ko: "이거 네 거야?" },
+      ],
       drill: ["___ (This) is my book.", "___ (That) is your bag.", "Is ___ (this) mine?"],
       practice: {
         multipleChoice: [
@@ -1543,7 +1631,11 @@ const CURRICULUM_SAEBOM = [
         "these/those 뒤에는 복수명사가 오고, be동사는 are를 사용해요. (These are my shoes.)",
       ],
       tip: "❗주의: These is (X) → These are (O) — these/those는 항상 are와 짝이에요.",
-      examples: ["These are my shoes.", "Those are your gloves.", "Are these your socks?"],
+      examples: [
+        { en: "These are my shoes.", ko: "이것들은 내 신발이야." },
+        { en: "Those are your gloves.", ko: "저것들은 네 장갑이야." },
+        { en: "Are these your socks?", ko: "이것들 네 양말이야?" },
+      ],
       drill: ["___ (These) are my gloves.", "___ (Those) are your shoes.", "Are ___ (these) yours?"],
       practice: {
         multipleChoice: [
@@ -1610,7 +1702,11 @@ const CURRICULUM_SAEBOM = [
         "소유격 뒤에는 항상 명사가 와요. (my hat, her bag, their toys)",
       ],
       tip: "❗주의: her과 his를 헷갈리기 쉬워요 — her은 여자(그녀), his는 남자(그)예요.",
-      examples: ["This is my hat.", "That is her jacket.", "Their backpacks are heavy."],
+      examples: [
+        { en: "This is my hat.", ko: "이건 내 모자야." },
+        { en: "That is her jacket.", ko: "저건 그녀의 자켓이야." },
+        { en: "Their backpacks are heavy.", ko: "그들의 책가방은 무거워." },
+      ],
       drill: ["This is ___ (my) wallet.", "That is ___ (his) watch.", "___ (Their) keys are here."],
       practice: {
         multipleChoice: [
@@ -1672,7 +1768,11 @@ const CURRICULUM_SAEBOM = [
         "이미 s로 끝나는 복수명사는 아포스트로피(')만 붙여요. (the girls' bags)",
       ],
       tip: "❗주의: 's와 소유격 my/her 등을 한 문장에 같이 쓰지 않아요.",
-      examples: ["This is Saebom's notebook.", "That is the puppy's toy.", "It's my sister's birthday."],
+      examples: [
+        { en: "This is Saebom's notebook.", ko: "이건 새봄이의 공책이야." },
+        { en: "That is the puppy's toy.", ko: "저건 강아지의 장난감이야." },
+        { en: "It's my sister's birthday.", ko: "오늘은 내 동생 생일이야." },
+      ],
       drill: ["This is ___ (Saebom's) idea.", "That is ___ (the puppy's) toy.", "It is ___ (my sister's) birthday."],
       practice: {
         multipleChoice: [
@@ -1767,7 +1867,11 @@ const CURRICULUM_SAEBOM = [
         "부정형은 can't 또는 cannot이에요. (I can't ride a bike.)",
       ],
       tip: "❗Tip: can은 he/she/it이 와도 s를 붙이지 않는 특별한 동사예요.",
-      examples: ["I can ride a bike.", "She can skate.", "He can't swim."],
+      examples: [
+        { en: "I can ride a bike.", ko: "나는 자전거를 탈 수 있어." },
+        { en: "She can skate.", ko: "그녀는 스케이트를 탈 수 있어." },
+        { en: "He can't swim.", ko: "그는 수영을 못해." },
+      ],
       drill: ["I ___ (can) jump rope.", "She ___ (can) paint well.", "He ___ (can't) whistle."],
       practice: {
         multipleChoice: [
@@ -1829,7 +1933,11 @@ const CURRICULUM_SAEBOM = [
         "대답은 Sure!/Of course!(좋아요) 또는 Sorry, I can't.(미안, 안 돼요)처럼 자연스럽게 할 수 있어요.",
       ],
       tip: "❗Tip: 정중하게 부탁할 때는 문장 끝에 please를 붙여보세요. (Can you help me, please?)",
-      examples: ["Can I borrow your pencil?", "Can you open the door?", "Can you help me, please?"],
+      examples: [
+        { en: "Can I borrow your pencil?", ko: "네 연필 좀 빌릴 수 있을까?" },
+        { en: "Can you open the door?", ko: "문 좀 열어줄 수 있어?" },
+        { en: "Can you help me, please?", ko: "나 좀 도와줄 수 있어?" },
+      ],
       drill: ["___ (Can) I open the window?", "___ (Can) you pass the salt?", "___ (Can) you help me?"],
       practice: {
         multipleChoice: [
@@ -1891,7 +1999,11 @@ const CURRICULUM_SAEBOM = [
         "의문사 뒤에는 be동사나 do/does/did 의문문이 그대로 이어져요. (What is this? What do you like?)",
       ],
       tip: "❗Tip: What/Who 뒤의 문장 순서는 일반 의문문과 똑같아요 — 의문사만 앞에 붙인다고 생각하면 쉬워요.",
-      examples: ["What is this?", "Who is she?", "What do you like?"],
+      examples: [
+        { en: "What is this?", ko: "이게 뭐야?" },
+        { en: "Who is she?", ko: "그녀는 누구야?" },
+        { en: "What do you like?", ko: "너는 뭘 좋아해?" },
+      ],
       drill: ["___ (What) is your favorite color?", "___ (Who) is your teacher?", "___ (What) do you like?"],
       practice: {
         multipleChoice: [
@@ -1955,7 +2067,12 @@ const CURRICULUM_SAEBOM = [
         "How는 How are you?(안부), How many~?(개수), How old~?(나이)처럼 다양하게 활용돼요.",
       ],
       tip: "❗Tip: 의문사 5총사 What/Who/Where/When/Why/How를 한 문장으로 외워보세요 — '무누어언왜어떻'!",
-      examples: ["Where is the museum?", "When is your birthday?", "Why are you happy?", "How are you?"],
+      examples: [
+        { en: "Where is the museum?", ko: "박물관은 어디에 있어?" },
+        { en: "When is your birthday?", ko: "네 생일은 언제야?" },
+        { en: "Why are you happy?", ko: "너는 왜 행복해?" },
+        { en: "How are you?", ko: "어떻게 지내?" },
+      ],
       drill: ["___ (Where) do you live?", "___ (When) is the trip?", "___ (How) old are you?"],
       practice: {
         multipleChoice: [
@@ -2023,7 +2140,11 @@ const CURRICULUM_SAEBOM = [
         "헷갈리는 부분이 있다면 해당 회차 교재를 다시 꺼내서 복습해보세요. 반복이 가장 좋은 공부 방법이에요.",
       ],
       tip: "🎉 축하해요! 정말 많은 문법을 배웠어요. 다음 회차 Review Test로 최종 점검해봐요!",
-      examples: ["I am confident now.", "I studied hard and practiced a lot.", "I can make many sentences now!"],
+      examples: [
+        { en: "I am confident now.", ko: "나는 이제 자신 있어." },
+        { en: "I studied hard and practiced a lot.", ko: "나는 열심히 공부하고 많이 연습했어." },
+        { en: "I can make many sentences now!", ko: "나는 이제 많은 문장을 만들 수 있어!" },
+      ],
       drill: ["I ___ (am) proud of myself.", "I ___ (practiced) every day.", "I ___ (can) speak more English now."],
       practice: {
         multipleChoice: [
@@ -2124,7 +2245,11 @@ const CURRICULUM_SAEBOM = [
         "next to, in front of, behind, between처럼 두 단어 이상으로 된 전치사도 있어요. 뜻과 함께 통째로 외워두면 좋아요.",
       ],
       tip: "❗주의: 전치사 뒤에는 반드시 명사가 와요. (on table (X) → on the table (O))",
-      examples: ["The cat is on the table.", "The bank is next to the library.", "It is between the school and the park."],
+      examples: [
+        { en: "The cat is on the table.", ko: "고양이는 탁자 위에 있어." },
+        { en: "The bank is next to the library.", ko: "은행은 도서관 옆에 있어." },
+        { en: "It is between the school and the park.", ko: "그것은 학교와 공원 사이에 있어." },
+      ],
       drill: ["The ball is ___ (under) the chair.", "The store is ___ (next to) the bank.", "I am ___ (at) school now."],
       practice: {
         multipleChoice: [
@@ -2187,7 +2312,11 @@ const CURRICULUM_SAEBOM = [
         "예외로 night(밤)은 at night처럼 at을 쓴다는 것도 기억해두세요.",
       ],
       tip: "❗Tip: in(큰 시간) → on(특정 날) → at(정확한 시각) — 범위가 좁아질수록 in→on→at!",
-      examples: ["I was born in 2016.", "We have a party on Saturday.", "School starts at nine o'clock."],
+      examples: [
+        { en: "I was born in 2016.", ko: "나는 2016년에 태어났어." },
+        { en: "We have a party on Saturday.", ko: "우리는 토요일에 파티를 해." },
+        { en: "School starts at nine o'clock.", ko: "학교는 아홉 시에 시작해." },
+      ],
       drill: ["My birthday is ___ (in) May.", "We have PE ___ (on) Monday.", "I go to bed ___ (at) nine."],
       practice: {
         multipleChoice: [
@@ -2252,7 +2381,11 @@ const CURRICULUM_SAEBOM = [
         "부사(동작을 꾸며주는 말)는 보통 문장 맨 끝에 와요. (I run fast. She sings well.)",
       ],
       tip: "❗Tip: 영어 문장을 만들 때는 항상 '누가(주어) - 한다(동사) - 무엇을(목적어)' 순서로 생각하는 습관을 들이세요!",
-      examples: ["I eat an apple.", "She has a cute dog.", "He runs fast."],
+      examples: [
+        { en: "I eat an apple.", ko: "나는 사과를 먹어." },
+        { en: "She has a cute dog.", ko: "그녀는 귀여운 강아지가 있어." },
+        { en: "He runs fast.", ko: "그는 빨리 달려." },
+      ],
       drill: ["I ___ (like) pizza. (주어+동사+목적어)", "She has a ___ (cute) cat. (형용사 위치)", "He speaks English ___ (well). (부사 위치)"],
       practice: {
         multipleChoice: [
@@ -2317,7 +2450,11 @@ const CURRICULUM_SAEBOM = [
         "일반동사가 있는 문장에서는 일반동사 앞에 빈도부사를 써요. (I always eat breakfast.)",
       ],
       tip: "❗주의: I always am happy (X) → I am always happy (O) — be동사는 빈도부사보다 먼저!",
-      examples: ["I am always happy.", "She usually eats breakfast.", "He never lies."],
+      examples: [
+        { en: "I am always happy.", ko: "나는 항상 행복해." },
+        { en: "She usually eats breakfast.", ko: "그녀는 보통 아침을 먹어." },
+        { en: "He never lies.", ko: "그는 절대 거짓말을 안 해." },
+      ],
       drill: ["I ___ (always) brush my teeth.", "She is ___ (usually) busy.", "He ___ (never) cries."],
       practice: {
         multipleChoice: [
@@ -2383,7 +2520,11 @@ const CURRICULUM_SAEBOM = [
         "관사 a/an은 '하나의'라는 뜻으로 처음 등장하는 명사 앞에, the는 '그것'이라는 뜻으로 이미 알고 있는 특정한 명사 앞에 써요. a 뒤엔 자음 발음, an 뒤엔 모음 발음이 와요.",
       ],
       tip: "❗주의: a apple (X) → an apple (O) — apple은 모음 소리로 시작하니 an을 써요!",
-      examples: ["I have two apples.", "There are three boxes.", "I see a cat. The cat is cute."],
+      examples: [
+        { en: "I have two apples.", ko: "나는 사과 두 개가 있어." },
+        { en: "There are three boxes.", ko: "상자가 세 개 있어." },
+        { en: "I see a cat. The cat is cute.", ko: "나는 고양이를 봐. 그 고양이는 귀여워." },
+      ],
       drill: ["I have two ___ (box → boxes).", "She has three ___ (city → cities).", "I have ___ (a/an) umbrella."],
       practice: {
         multipleChoice: [

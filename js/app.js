@@ -186,6 +186,36 @@ function answerKeyHTML(answers) {
     </section>`;
 }
 
+function traceListHTML(items, opts) {
+  if (opts && opts.compact) {
+    return `<ol class="trace-list trace-list-compact">
+      ${items
+        .map(
+          (item, i) => `<li class="trace-row-inline">
+            <span class="trace-num">${i + 1})</span>
+            <span class="trace-ko-inline">${item.ko}</span>
+            <span class="trace-en-inline">${item.en}</span>
+            ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
+          </li>`
+        )
+        .join("")}
+    </ol>`;
+  }
+  return `<ol class="trace-list">
+    ${items
+      .map(
+        (item, i) => `<li class="trace-row">
+          <p class="trace-ko"><span class="trace-num">${i + 1})</span> ${item.ko}</p>
+          <p class="trace-en">
+            <span>${item.en}</span>
+            ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
+          </p>
+        </li>`
+      )
+      .join("")}
+  </ol>`;
+}
+
 function vocabGridHTML(vocab) {
   return `<div class="vocab-grid">
     ${vocab
@@ -228,7 +258,14 @@ function renderSaebomWorksheet(chapter) {
           ${chapter.grammar.table.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join("")}
         </tbody>
       </table>
-      <p class="examples">${chapter.grammar.examples.join(" &nbsp;/&nbsp; ")}</p>
+      ${traceListHTML(
+        chapter.grammar.examples.map((ex, i) => ({
+          ko: ex.ko,
+          en: ex.en,
+          emoji: ["✏️", "💬", "⭐", "🌟"][i % 4],
+        })),
+        { compact: true }
+      )}
       <p class="grammar-tip">${chapter.grammar.tip}</p>
       <p class="drill-title">빈칸 채우기</p>
       <ol class="drill-list">
@@ -361,17 +398,6 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>오늘의 문장 따라쓰기</h2>
-      <p class="pattern-sentence">${chapter.pattern.emoji} ${chapter.pattern.sentence}</p>
-      <p class="pattern-korean">${chapter.pattern.korean}</p>
-      <div class="quad-line">
-        <span class="quad-line-text">${chapter.pattern.sentence}</span>
-      </div>
-      <div class="quad-line"></div>
-      <div class="quad-line"></div>
-    </section>
-
-    <section class="block">
       <h2>오늘의 단어</h2>
       ${vocabGridHTML(chapter.vocab)}
     </section>
@@ -383,13 +409,12 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>문장 확장하기</h2>
-      <p class="sec-hint">조금 더 긴 문장을 보고 따라 써 보세요</p>
-      <p class="pattern-sentence">${chapter.pattern2.emoji} ${chapter.pattern2.sentence}</p>
-      <p class="pattern-korean">${chapter.pattern2.korean}</p>
-      <p class="trace-sentence">${chapter.pattern2.sentence}</p>
-      <div class="write-line"></div>
-      <div class="write-line"></div>
+      <h2>오늘의 문장 따라쓰기</h2>
+      <p class="sec-hint">한글 뜻을 보고 영어 문장을 소리 내어 읽은 뒤, 점선을 따라 써 보세요.</p>
+      ${traceListHTML([
+        { ko: chapter.pattern.korean, en: chapter.pattern.sentence, emoji: chapter.pattern.emoji },
+        { ko: chapter.pattern2.korean, en: chapter.pattern2.sentence, emoji: chapter.pattern2.emoji },
+      ])}
     </section>
 
     <section class="block">
