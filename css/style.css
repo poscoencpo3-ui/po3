@@ -352,11 +352,13 @@ body {
   -webkit-text-stroke: 1px #b5b5b5;
 }
 
-/* 4선 손글씨 연습 가이드: 위 실선(대문자 상단) - 점선(소문자 x-height) - 실선(베이스라인) - 점선(디센더) */
+/* 4선 손글씨 연습 가이드: 위 실선(대문자 상단) - 점선(소문자 x-height) - 실선(베이스라인) - 점선(디센더)
+   text-box-trim으로 글자 박스를 캡하이트~베이스라인에 정확히 맞춰, 대문자는 윗선에, 베이스라인은
+   세번째 선에 딱 맞닿도록 계산했습니다 (소문자 x-height는 폰트 비율상 중간 점선에 자연스럽게 맞춰짐). */
 .quad-line {
   position: relative;
-  height: 58px;
-  margin-bottom: 9px;
+  height: 44px;
+  margin-bottom: 14px;
   background-repeat: no-repeat, repeat-x, no-repeat, repeat-x;
   background-image:
     linear-gradient(var(--ink), var(--ink)),
@@ -369,13 +371,15 @@ body {
 .quad-line-text {
   position: absolute;
   left: 8px;
-  bottom: 32%;
-  font-size: 27px;
+  bottom: 33.34%;
+  font-size: 40px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0.5px;
-  color: #d6d6d6;
+  color: #d2d2d2;
   white-space: nowrap;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
 }
 
 .pattern-sentence { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
