@@ -24,7 +24,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Bb", sound: "브", word: "ball", emoji: "⚽" },
       { letter: "Cc", sound: "크", word: "cat", emoji: "🐱" },
     ],
-    tracing: ["A", "a", "B", "b", "C", "c"],
     vocab: [
       { word: "yes", meaning: "네", emoji: "🙆" },
       { word: "no", meaning: "아니요", emoji: "🙅" },
@@ -58,11 +57,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "A a apple! B b ball! C c cat! 🎵",
       dialogue: [
-        { speaker: "새별", line: "A, a, apple!" },
-        { speaker: "새봄", line: "B, b, ball!" },
-        { speaker: "새별", line: "C, c, cat!" },
+        { speaker: "새별", line: "Hello! Are you my friend?" },
+        { speaker: "새봄", line: "Yes! Hello, Saebyul!" },
+        { speaker: "새별", line: "I see a cat. Do you see it too?" },
+        { speaker: "새봄", line: "Yes, I see it! So cute!" },
       ],
-      instruction: "부모님이 먼저 소리 내어 읽어주면, 새별이가 듣고 따라 말해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 인사하듯 역할을 나누어 대화를 따라 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -83,7 +83,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Ee", sound: "에", word: "elephant", emoji: "🐘" },
       { letter: "Ff", sound: "프", word: "fish", emoji: "🐟" },
     ],
-    tracing: ["D", "d", "E", "e", "F", "f"],
     vocab: [
       { word: "dad", meaning: "아빠", emoji: "👨" },
       { word: "big", meaning: "큰", emoji: "🐋" },
@@ -117,11 +116,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "D d dog! E e elephant! F f fish! 🎵",
       dialogue: [
-        { speaker: "새별", line: "D, d, dog!" },
-        { speaker: "새봄", line: "E, e, elephant!" },
-        { speaker: "새별", line: "F, f, fish!" },
+        { speaker: "새봄", line: "Are you hungry?" },
+        { speaker: "새별", line: "Yes, I am hungry!" },
+        { speaker: "새봄", line: "Let's have lunch with Dad." },
+        { speaker: "새별", line: "Yay! Then let's play!" },
       ],
-      instruction: "챈트를 3번 듣고, 새별이가 큰 소리로 따라 말해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -142,7 +142,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Hh", sound: "흐", word: "hat", emoji: "🎩" },
       { letter: "Ii", sound: "이", word: "ice cream", emoji: "🍦" },
     ],
-    tracing: ["G", "g", "H", "h", "I", "i"],
     vocab: [
       { word: "happy", meaning: "행복한", emoji: "😊" },
       { word: "sad", meaning: "슬픈", emoji: "😢" },
@@ -176,11 +175,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "G g giraffe! H h hat! I i ice cream! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "G, g, giraffe!" },
-        { speaker: "새별", line: "H, h, hat!" },
-        { speaker: "새봄", line: "I, i, ice cream!" },
+        { speaker: "새별", line: "How are you today?" },
+        { speaker: "새봄", line: "I am happy! How about you?" },
+        { speaker: "새별", line: "I am happy too! I like my hat." },
+        { speaker: "새봄", line: "It looks great on you!" },
       ],
-      instruction: "손가락으로 글자를 짚으며 소리 내어 말해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -201,7 +201,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Kk", sound: "크", word: "kite", emoji: "🪁" },
       { letter: "Ll", sound: "르", word: "lion", emoji: "🦁" },
     ],
-    tracing: ["J", "j", "K", "k", "L", "l"],
     vocab: [
       { word: "red", meaning: "빨간색", emoji: "🔴" },
       { word: "blue", meaning: "파란색", emoji: "🔵" },
@@ -235,11 +234,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "J j juice! K k kite! L l lion! 🎵",
       dialogue: [
-        { speaker: "새별", line: "J, j, juice!" },
-        { speaker: "새봄", line: "K, k, kite!" },
-        { speaker: "새별", line: "L, l, lion!" },
+        { speaker: "새봄", line: "What color do you like?" },
+        { speaker: "새별", line: "I like red! What about you?" },
+        { speaker: "새봄", line: "I like blue. Can I drink my juice now?" },
+        { speaker: "새별", line: "Yes, go ahead!" },
       ],
-      instruction: "새봄이와 번갈아 가며 한 단어씩 말해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -260,7 +260,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Nn", sound: "느", word: "nest", emoji: "🪺" },
       { letter: "Oo", sound: "아", word: "orange", emoji: "🍊" },
     ],
-    tracing: ["M", "m", "N", "n", "O", "o"],
     vocab: [
       { word: "one", meaning: "하나", emoji: "1️⃣" },
       { word: "two", meaning: "둘", emoji: "2️⃣" },
@@ -294,11 +293,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "M m monkey! N n nest! O o orange! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "M, m, monkey!" },
-        { speaker: "새별", line: "N, n, nest!" },
-        { speaker: "새봄", line: "O, o, orange!" },
+        { speaker: "새별", line: "Look! I see a little monkey!" },
+        { speaker: "새봄", line: "Wow, one, two, three monkeys!" },
+        { speaker: "새별", line: "Can we feed them?" },
+        { speaker: "새봄", line: "Sure, let's go see them." },
       ],
-      instruction: "원숭이 흉내를 내며 재미있게 말해봐요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -319,7 +319,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Qq", sound: "크우", word: "queen", emoji: "👸" },
       { letter: "Rr", sound: "르", word: "rabbit", emoji: "🐰" },
     ],
-    tracing: ["P", "p", "Q", "q", "R", "r"],
     vocab: [
       { word: "hot", meaning: "더운", emoji: "🥵" },
       { word: "cold", meaning: "추운", emoji: "🥶" },
@@ -353,11 +352,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "P p pig! Q q queen! R r rabbit! 🎵",
       dialogue: [
-        { speaker: "새별", line: "P, p, pig!" },
-        { speaker: "새봄", line: "Q, q, queen!" },
-        { speaker: "새별", line: "R, r, rabbit!" },
+        { speaker: "새봄", line: "Is it hot today?" },
+        { speaker: "새별", line: "Yes, it's very hot!" },
+        { speaker: "새봄", line: "Let's get a cold drink." },
+        { speaker: "새별", line: "Good idea!" },
       ],
-      instruction: "rabbit을 듣고 그림책에서 토끼를 찾아보아요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -378,7 +378,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Tt", sound: "트", word: "tiger", emoji: "🐯" },
       { letter: "Uu", sound: "어", word: "umbrella", emoji: "☂️" },
     ],
-    tracing: ["S", "s", "T", "t", "U", "u"],
     vocab: [
       { word: "up", meaning: "위로", emoji: "⬆️" },
       { word: "down", meaning: "아래로", emoji: "⬇️" },
@@ -412,11 +411,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "S s sun! T t tiger! U u umbrella! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "S, s, sun!" },
-        { speaker: "새별", line: "T, t, tiger!" },
-        { speaker: "새봄", line: "U, u, umbrella!" },
+        { speaker: "새별", line: "Look up! Is that rain?" },
+        { speaker: "새봄", line: "Yes! Let's hide under my umbrella." },
+        { speaker: "새별", line: "Okay! Can we jump in the puddles after?" },
+        { speaker: "새봄", line: "Sure, let's go!" },
       ],
-      instruction: "호랑이처럼 크게 그르렁 소리를 내며 말해봐요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -439,7 +439,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "Yy", sound: "여", word: "yo-yo", emoji: "🪀" },
       { letter: "Zz", sound: "즈", word: "zebra", emoji: "🦓" },
     ],
-    tracing: ["V", "v", "W", "w", "X", "x", "Y", "y", "Z", "z"],
     vocab: [
       { word: "love", meaning: "사랑하다", emoji: "❤️" },
       { word: "friend", meaning: "친구", emoji: "🧑‍🤝‍🧑" },
@@ -473,12 +472,13 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "V v violin! W w watermelon! X, box! Y y yo-yo! Z z zebra! 🎵",
       dialogue: [
-        { speaker: "새별", line: "V, v, violin!" },
-        { speaker: "새봄", line: "W, w, watermelon!" },
-        { speaker: "새별", line: "Y, y, yo-yo!" },
-        { speaker: "새봄", line: "Z, z, zebra!" },
+        { speaker: "새봄", line: "I love this song! Do you?" },
+        { speaker: "새별", line: "Yes! I love music too." },
+        { speaker: "새봄", line: "You are my best friend." },
+        { speaker: "새별", line: "You are my best friend too! This is so much fun." },
       ],
-      instruction: "A부터 Z까지 다 함께 처음부터 끝까지 말해보아요. 이번 회차로 알파벳 소리 한 바퀴 완성!",
+      instruction:
+        "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요. 이번 회차로 알파벳 소리 한 바퀴 완성!",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -499,7 +499,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "-ap", sound: "앱", word: "map", emoji: "🗺️" },
       { letter: "-an", sound: "앤", word: "fan", emoji: "🪭" },
     ],
-    tracing: ["cat", "map", "fan"],
     vocab: [
       { word: "bag", meaning: "가방", emoji: "🎒" },
       { word: "bat", meaning: "박쥐", emoji: "🦇" },
@@ -533,11 +532,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "C-a-t, cat! M-a-p, map! F-a-n, fan! 단모음 a는 애 소리! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Cat, cat, I see a cat!" },
-        { speaker: "새봄", line: "Map, map, look at the map!" },
-        { speaker: "새별", line: "Fan, fan, a big fan!" },
+        { speaker: "새별", line: "What is in your bag?" },
+        { speaker: "새봄", line: "I have juice and jam!" },
+        { speaker: "새별", line: "Can I have some jam, please?" },
+        { speaker: "새봄", line: "Yes, here you go!" },
       ],
-      instruction: "단모음 a가 들어간 단어는 모두 '애' 소리가 나요. 소리 내어 비교해 보아요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -558,7 +558,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "-en", sound: "엔", word: "hen", emoji: "🐔" },
       { letter: "-ed", sound: "에드", word: "bed", emoji: "🛏️" },
     ],
-    tracing: ["pet", "hen", "bed"],
     vocab: [
       { word: "leg", meaning: "다리", emoji: "🦵" },
       { word: "web", meaning: "거미줄", emoji: "🕸️" },
@@ -592,11 +591,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "P-e-t, pet! H-e-n, hen! B-e-d, bed! 단모음 e는 에 소리! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Pet, pet, my pet hen!" },
-        { speaker: "새별", line: "Hen, hen, in the bed?" },
-        { speaker: "새봄", line: "No! Hen in the nest, I sleep in the bed!" },
+        { speaker: "새봄", line: "My leg hurts a little." },
+        { speaker: "새별", line: "Are you okay? Let's see the vet." },
+        { speaker: "새봄", line: "Okay, thank you." },
+        { speaker: "새별", line: "Get well soon!" },
       ],
-      instruction: "단모음 e가 들어간 단어는 '에' 소리가 나요. 손뼉을 치며 말해보아요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -617,7 +617,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "-in", sound: "인", word: "pin", emoji: "📌" },
       { letter: "-it", sound: "잇", word: "sit", emoji: "🪑" },
     ],
-    tracing: ["pig", "pin", "sit"],
     vocab: [
       { word: "lip", meaning: "입술", emoji: "👄" },
       { word: "six", meaning: "여섯", emoji: "6️⃣" },
@@ -651,11 +650,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "P-i-g, pig! P-i-n, pin! S-i-t, sit! 단모음 i는 이 소리! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Pig, pig, a pink pig!" },
-        { speaker: "새봄", line: "Pin, pin, a small pin!" },
-        { speaker: "새별", line: "Sit, sit, let's sit down!" },
+        { speaker: "새별", line: "Can I have some milk?" },
+        { speaker: "새봄", line: "Sure! Here is your milk." },
+        { speaker: "새별", line: "Thank you! I am six years old today!" },
+        { speaker: "새봄", line: "Happy birthday!" },
       ],
-      instruction: "단모음 i가 들어간 단어는 '이' 소리가 나요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -676,7 +676,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "-ot", sound: "앗", word: "pot", emoji: "🍲" },
       { letter: "-op", sound: "압", word: "top", emoji: "🔝" },
     ],
-    tracing: ["dog", "pot", "top"],
     vocab: [
       { word: "box", meaning: "상자", emoji: "📦" },
       { word: "sock", meaning: "양말", emoji: "🧦" },
@@ -710,11 +709,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "D-o-g, dog! P-o-t, pot! T-o-p, top! 단모음 o는 아 소리! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Dog, dog, a big dog!" },
-        { speaker: "새별", line: "Pot, pot, a hot pot!" },
-        { speaker: "새봄", line: "Top, top, spin the top!" },
+        { speaker: "새봄", line: "What is in the box?" },
+        { speaker: "새별", line: "It's a frog! I found it on a rock." },
+        { speaker: "새봄", line: "Wow, can I see it?" },
+        { speaker: "새별", line: "Sure, look!" },
       ],
-      instruction: "단모음 o가 들어간 단어는 '아' 소리가 나요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -735,7 +735,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "-un", sound: "언", word: "sun", emoji: "☀️" },
       { letter: "-ut", sound: "엇", word: "cut", emoji: "✂️" },
     ],
-    tracing: ["bug", "sun", "cut"],
     vocab: [
       { word: "cup", meaning: "컵", emoji: "🥤" },
       { word: "bus", meaning: "버스", emoji: "🚌" },
@@ -769,12 +768,14 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "B-u-g, bug! S-u-n, sun! C-u-t, cut! 단모음 u는 어 소리! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Bug, bug, a tiny bug!" },
-        { speaker: "새봄", line: "Sun, sun, a big sun!" },
-        { speaker: "새별", line: "Cut, cut, cut it out!" },
+        { speaker: "새별", line: "The bus is here! Let's go." },
+        { speaker: "새봄", line: "Wait, I have my cup." },
+        { speaker: "새별", line: "Okay, let's go see the ducks." },
+        { speaker: "새봄", line: "I can't wait!" },
       ],
       instruction:
-        "오늘로 a, e, i, o, u 다섯 단모음 소리를 모두 배웠어요! 다섯 소리를 이어서 말해보아요: 애-에-이-아-어.",
+        "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요. " +
+        "오늘로 a, e, i, o, u 다섯 단모음 소리를 모두 배웠어요!",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -795,7 +796,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "cl", sound: "클", word: "clap", emoji: "👏" },
       { letter: "fl", sound: "플", word: "flag", emoji: "🚩" },
     ],
-    tracing: ["black", "clap", "flag"],
     vocab: [
       { word: "block", meaning: "블록", emoji: "🧱" },
       { word: "clock", meaning: "시계", emoji: "🕐" },
@@ -829,11 +829,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Bl-bl-black! Cl-cl-clap! Fl-fl-flag! 자음 두 개가 만나 하나의 소리로! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Black, black, I see black!" },
-        { speaker: "새별", line: "Clap, clap, let's clap!" },
-        { speaker: "새봄", line: "Flag, flag, wave the flag!" },
+        { speaker: "새봄", line: "What time is it?" },
+        { speaker: "새별", line: "Look at the clock! It's three." },
+        { speaker: "새봄", line: "Let's go pick some flowers." },
+        { speaker: "새별", line: "Okay! I love flowers." },
       ],
-      instruction: "bl, cl, fl처럼 자음 두 개가 붙으면 두 소리를 빠르게 이어서 발음해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -854,7 +855,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "dr", sound: "드르", word: "drum", emoji: "🥁" },
       { letter: "tr", sound: "트르", word: "truck", emoji: "🚚" },
     ],
-    tracing: ["crab", "drum", "truck"],
     vocab: [
       { word: "tree", meaning: "나무", emoji: "🌳" },
       { word: "dress", meaning: "원피스", emoji: "👗" },
@@ -888,11 +888,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Cr-cr-crab! Dr-dr-drum! Tr-tr-truck! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Crab, crab, a red crab!" },
-        { speaker: "새봄", line: "Drum, drum, beat the drum!" },
-        { speaker: "새별", line: "Truck, truck, a big truck!" },
+        { speaker: "새별", line: "Don't cry! What happened?" },
+        { speaker: "새봄", line: "I lost my brush under the tree." },
+        { speaker: "새별", line: "Let's look together." },
+        { speaker: "새봄", line: "Thank you, you are so kind." },
       ],
-      instruction: "cr, dr, tr 소리를 혀를 굴리듯 빠르게 이어 발음해 보아요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -913,7 +914,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "st", sound: "스트", word: "star", emoji: "⭐" },
       { letter: "sw", sound: "스워", word: "swim", emoji: "🏊" },
     ],
-    tracing: ["spoon", "star", "swim"],
     vocab: [
       { word: "stop", meaning: "멈추다", emoji: "🛑" },
       { word: "snow", meaning: "눈", emoji: "❄️" },
@@ -947,11 +947,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Sp-sp-spoon! St-st-star! Sw-sw-swim! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Spoon, spoon, a big spoon!" },
-        { speaker: "새별", line: "Star, star, a bright star!" },
-        { speaker: "새봄", line: "Swim, swim, let's swim!" },
+        { speaker: "새봄", line: "Look! It's snowing!" },
+        { speaker: "새별", line: "Wow, can we play outside?" },
+        { speaker: "새봄", line: "Yes, but wear your coat first." },
+        { speaker: "새별", line: "Okay! Snow is so sweet and pretty." },
       ],
-      instruction: "s로 시작하는 블렌드는 s 소리를 살짝 세게 발음해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -972,7 +973,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "ch", sound: "취", word: "chair", emoji: "🪑" },
       { letter: "wh", sound: "위", word: "wheel", emoji: "🎡" },
     ],
-    tracing: ["ship", "chair", "wheel"],
     vocab: [
       { word: "shell", meaning: "조개껍데기", emoji: "🐚" },
       { word: "cheese", meaning: "치즈", emoji: "🧀" },
@@ -1006,11 +1006,12 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Sh-sh-ship! Ch-ch-chair! Wh-wh-wheel! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Ship, ship, a big ship!" },
-        { speaker: "새봄", line: "Chair, chair, sit on the chair!" },
-        { speaker: "새별", line: "Wheel, wheel, round wheel!" },
+        { speaker: "새별", line: "What is your favorite animal?" },
+        { speaker: "새봄", line: "I like whales! What about you?" },
+        { speaker: "새별", line: "I like chicks, they are so small and cute." },
+        { speaker: "새봄", line: "Let's go see them at the farm." },
       ],
-      instruction: "sh, ch, wh처럼 두 글자가 만나 새로운 소리 하나를 만드는 것을 이중자음(digraph)이라고 해요.",
+      instruction: "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -1031,7 +1032,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "th", sound: "드(유성)", word: "this", emoji: "👉" },
       { letter: "ck", sound: "크", word: "duck", emoji: "🦆" },
     ],
-    tracing: ["think", "this", "duck"],
     vocab: [
       { word: "thumb", meaning: "엄지손가락", emoji: "👍" },
       { word: "bath", meaning: "목욕", emoji: "🛁" },
@@ -1065,11 +1065,13 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Th-th-think! Th-th-this! Ck-ck-duck! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Think, think, what do you think?" },
-        { speaker: "새별", line: "This, this, look at this!" },
-        { speaker: "새봄", line: "Duck, duck, a yellow duck!" },
+        { speaker: "새봄", line: "Are you sick today?" },
+        { speaker: "새별", line: "A little. I need a bath and rest." },
+        { speaker: "새봄", line: "Get well soon! Let's play ball later." },
+        { speaker: "새별", line: "Okay, thank you!" },
       ],
-      instruction: "오늘은 sh·ch·wh·th·ck 이중자음을 모두 복습해요. 지난 회차 단어도 함께 소리 내어 읽어보아요.",
+      instruction:
+        "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요. 오늘은 sh·ch·wh·th·ck 이중자음을 모두 복습해요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -1090,7 +1092,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "a_e", sound: "에이 (e는 묵음)", word: "gate", emoji: "🚪" },
       { letter: "i_e", sound: "아이 (e는 묵음)", word: "bike", emoji: "🚲" },
     ],
-    tracing: ["cake", "gate", "bike"],
     vocab: [
       { word: "cave", meaning: "동굴", emoji: "🕳️" },
       { word: "kite", meaning: "연", emoji: "🪁" },
@@ -1124,13 +1125,14 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Cake, cake! e는 소리 나지 않고 a가 '에이'! Gate, gate! Bike, bike, i가 '아이'! 🎵",
       dialogue: [
-        { speaker: "새별", line: "Cake, cake, a sweet cake!" },
-        { speaker: "새봄", line: "Gate, gate, open the gate!" },
-        { speaker: "새별", line: "Bike, bike, ride the bike!" },
+        { speaker: "새별", line: "Let's fly a kite today!" },
+        { speaker: "새봄", line: "Great idea! It's a nice day." },
+        { speaker: "새별", line: "I am so happy, look at my smile!" },
+        { speaker: "새봄", line: "Me too! Let's go." },
       ],
       instruction:
-        "단어 끝에 오는 e는 소리가 나지 않는 '묵음'이에요! 대신 앞의 모음이 알파벳 이름 그대로 소리 나요 " +
-        "(a는 '에이', i는 '아이'). cat과 cake을 비교해서 읽어보아요.",
+        "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요. 단어 끝에 오는 e는 소리가 나지 않는 " +
+        "'묵음'이에요! 대신 앞의 모음이 알파벳 이름 그대로 소리 나요 (a는 '에이', i는 '아이'). cat과 cake을 비교해서 읽어보아요.",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",
@@ -1151,7 +1153,6 @@ const CURRICULUM_SAEBYUL = [
       { letter: "o_e", sound: "오우 (e는 묵음)", word: "bone", emoji: "🦴" },
       { letter: "u_e", sound: "유 (e는 묵음)", word: "cute", emoji: "🥰" },
     ],
-    tracing: ["home", "bone", "cute"],
     vocab: [
       { word: "rose", meaning: "장미", emoji: "🌹" },
       { word: "nose", meaning: "코", emoji: "👃" },
@@ -1185,13 +1186,14 @@ const CURRICULUM_SAEBYUL = [
     speaking: {
       chant: "Home, home, o가 '오우'! Bone, bone! Cute, cute, u가 '유'! e는 여전히 묵음! 🎵",
       dialogue: [
-        { speaker: "새봄", line: "Home, home, go back home!" },
-        { speaker: "새별", line: "Bone, bone, a big bone!" },
-        { speaker: "새봄", line: "Cute, cute, so cute!" },
+        { speaker: "새봄", line: "Smell this rose! It's lovely." },
+        { speaker: "새별", line: "Wow, it smells so good!" },
+        { speaker: "새봄", line: "We did it! We finished all our phonics." },
+        { speaker: "새별", line: "Yay! I am so proud of us!" },
       ],
       instruction:
-        "오늘로 단모음-블렌드-이중자음-매직 e까지 모두 배웠어요! 지금까지 배운 단어를 처음부터 끝까지 " +
-        "다 함께 읽어보며 파닉스를 완성해요. 🎉",
+        "새봄이와 새별이가 되어 실제로 대화하듯 역할을 나누어 말해보아요. 오늘로 단모음-블렌드-이중자음-매직 e까지 " +
+        "모두 배웠어요! 지금까지 배운 단어를 처음부터 끝까지 다 함께 읽어보며 파닉스를 완성해요. 🎉",
     },
     matching: {
       instruction: "그림을 보고 알맞은 단어에 동그라미 하세요.",

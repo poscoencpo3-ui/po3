@@ -352,6 +352,32 @@ body {
   -webkit-text-stroke: 1px #b5b5b5;
 }
 
+/* 4선 손글씨 연습 가이드: 위 실선(대문자 상단) - 점선(소문자 x-height) - 실선(베이스라인) - 점선(디센더) */
+.quad-line {
+  position: relative;
+  height: 58px;
+  margin-bottom: 9px;
+  background-repeat: no-repeat, repeat-x, no-repeat, repeat-x;
+  background-image:
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(to right, #c7c7c7 50%, transparent 50%),
+    linear-gradient(var(--ink), var(--ink)),
+    linear-gradient(to right, #c7c7c7 50%, transparent 50%);
+  background-size: 100% 1.5px, 8px 1px, 100% 1.5px, 8px 1px;
+  background-position: 0 0, 0 33.33%, 0 66.66%, 0 100%;
+}
+.quad-line-text {
+  position: absolute;
+  left: 8px;
+  bottom: 32%;
+  font-size: 27px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: #d6d6d6;
+  white-space: nowrap;
+}
+
 .pattern-sentence { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
 .pattern-korean { font-size: 14px; color: var(--sub); margin: 0 0 12px; }
 .trace-sentence {

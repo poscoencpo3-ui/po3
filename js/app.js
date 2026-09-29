@@ -361,12 +361,14 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>알파벳 따라쓰기</h2>
-      <div class="tracing-row">
-        ${chapter.tracing.map((l) => `<span class="trace-letter">${l}</span>`).join("")}
+      <h2>오늘의 문장 따라쓰기</h2>
+      <p class="pattern-sentence">${chapter.pattern.emoji} ${chapter.pattern.sentence}</p>
+      <p class="pattern-korean">${chapter.pattern.korean}</p>
+      <div class="quad-line">
+        <span class="quad-line-text">${chapter.pattern.sentence}</span>
       </div>
-      <div class="write-line"></div>
-      <div class="write-line"></div>
+      <div class="quad-line"></div>
+      <div class="quad-line"></div>
     </section>
 
     <section class="block">
@@ -381,15 +383,11 @@ function renderSaebyulWorksheet(chapter) {
     </section>
 
     <section class="block">
-      <h2>오늘의 문장 따라쓰기</h2>
-      <p class="sec-label">1. 기본 문장</p>
-      <p class="pattern-sentence">${chapter.pattern.emoji} ${chapter.pattern.sentence}</p>
-      <p class="pattern-korean">${chapter.pattern.korean}</p>
-      <p class="trace-sentence">${chapter.pattern.sentence}</p>
-      <div class="write-line"></div>
-      <p class="sec-label">2. 문장 확장하기 <span class="sec-hint">조금 더 긴 문장을 보고 따라 써 보세요</span></p>
+      <h2>문장 확장하기</h2>
+      <p class="sec-hint">조금 더 긴 문장을 보고 따라 써 보세요</p>
       <p class="pattern-sentence">${chapter.pattern2.emoji} ${chapter.pattern2.sentence}</p>
       <p class="pattern-korean">${chapter.pattern2.korean}</p>
+      <p class="trace-sentence">${chapter.pattern2.sentence}</p>
       <div class="write-line"></div>
       <div class="write-line"></div>
     </section>
