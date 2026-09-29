@@ -210,7 +210,7 @@ function traceListHTML(items, opts) {
         (item, i) => `<li class="trace-row">
           <p class="trace-ko"><span class="trace-num">${i + 1})</span> ${item.ko}</p>
           <p class="trace-en">
-            <span>${item.en}</span>
+            <span class="trace-en-text">${item.en}</span>
             ${item.emoji ? `<span class="trace-emoji">${item.emoji}</span>` : ""}
           </p>
           <div class="write-line"></div>
