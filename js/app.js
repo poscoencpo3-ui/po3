@@ -134,34 +134,56 @@ function markPrinted() {
   renderDashboard();
 }
 
-function mcListHTML(items) {
+function makeAnswerCtx() {
+  let n = 0;
+  const answers = [];
+  return {
+    next(answer) {
+      n += 1;
+      answers.push({ n, a: answer });
+      return n;
+    },
+    answers,
+  };
+}
+
+function mcListHTML(items, ctx) {
   return `<ol class="mc-list">
     ${items
-      .map(
-        (m, i) => `<li>
-          <span class="mc-q">${i + 1}. ${m.q}</span>
+      .map((m) => {
+        const num = ctx.next(`${String.fromCharCode(65 + m.answerIndex)}) ${m.options[m.answerIndex]}`);
+        return `<li>
+          <span class="mc-q">${num}. ${m.q}</span>
           <span class="mc-options">
-            ${m.options
-              .map((o, oi) => `<span class="mc-opt ${oi === m.answerIndex ? "correct" : ""}">${String.fromCharCode(65 + oi)}) ${o}</span>`)
-              .join("")}
+            ${m.options.map((o, oi) => `<span class="mc-opt">${String.fromCharCode(65 + oi)}) ${o}</span>`).join("")}
           </span>
-        </li>`
-      )
+        </li>`;
+      })
       .join("")}
   </ol>`;
 }
 
-function transformListHTML(items) {
+function transformListHTML(items, ctx) {
   return `<ol class="transform-list">
     ${items
-      .map(
-        (t, i) => `<li>
-          <span class="tf-prompt">${i + 1}. ${t.prompt}</span>
-          <span class="answer-hint">정답: ${t.answer}</span>
-        </li>`
-      )
+      .map((t) => {
+        const num = ctx.next(t.answer);
+        return `<li><span class="tf-prompt">${num}. ${t.prompt}</span></li>`;
+      })
       .join("")}
   </ol>`;
+}
+
+function answerKeyHTML(answers) {
+  if (!answers.length) return "";
+  return `
+    <section class="block answer-key-block">
+      <h2>정답</h2>
+      <div class="answer-key-box">
+        ${answers.map((a) => `<span class="answer-key-item"><strong>${a.n}.</strong> ${a.a}</span>`).join("")}
+      </div>
+      <p class="answer-key-note">풀기 전에는 이 박스를 가려주세요.</p>
+    </section>`;
 }
 
 function vocabGridHTML(vocab) {
@@ -179,6 +201,7 @@ function vocabGridHTML(vocab) {
 }
 
 function renderSaebomWorksheet(chapter) {
+  const ctx = makeAnswerCtx();
   return `
   <section class="sheet sheet-saebom">
     <header class="sheet-header">
@@ -216,9 +239,9 @@ function renderSaebomWorksheet(chapter) {
     <section class="block">
       <h2>문법 연습</h2>
       <p class="sec-label">객관식 고르기</p>
-      ${mcListHTML(chapter.grammar.practice.multipleChoice)}
+      ${mcListHTML(chapter.grammar.practice.multipleChoice, ctx)}
       <p class="sec-label">${chapter.grammar.practice.secondType}</p>
-      ${transformListHTML(chapter.grammar.practice.secondItems)}
+      ${transformListHTML(chapter.grammar.practice.secondItems, ctx)}
     </section>
 
     <section class="block">
@@ -226,13 +249,13 @@ function renderSaebomWorksheet(chapter) {
       <p class="sec-label">1. 문장 완성하기 <span class="sec-hint">빈칸을 채워 문장 전체를 쓰세요</span></p>
       <ol class="write-fill-list">
         ${chapter.writing.sentenceCompletion
-          .map(
-            (item) => `<li>
-              <span class="fill-prompt">${item.prompt}</span>
-              <span class="answer-hint">예: ${item.answer}</span>
+          .map((item) => {
+            const num = ctx.next(item.answer);
+            return `<li>
+              <span class="fill-prompt">${num}. ${item.prompt}</span>
               <div class="write-line-sm"></div>
-            </li>`
-          )
+            </li>`;
+          })
           .join("")}
       </ol>
       <p class="sec-label">2. 단어로 문장 만들기</p>
@@ -255,7 +278,7 @@ function renderSaebomWorksheet(chapter) {
       </div>
       <p class="roleplay-note">${chapter.speaking.roleplay}</p>
     </section>
-
+    ${answerKeyHTML(ctx.answers)}
     <footer class="sheet-footer">
       <span>부모님 확인</span>
       <span>서명: ______________</span>
@@ -264,6 +287,7 @@ function renderSaebomWorksheet(chapter) {
 }
 
 function renderSaebomReview(chapter) {
+  const ctx = makeAnswerCtx();
   return `
   <section class="sheet sheet-saebom">
     <header class="sheet-header">
@@ -286,12 +310,12 @@ function renderSaebomReview(chapter) {
 
     <section class="block">
       <h2>객관식 (10문제)</h2>
-      ${mcListHTML(chapter.multipleChoice)}
+      ${mcListHTML(chapter.multipleChoice, ctx)}
     </section>
 
     <section class="block">
       <h2>문장 전환 / 어순 배열 (5문제)</h2>
-      ${transformListHTML(chapter.transform)}
+      ${transformListHTML(chapter.transform, ctx)}
     </section>
 
     <section class="block">
@@ -300,7 +324,7 @@ function renderSaebomReview(chapter) {
       <div class="write-line"></div>
       <div class="write-line"></div>
     </section>
-
+    ${answerKeyHTML(ctx.answers)}
     <footer class="sheet-footer">
       <span>부모님 확인</span>
       <span>서명: ______________</span>
