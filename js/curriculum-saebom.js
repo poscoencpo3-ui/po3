@@ -1,8 +1,9 @@
 /* 새봄이 커리큘럼 (초등 2학년, 파닉스 완료 · 읽기 가능)
    회차마다: 단어 / 문법(설명+표+예문+빈칸연습+객관식/어순배열·문장전환) /
    쓰기(문장완성+단어로 문장만들기+자유작문) / 회화(대화문+롤플레이)
-   5개 학습 회차마다 Review Test 1회 삽입 (총 30개 학습 회차 + 6개 Review Test = 36회차)
-   2일에 1회차 진행 기준, 총 36회차(약 72일)로 초등 기초 문법 한 사이클을 완주 + 정기 복습 */
+   5개 학습 회차마다 Review Test 1회 삽입 (총 35개 학습 회차 + 7개 Review Test = 42회차)
+   2일에 1회차 진행 기준, 총 42회차(약 84일)로 초등 기초 문법 한 사이클(1~36회차) +
+   전치사·어순·빈도부사·명사/관사 심화(37~42회차)까지 완주 + 정기 복습 */
 const CURRICULUM_SAEBOM = [
   {
     id: 1,
@@ -2090,5 +2091,365 @@ const CURRICULUM_SAEBOM = [
       { prompt: "(is / favorite / what / your / animal) 어순 배열", answer: "What is your favorite animal?" },
     ],
     freeWrite: { prompt: "36회차 동안 배운 것 중 가장 자신 있는 문법을 하나 골라 문장으로 써 보세요." },
+  },
+  {
+    id: 37,
+    title: "37회차 · 전치사 ① (장소 — in/on/at, under/next to/in front of/behind/between)",
+    theme: "우리 동네",
+    vocab: [
+      { word: "library", meaning: "도서관", emoji: "📚" },
+      { word: "store", meaning: "가게", emoji: "🏬" },
+      { word: "hospital", meaning: "병원", emoji: "🏥" },
+      { word: "bank", meaning: "은행", emoji: "🏦" },
+      { word: "station", meaning: "역", emoji: "🚉" },
+      { word: "bridge", meaning: "다리", emoji: "🌉" },
+      { word: "corner", meaning: "모퉁이", emoji: "📐" },
+      { word: "street", meaning: "거리", emoji: "🛣️" },
+    ],
+    grammar: {
+      topic: "전치사 ① — 장소 in / on / at, under / next to / in front of / behind / between",
+      table: [
+        ["in", "(공간) 안에 — in the box, in Seoul"],
+        ["on", "(표면) 위에 닿아서 — on the table, on the wall"],
+        ["at", "(한 지점) ~에서 — at the door, at school"],
+        ["under", "~아래에"],
+        ["next to", "~옆에"],
+        ["in front of", "~앞에"],
+        ["behind", "~뒤에"],
+        ["between A and B", "A와 B 사이에"],
+      ],
+      explain: [
+        "전치사는 명사 앞에 붙어서 장소, 위치를 자세히 설명해주는 말이에요. 전치사 뒤에는 항상 명사(또는 대명사)가 와요.",
+        "in은 넓은 공간 안, on은 표면에 붙어 있을 때, at은 한 지점을 콕 짚을 때 사용해요. (in the room / on the desk / at the bus stop)",
+        "next to, in front of, behind, between처럼 두 단어 이상으로 된 전치사도 있어요. 뜻과 함께 통째로 외워두면 좋아요.",
+      ],
+      tip: "❗주의: 전치사 뒤에는 반드시 명사가 와요. (on table (X) → on the table (O))",
+      examples: ["The cat is on the table.", "The bank is next to the library.", "It is between the school and the park."],
+      drill: ["The ball is ___ (under) the chair.", "The store is ___ (next to) the bank.", "I am ___ (at) school now."],
+      practice: {
+        multipleChoice: [
+          { q: "The book is ___ the table.", options: ["in", "on", "at", "under"], answerIndex: 1 },
+          { q: "I am ___ school now.", options: ["in", "on", "at", "under"], answerIndex: 2 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(is / the / cat / under / the / table)", answer: "The cat is under the table." },
+          { prompt: "(bank / is / the / next to / the / library)", answer: "The bank is next to the library." },
+        ],
+      },
+    },
+    writing: {
+      sentenceCompletion: [
+        { prompt: "The park is ___ (in front of) my house.", answer: "The park is in front of my house." },
+        { prompt: "The dog is ___ (behind) the door.", answer: "The dog is behind the door." },
+        { prompt: "The store is ___ (between) the bank and the station.", answer: "The store is between the bank and the station." },
+      ],
+      wordSentences: ["library", "hospital", "bridge"],
+      freeWrite: {
+        example: "The library is next to the park.",
+        prompt: "우리 동네에 있는 장소들의 위치를 전치사를 사용해서 써 보세요.",
+      },
+    },
+    speaking: {
+      dialogue: [
+        { speaker: "새봄", line: "Where is the library?" },
+        { speaker: "새별", line: "It's next to the park." },
+        { speaker: "새봄", line: "Is the bank in front of the station?" },
+        { speaker: "새별", line: "No, it's behind the station." },
+      ],
+      roleplay: "실제 동네 지도를 떠올리며 위치를 묻고 답해보세요.",
+    },
+  },
+  {
+    id: 38,
+    title: "38회차 · 전치사 ② (시간 — in/on/at)",
+    theme: "시간 약속",
+    vocab: [
+      { word: "morning", meaning: "아침", emoji: "🌅" },
+      { word: "afternoon", meaning: "오후", emoji: "☀️" },
+      { word: "evening", meaning: "저녁", emoji: "🌆" },
+      { word: "night", meaning: "밤", emoji: "🌙" },
+      { word: "o'clock", meaning: "정각", emoji: "🕐" },
+      { word: "weekday", meaning: "평일", emoji: "📅" },
+      { word: "month", meaning: "달(월)", emoji: "🗓️" },
+      { word: "appointment", meaning: "약속", emoji: "📌" },
+    ],
+    grammar: {
+      topic: "전치사 ② — 시간 in / on / at",
+      table: [
+        ["in", "연도, 월, 계절, 아침/오후/저녁 — in 2024, in July, in summer, in the morning"],
+        ["on", "요일, 날짜 — on Monday, on July 4th"],
+        ["at", "시각, 정오/밤 — at 3 o'clock, at noon, at night"],
+      ],
+      explain: [
+        "시간을 나타낼 때도 in, on, at을 상황에 맞게 구분해서 써요.",
+        "큰 단위(연도/월/계절)는 in, 특정 날(요일/날짜)은 on, 정확한 시각은 at을 사용해요 — 시간이 좁아질수록 in→on→at 순서로 기억하면 쉬워요.",
+        "예외로 night(밤)은 at night처럼 at을 쓴다는 것도 기억해두세요.",
+      ],
+      tip: "❗Tip: in(큰 시간) → on(특정 날) → at(정확한 시각) — 범위가 좁아질수록 in→on→at!",
+      examples: ["I was born in 2016.", "We have a party on Saturday.", "School starts at nine o'clock."],
+      drill: ["My birthday is ___ (in) May.", "We have PE ___ (on) Monday.", "I go to bed ___ (at) nine."],
+      practice: {
+        multipleChoice: [
+          { q: "School starts ___ nine o'clock.", options: ["in", "on", "at", "of"], answerIndex: 2 },
+          { q: "We have a party ___ Saturday.", options: ["in", "on", "at", "of"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(born / I / in / 2016 / was)", answer: "I was born in 2016." },
+          { prompt: "(nine / school / at / starts / o'clock)", answer: "School starts at nine o'clock." },
+        ],
+      },
+    },
+    writing: {
+      sentenceCompletion: [
+        { prompt: "We have a party ___ (on) Saturday.", answer: "We have a party on Saturday." },
+        { prompt: "I go to bed ___ (at) nine.", answer: "I go to bed at nine." },
+        { prompt: "My birthday is ___ (in) May.", answer: "My birthday is in May." },
+      ],
+      wordSentences: ["morning", "weekday", "appointment"],
+      freeWrite: {
+        example: "School starts at nine o'clock.",
+        prompt: "나의 하루 일과나 약속을 시간 전치사를 사용해서 써 보세요.",
+      },
+    },
+    speaking: {
+      dialogue: [
+        { speaker: "새별", line: "When is your birthday?" },
+        { speaker: "새봄", line: "My birthday is in May. When is yours?" },
+        { speaker: "새별", line: "Mine is on July 4th!" },
+        { speaker: "새봄", line: "Let's have a party at three o'clock!" },
+      ],
+      roleplay: "진짜 생일이나 약속 시간으로 바꿔서 대화를 다시 해보세요.",
+    },
+  },
+  {
+    id: 39,
+    title: "39회차 · 문장의 기본 어순 (주어+동사+목적어, 형용사·부사 위치)",
+    theme: "문장 만들기 기초",
+    vocab: [
+      { word: "order", meaning: "순서", emoji: "🔢" },
+      { word: "subject", meaning: "주어", emoji: "🙋" },
+      { word: "verb", meaning: "동사", emoji: "🏃" },
+      { word: "object", meaning: "목적어", emoji: "🎯" },
+      { word: "adjective", meaning: "형용사", emoji: "🎨" },
+      { word: "adverb", meaning: "부사", emoji: "⚡" },
+      { word: "word", meaning: "단어", emoji: "🔤" },
+      { word: "meaning", meaning: "뜻", emoji: "💭" },
+    ],
+    grammar: {
+      topic: "문장의 기본 어순 — 주어 + 동사 + 목적어(SVO), 형용사·부사의 위치",
+      table: [
+        ["기본 어순", "주어(누가) + 동사(한다) + 목적어(무엇을)"],
+        ["한국어", "나는 사과를 먹는다 (주어-목적어-동사)"],
+        ["영어", "I eat an apple. (주어-동사-목적어)"],
+        ["형용사 위치", "명사 바로 앞 — a cute dog"],
+        ["부사 위치", "보통 문장 끝 — I run fast."],
+      ],
+      explain: [
+        "한국어는 '나는 사과를 먹는다'처럼 동사가 맨 뒤에 오지만, 영어는 '나는 먹는다 사과를'처럼 동사가 목적어보다 먼저 와요. 이게 영어 어순에서 가장 헷갈리는 부분이에요!",
+        "형용사(꾸며주는 말)는 보통 명사 바로 앞에 와요. (a cute dog, a big house)",
+        "부사(동작을 꾸며주는 말)는 보통 문장 맨 끝에 와요. (I run fast. She sings well.)",
+      ],
+      tip: "❗Tip: 영어 문장을 만들 때는 항상 '누가(주어) - 한다(동사) - 무엇을(목적어)' 순서로 생각하는 습관을 들이세요!",
+      examples: ["I eat an apple.", "She has a cute dog.", "He runs fast."],
+      drill: ["I ___ (like) pizza. (주어+동사+목적어)", "She has a ___ (cute) cat. (형용사 위치)", "He speaks English ___ (well). (부사 위치)"],
+      practice: {
+        multipleChoice: [
+          { q: "다음 중 올바른 어순은?", options: ["Apple I eat.", "I apple eat.", "I eat an apple.", "Eat I an apple."], answerIndex: 2 },
+          { q: "다음 중 형용사 위치가 올바른 것은?", options: ["a dog cute", "a cute dog", "cute a dog", "dog a cute"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(a / have / book / I)", answer: "I have a book." },
+          { prompt: "(fast / runs / he)", answer: "He runs fast." },
+        ],
+      },
+    },
+    writing: {
+      sentenceCompletion: [
+        { prompt: "(pizza / I / like) → 올바른 어순으로 쓰세요", answer: "I like pizza." },
+        { prompt: "(has / dog / a / she / cute) → 올바른 어순으로 쓰세요", answer: "She has a cute dog." },
+        { prompt: "(sings / she / well) → 올바른 어순으로 쓰세요", answer: "She sings well." },
+      ],
+      wordSentences: ["order", "subject", "adjective"],
+      freeWrite: {
+        example: "I eat an apple.",
+        prompt: "주어+동사+목적어 순서를 생각하며 나만의 문장을 써 보세요.",
+      },
+    },
+    speaking: {
+      dialogue: [
+        { speaker: "새봄", line: "I eat an apple every day." },
+        { speaker: "새별", line: "I like pizza. Do you like pizza, too?" },
+        { speaker: "새봄", line: "Yes! I like pizza a lot." },
+        { speaker: "새별", line: "Let's eat pizza together!" },
+      ],
+      roleplay: "실제 좋아하는 음식으로 바꿔서 주어+동사+목적어 순서로 말해보세요.",
+    },
+  },
+  {
+    id: 40,
+    title: "40회차 · 빈도부사 (always/usually/often/sometimes/never)",
+    theme: "얼마나 자주",
+    vocab: [
+      { word: "always", meaning: "항상", emoji: "💯" },
+      { word: "usually", meaning: "보통", emoji: "🔁" },
+      { word: "often", meaning: "자주", emoji: "🔂" },
+      { word: "sometimes", meaning: "가끔", emoji: "🤔" },
+      { word: "never", meaning: "절대 ~않다", emoji: "🚫" },
+      { word: "everyday", meaning: "매일의", emoji: "📆" },
+      { word: "rarely", meaning: "거의 ~않다", emoji: "🌦️" },
+      { word: "schedule", meaning: "일정", emoji: "🗓️" },
+    ],
+    grammar: {
+      topic: "빈도부사 — always / usually / often / sometimes / never",
+      table: [
+        ["100%", "always (항상)"],
+        ["90%", "usually (보통)"],
+        ["70%", "often (자주)"],
+        ["50%", "sometimes (가끔)"],
+        ["0%", "never (절대 ~않다)"],
+      ],
+      explain: [
+        "빈도부사는 '얼마나 자주 하는지'를 나타내는 말이에요. always(항상)부터 never(절대 안 함)까지 빈도 순서로 정리하면 외우기 쉬워요.",
+        "be동사가 있는 문장에서는 be동사 뒤에 빈도부사를 써요. (I am always happy.)",
+        "일반동사가 있는 문장에서는 일반동사 앞에 빈도부사를 써요. (I always eat breakfast.)",
+      ],
+      tip: "❗주의: I always am happy (X) → I am always happy (O) — be동사는 빈도부사보다 먼저!",
+      examples: ["I am always happy.", "She usually eats breakfast.", "He never lies."],
+      drill: ["I ___ (always) brush my teeth.", "She is ___ (usually) busy.", "He ___ (never) cries."],
+      practice: {
+        multipleChoice: [
+          { q: "I ___ eat breakfast. (매일)", options: ["always eat", "eat always", "am always", "always am"], answerIndex: 0 },
+          { q: "She ___ tired. (보통, be동사문)", options: ["usually is", "is usually", "is be usually", "usually be"], answerIndex: 1 },
+        ],
+        secondType: "어순 배열 — 괄호 안 단어를 바르게 배열하세요",
+        secondItems: [
+          { prompt: "(happy / always / I / am)", answer: "I am always happy." },
+          { prompt: "(eats / she / breakfast / usually)", answer: "She usually eats breakfast." },
+        ],
+      },
+    },
+    writing: {
+      sentenceCompletion: [
+        { prompt: "I ___ (always) brush my teeth.", answer: "I always brush my teeth." },
+        { prompt: "She ___ (never) lies.", answer: "She never lies." },
+        { prompt: "He ___ (sometimes) plays soccer.", answer: "He sometimes plays soccer." },
+      ],
+      wordSentences: ["usually", "often", "rarely"],
+      freeWrite: {
+        example: "I always brush my teeth.",
+        prompt: "내가 얼마나 자주 하는 일을 빈도부사를 사용해서 써 보세요.",
+      },
+    },
+    speaking: {
+      dialogue: [
+        { speaker: "새별", line: "Do you always eat breakfast?" },
+        { speaker: "새봄", line: "Yes, I always eat breakfast. Do you?" },
+        { speaker: "새별", line: "I usually eat breakfast, but sometimes I don't." },
+        { speaker: "새봄", line: "You should eat breakfast every day!" },
+      ],
+      roleplay: "실제 자기 습관으로 바꿔서 빈도부사를 사용해 대화를 다시 해보세요.",
+    },
+  },
+  {
+    id: 41,
+    title: "41회차 · 명사의 복수형 + 관사 a/an/the",
+    theme: "하나 vs 여러 개",
+    vocab: [
+      { word: "apple", meaning: "사과", emoji: "🍎" },
+      { word: "box", meaning: "상자", emoji: "📦" },
+      { word: "city", meaning: "도시", emoji: "🏙️" },
+      { word: "baby", meaning: "아기", emoji: "👶" },
+      { word: "leaf", meaning: "나뭇잎", emoji: "🍃" },
+      { word: "tooth", meaning: "이(치아)", emoji: "🦷" },
+      { word: "child", meaning: "아이", emoji: "🧒" },
+      { word: "foot", meaning: "발", emoji: "🦶" },
+    ],
+    grammar: {
+      topic: "명사의 복수형 + 관사 a / an / the",
+      table: [
+        ["대부분 명사", "+s (apples, books)"],
+        ["s/x/ch/sh로 끝나는 명사", "+es (boxes, buses, dishes)"],
+        ["자음+y로 끝나는 명사", "y를 i로 바꾸고 +es (city→cities, baby→babies)"],
+        ["불규칙 복수형", "child→children, foot→feet, tooth→teeth"],
+        ["a / an", "처음 언급하는 하나 (자음 앞 a, 모음 앞 an)"],
+        ["the", "이미 언급했거나 특정한 것"],
+      ],
+      explain: [
+        "명사가 하나면 단수, 둘 이상이면 복수라고 해요. 복수형은 보통 명사 끝에 s를 붙여서 만들어요.",
+        "s/x/ch/sh로 끝나면 es를 붙이고(box→boxes), 자음+y로 끝나면 y를 i로 바꾸고 es를 붙여요(city→cities). child→children처럼 모양이 완전히 바뀌는 불규칙 복수형도 있어요.",
+        "관사 a/an은 '하나의'라는 뜻으로 처음 등장하는 명사 앞에, the는 '그것'이라는 뜻으로 이미 알고 있는 특정한 명사 앞에 써요. a 뒤엔 자음 발음, an 뒤엔 모음 발음이 와요.",
+      ],
+      tip: "❗주의: a apple (X) → an apple (O) — apple은 모음 소리로 시작하니 an을 써요!",
+      examples: ["I have two apples.", "There are three boxes.", "I see a cat. The cat is cute."],
+      drill: ["I have two ___ (box → boxes).", "She has three ___ (city → cities).", "I have ___ (a/an) umbrella."],
+      practice: {
+        multipleChoice: [
+          { q: "I have two ___. (box)", options: ["box", "boxs", "boxes", "boxies"], answerIndex: 2 },
+          { q: "I have ___ umbrella.", options: ["a", "an", "the", "-"], answerIndex: 1 },
+        ],
+        secondType: "형태 바꾸기 — 단수 명사를 복수형으로 바꿔 써 보세요",
+        secondItems: [
+          { prompt: "city", answer: "cities" },
+          { prompt: "child", answer: "children" },
+        ],
+      },
+    },
+    writing: {
+      sentenceCompletion: [
+        { prompt: "I have two ___ (apple → apples).", answer: "I have two apples." },
+        { prompt: "There are three ___ (baby → babies).", answer: "There are three babies." },
+        { prompt: "I see ___ (a/an) elephant.", answer: "I see an elephant." },
+      ],
+      wordSentences: ["leaf", "tooth", "child"],
+      freeWrite: {
+        example: "I have two apples.",
+        prompt: "복수형 명사를 사용해서 내가 가진 물건을 세어 써 보세요.",
+      },
+    },
+    speaking: {
+      dialogue: [
+        { speaker: "새봄", line: "How many apples do you have?" },
+        { speaker: "새별", line: "I have three apples. How about you?" },
+        { speaker: "새봄", line: "I have two apples and an orange." },
+        { speaker: "새별", line: "Let's share!" },
+      ],
+      roleplay: "실제 가지고 있는 물건 개수로 바꿔서 복수형을 사용해 대화를 다시 해보세요.",
+    },
+  },
+  {
+    id: 42,
+    type: "review",
+    title: "42회차 · Review Test 7 (37~41회차 총정리)",
+    covers: "37~41회차",
+    recap: [
+      ["in/on/at, under/next to/in front of/behind/between", "전치사① 장소"],
+      ["in/on/at (시간)", "전치사② 시간"],
+      ["주어+동사+목적어(SVO), 형용사·부사 위치", "문장의 기본 어순"],
+      ["always/usually/often/sometimes/never", "빈도부사 위치"],
+      ["-s/-es 복수형, a/an/the", "명사와 관사"],
+    ],
+    multipleChoice: [
+      { q: "The book is ___ the table.", options: ["in", "on", "at", "under"], answerIndex: 1 },
+      { q: "I am ___ school now.", options: ["in", "on", "at", "under"], answerIndex: 2 },
+      { q: "We have a party ___ Saturday.", options: ["in", "on", "at", "of"], answerIndex: 1 },
+      { q: "School starts ___ nine o'clock.", options: ["in", "on", "at", "of"], answerIndex: 2 },
+      { q: "다음 중 올바른 어순은?", options: ["Apple I eat.", "I apple eat.", "I eat an apple.", "Eat I an apple."], answerIndex: 2 },
+      { q: "다음 중 형용사 위치가 올바른 것은?", options: ["a dog cute", "a cute dog", "cute a dog", "dog a cute"], answerIndex: 1 },
+      { q: "I ___ eat breakfast. (매일)", options: ["always eat", "eat always", "am always", "always am"], answerIndex: 0 },
+      { q: "She ___ tired. (보통)", options: ["usually is", "is usually", "is be usually", "usually be"], answerIndex: 1 },
+      { q: "I have two ___. (box)", options: ["box", "boxs", "boxes", "boxies"], answerIndex: 2 },
+      { q: "I have ___ umbrella.", options: ["a", "an", "the", "-"], answerIndex: 1 },
+    ],
+    transform: [
+      { prompt: "(is / the / cat / under / the / table) 어순 배열", answer: "The cat is under the table." },
+      { prompt: "(born / I / in / 2016 / was) 어순 배열", answer: "I was born in 2016." },
+      { prompt: "(a / have / book / I) 어순 배열", answer: "I have a book." },
+      { prompt: "(happy / always / I / am) 어순 배열", answer: "I am always happy." },
+      { prompt: "city 형태 바꾸기 (복수형)", answer: "cities" },
+    ],
+    freeWrite: { prompt: "37~41회차에서 배운 문법(전치사·어순·빈도부사·복수형) 중 하나를 사용해서 나만의 문장을 2개 써 보세요." },
   },
 ];
