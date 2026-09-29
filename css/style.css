@@ -309,6 +309,7 @@ body {
 .write-fill-list { list-style: none; margin: 0 0 15px; padding: 0; }
 .write-fill-list li { margin-bottom: 11px; }
 .fill-prompt { font-size: 15px; }
+.word-bank { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .word-tag {
   display: inline-block;
   font-size: 15px;

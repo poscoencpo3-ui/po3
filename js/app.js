@@ -382,11 +382,34 @@ function renderSaebyulWorksheet(chapter) {
 
     <section class="block">
       <h2>오늘의 문장 따라쓰기</h2>
+      <p class="sec-label">1. 기본 문장</p>
       <p class="pattern-sentence">${chapter.pattern.emoji} ${chapter.pattern.sentence}</p>
       <p class="pattern-korean">${chapter.pattern.korean}</p>
       <p class="trace-sentence">${chapter.pattern.sentence}</p>
       <div class="write-line"></div>
+      <p class="sec-label">2. 문장 확장하기 <span class="sec-hint">조금 더 긴 문장을 보고 따라 써 보세요</span></p>
+      <p class="pattern-sentence">${chapter.pattern2.emoji} ${chapter.pattern2.sentence}</p>
+      <p class="pattern-korean">${chapter.pattern2.korean}</p>
       <div class="write-line"></div>
+      <div class="write-line"></div>
+    </section>
+
+    <section class="block">
+      <h2>빈칸 채우기</h2>
+      <p class="sec-hint">${chapter.fillBlank.instruction}</p>
+      <div class="word-bank">
+        ${chapter.fillBlank.wordBank.map((w) => `<span class="word-tag">${w}</span>`).join("")}
+      </div>
+      <ol class="write-fill-list">
+        ${chapter.fillBlank.items
+          .map(
+            (item) => `<li>
+              <span class="fill-prompt">${item.emoji} ${item.sentence}</span>
+              <div class="write-line-sm"></div>
+            </li>`
+          )
+          .join("")}
+      </ol>
     </section>
 
     <section class="block">
