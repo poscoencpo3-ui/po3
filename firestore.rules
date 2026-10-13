@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Paste this into Firebase console > Firestore Database > Rules.
+//
+// Deliberately simple for a 2-person hobby app: anyone signed in (even
+// anonymously - see WakeUpApp.ensureAnonymousSignIn) can read/write a pair
+// document IF they already know its 6-digit code, but nobody can list/scan
+// the whole "pairs" collection to find codes they don't already have.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /pairs/{code} {
+
+      allow get: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.deviceB == null
+        && request.resource.data.keys().hasOnly(
+          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack']
+        );
+
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(
+          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack']
+        );
+
+      allow delete: if false;
+      allow list: if false;
+    }
+  }
+}

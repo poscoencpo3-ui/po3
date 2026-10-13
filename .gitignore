@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+app/build/
+app/release/
+
+# Firebase config is per-developer / per-Firebase-project; do not commit it.
+# Download your own from the Firebase console and place it at app/google-services.json
+google-services.json
+
+*.jks
+*.keystore

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">모닝콜 메이트</string>
+
+    <string name="hint_my_name">내 이름 (상대방에게 보일 이름)</string>
+    <string name="button_create_code">연결 코드 만들기</string>
+    <string name="label_or">또는</string>
+    <string name="hint_join_code">받은 6자리 코드 입력</string>
+    <string name="button_join_code">코드로 연결하기</string>
+    <string name="hint_waiting_partner">이 코드를 상대방에게 알려주세요.\n상대방이 입력하면 자동으로 연결됩니다.</string>
+
+    <string name="button_wake">깨우기!</string>
+    <string name="button_unpair">연결 해제</string>
+    <string name="status_connected_waiting">연결됨 · 상대방 대기 중</string>
+    <string name="status_connected_with">%1$s님과 연결됨</string>
+    <string name="status_sent_waiting">보냄 · 아직 확인 전</string>
+    <string name="status_confirmed">확인했어요 ✅</string>
+    <string name="toast_wake_sent">모닝콜을 보냈어요!</string>
+    <string name="toast_wake_failed">전송에 실패했어요. 인터넷 연결을 확인해주세요.</string>
+    <string name="toast_partner_connected">%1$s님과 연결됐어요!</string>
+
+    <string name="label_settings">알람이 확실히 울리도록 설정하기</string>
+    <string name="button_battery_optimization">배터리 최적화 제외하기</string>
+    <string name="button_dnd_access">방해금지 모드 접근 허용하기</string>
+    <string name="button_full_screen_intent">전체화면 알림 권한 확인하기 (Android 14+)</string>
+    <string name="hint_permissions">위 설정을 모두 허용해야 무음/진동 모드에서도 알람이 확실히 울립니다. 두 사람 모두 각자의 폰에서 설정해주세요.</string>
+
+    <string name="channel_service_name">모닝콜 연결 상태</string>
+    <string name="channel_service_description">모닝콜 메이트가 상대방의 신호를 기다리고 있습니다</string>
+    <string name="channel_alarm_name">모닝콜 알람</string>
+    <string name="channel_alarm_description">상대방이 보낸 깨우기 신호</string>
+
+    <string name="service_notification_title">모닝콜 연결됨</string>
+    <string name="service_notification_text">상대방의 깨우기 신호를 기다리는 중</string>
+
+    <string name="alarm_notification_title">%1$s님이 깨우기 신호를 보냈어요</string>
+    <string name="alarm_notification_text">눌러서 알람을 확인하세요</string>
+
+    <string name="default_partner_name">상대방</string>
+    <string name="alarm_message">%1$s님이 깨우는 중이에요!</string>
+    <string name="alarm_icon_emoji">⏰</string>
+    <string name="button_stop_alarm">끄기</string>
+
+    <string name="error_name_required">이름을 입력해주세요</string>
+    <string name="error_code_length">6자리 코드를 입력해주세요</string>
+    <string name="error_code_not_found">존재하지 않는 코드예요. 코드를 다시 확인해주세요.</string>
+    <string name="error_code_already_used">이미 다른 기기와 연결된 코드예요.</string>
+    <string name="error_create_failed">코드 생성에 실패했어요. 다시 시도해주세요.</string>
+</resources>
