@@ -3,14 +3,19 @@ package com.wakeupcall.duo
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
@@ -20,9 +25,26 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var pairListener: ListenerRegistration? = null
+    private val previewHandler = Handler(Looper.getMainLooper())
+    private var previewRunnable: Runnable? = null
+    private var isPreviewPlaying = false
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private val ringtonePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val uri: Uri? = if (Build.VERSION.SDK_INT >= 33) {
+                    result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                }
+                PrefsManager.setAlarmSoundUri(this, uri?.toString())
+                updateCurrentSoundLabel()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,18 +56,21 @@ class MainActivity : AppCompatActivity() {
         ensureNotificationPermission()
         startWakeService()
         setupListeners()
+        setupSoundSettings()
         refreshUi()
     }
 
     override fun onStart() {
         super.onStart()
         attachLiveStatusListener()
+        refreshFullScreenIntentStatus()
     }
 
     override fun onStop() {
         super.onStop()
         pairListener?.remove()
         pairListener = null
+        cancelPreview()
     }
 
     private fun ensureNotificationPermission() {
@@ -90,6 +115,85 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             binding.buttonFullScreenIntent.visibility = View.GONE
+        }
+
+        binding.buttonPickSound.setOnClickListener { openRingtonePicker() }
+        binding.buttonPreviewSound.setOnClickListener { previewSound() }
+    }
+
+    /** Shown only on Android 14+, where this permission can default to off for sideloaded apps. */
+    private fun refreshFullScreenIntentStatus() {
+        if (Build.VERSION.SDK_INT >= 34) {
+            val allowed = NotificationManagerCompat.from(this).canUseFullScreenIntent()
+            binding.textFullScreenStatus.visibility = View.VISIBLE
+            binding.textFullScreenStatus.text = getString(
+                if (allowed) R.string.status_fullscreen_allowed else R.string.status_fullscreen_blocked
+            )
+        } else {
+            binding.textFullScreenStatus.visibility = View.GONE
+        }
+    }
+
+    private fun setupSoundSettings() {
+        updateCurrentSoundLabel()
+
+        val percent = PrefsManager.getAlarmVolumePercent(this)
+        binding.seekBarVolume.progress = percent
+        binding.textVolumeLabel.text = getString(R.string.label_volume, percent)
+        binding.seekBarVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                binding.textVolumeLabel.text = getString(R.string.label_volume, progress)
+                if (fromUser) {
+                    PrefsManager.setAlarmVolumePercent(this@MainActivity, progress)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        })
+    }
+
+    private fun updateCurrentSoundLabel() {
+        val savedUri = PrefsManager.getAlarmSoundUri(this)?.let { Uri.parse(it) }
+        val uri = savedUri ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+        val name = uri?.let { RingtoneManager.getRingtone(this, it)?.getTitle(this) }
+            ?: getString(R.string.default_sound_name)
+        binding.textCurrentSound.text = getString(R.string.text_current_sound, name)
+    }
+
+    private fun openRingtonePicker() {
+        val currentUri = PrefsManager.getAlarmSoundUri(this)?.let { Uri.parse(it) }
+            ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+        }
+        ringtonePickerLauncher.launch(intent)
+    }
+
+    private fun previewSound() {
+        cancelPreview()
+        AlarmSoundPlayer.start(this)
+        isPreviewPlaying = true
+        val runnable = Runnable { cancelPreview() }
+        previewRunnable = runnable
+        previewHandler.postDelayed(runnable, 4000L)
+    }
+
+    /**
+     * Only stops playback if OUR preview is what's currently playing. A real
+     * incoming wake alarm (AlarmActivity) uses the same AlarmSoundPlayer, and
+     * this must never silence that - e.g. if MainActivity happens to be open
+     * and gets covered/stopped right as a real wake signal arrives.
+     */
+    private fun cancelPreview() {
+        previewRunnable?.let { previewHandler.removeCallbacks(it) }
+        previewRunnable = null
+        if (isPreviewPlaying) {
+            AlarmSoundPlayer.stop(this)
+            isPreviewPlaying = false
         }
     }
 

@@ -24,6 +24,15 @@
     <string name="button_dnd_access">방해금지 모드 접근 허용하기</string>
     <string name="button_full_screen_intent">전체화면 알림 권한 확인하기 (Android 14+)</string>
     <string name="hint_permissions">위 설정을 모두 허용해야 무음/진동 모드에서도 알람이 확실히 울립니다. 두 사람 모두 각자의 폰에서 설정해주세요.</string>
+    <string name="status_fullscreen_allowed">✅ 전체화면 알림이 허용되어 있어요</string>
+    <string name="status_fullscreen_blocked">⚠️ 전체화면 알림이 꺼져 있어요 — 바로 아래 버튼을 눌러 켜주세요. 꺼진 상태면 알림을 직접 눌러야만 알람 화면이 열립니다.</string>
+
+    <string name="label_sound_settings">내 폰에서 울릴 알람 소리 설정</string>
+    <string name="text_current_sound">현재 소리: %1$s</string>
+    <string name="default_sound_name">기기 기본 알람음</string>
+    <string name="button_pick_sound">알람 소리 선택하기</string>
+    <string name="label_volume">소리 크기: %1$d%%</string>
+    <string name="button_preview_sound">미리듣기 (4초)</string>
 
     <string name="channel_service_name">모닝콜 연결 상태</string>
     <string name="channel_service_description">모닝콜 메이트가 상대방의 신호를 기다리고 있습니다</string>

@@ -13,6 +13,9 @@ object PrefsManager {
     private const val KEY_PARTNER_NAME = "partner_name"
     private const val KEY_LAST_HANDLED_NONCE_PREFIX = "last_handled_nonce_"
     private const val KEY_LAST_SENT_NONCE = "last_sent_nonce"
+    private const val KEY_ALARM_SOUND_URI = "alarm_sound_uri"
+    private const val KEY_ALARM_VOLUME_PERCENT = "alarm_volume_percent"
+    const val DEFAULT_ALARM_VOLUME_PERCENT = 100
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -70,5 +73,19 @@ object PrefsManager {
 
     fun setLastSentNonce(context: Context, nonce: Long) {
         prefs(context).edit().putLong(KEY_LAST_SENT_NONCE, nonce).apply()
+    }
+
+    /** Null means "use the device's default alarm sound". */
+    fun getAlarmSoundUri(context: Context): String? = prefs(context).getString(KEY_ALARM_SOUND_URI, null)
+
+    fun setAlarmSoundUri(context: Context, uri: String?) {
+        prefs(context).edit().putString(KEY_ALARM_SOUND_URI, uri).apply()
+    }
+
+    fun getAlarmVolumePercent(context: Context): Int =
+        prefs(context).getInt(KEY_ALARM_VOLUME_PERCENT, DEFAULT_ALARM_VOLUME_PERCENT)
+
+    fun setAlarmVolumePercent(context: Context, percent: Int) {
+        prefs(context).edit().putInt(KEY_ALARM_VOLUME_PERCENT, percent).apply()
     }
 }

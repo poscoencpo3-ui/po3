@@ -19,6 +19,9 @@ import android.provider.Settings
  */
 object AlarmSoundPlayer {
 
+    // Never let the user pick a volume so low it defeats the whole point of the app.
+    private const val MIN_VOLUME_PERCENT = 20
+
     private var mediaPlayer: MediaPlayer? = null
     private var previousAlarmVolume: Int = -1
 
@@ -28,12 +31,23 @@ object AlarmSoundPlayer {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         previousAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0)
+        val percent = PrefsManager.getAlarmVolumePercent(context).coerceIn(MIN_VOLUME_PERCENT, 100)
+        val targetVolume = (maxVolume * percent / 100).coerceAtLeast(1)
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, targetVolume, 0)
 
-        val uri: Uri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
+        val defaultUri: Uri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
             ?: Settings.System.DEFAULT_ALARM_ALERT_URI
+        val savedUri = PrefsManager.getAlarmSoundUri(context)?.let { Uri.parse(it) }
 
-        try {
+        // Fall back to the device default if the user's saved pick fails to play
+        // (e.g. a ringtone that was since removed).
+        if (savedUri == null || !tryPlay(context, savedUri)) {
+            tryPlay(context, defaultUri)
+        }
+    }
+
+    private fun tryPlay(context: Context, uri: Uri): Boolean {
+        return try {
             mediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
@@ -46,8 +60,10 @@ object AlarmSoundPlayer {
                 prepare()
                 start()
             }
+            true
         } catch (e: Exception) {
             mediaPlayer = null
+            false
         }
     }
 
