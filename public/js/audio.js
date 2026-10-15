@@ -88,6 +88,18 @@
     toss() {
       tone(500, 0.08, 'sine', 0.12, 800);
     },
+    // 필살기: 시간이 멈추는 듯한 "우우웅~" + 반짝임
+    special() {
+      tone(90, 1.6, 'sawtooth', 0.12, 45);
+      tone(300, 1.2, 'sine', 0.12, 1400);
+      noise(1.4, 0.18, 3000, 0.5, 0.4);
+      setTimeout(() => tone(1800, 0.4, 'triangle', 0.08, 2600), 900);
+      setTimeout(() => tone(2200, 0.4, 'triangle', 0.08, 3000), 1400);
+      setTimeout(() => {
+        tone(60, 0.6, 'sine', 0.5, 30);
+        noise(0.6, 0.4, 500, 0.6, 0.01);
+      }, 2650);
+    },
   };
   window.Sfx = Sfx;
 

@@ -36,7 +36,9 @@
     imgs: {}, // slot -> Image
     cursor: { x: -100, y: -100, swing: 0 },
     hist: [],
-    cutMode: false,
+    specialArmed: false,
+    special: null,
+    touch: null,
     cooldown: 0,
     token: store.get('pp_token') || null,
     roomCode: null,
@@ -384,6 +386,8 @@
   }
 
   socket.on('started', () => {
+    S.special = null;
+    S.specialArmed = false;
     Sfx.whistle();
     enterGame();
     arena.addText('GAME START!', '#ffd60a', true);
@@ -467,6 +471,7 @@
     [b.x, b.y, b.z, b.vx, b.vy, b.vz, b.ax, b.az] = st.ball;
     b.spin = st.spin;
     b.side = st.side;
+    b.special = !!st.sp;
     return b;
   }
 
@@ -497,14 +502,21 @@
       const curve = Math.abs(e.curve) > 0.45 ? (e.curve > 0 ? ' ↪커브' : ' ↩커브') : '';
       const x = pr ? pr.x : null;
       const y = pr ? pr.y - 50 : null;
-      if (e.tier === 'fire') {
+      if (e.special) {
+        arena.addText(e.kind === 'smash' ? '💥 SUPER SMASH!!' : '🌪 SUPER DRIVE!!', '#c77dff', true);
+        arena.shake = 0.7;
+        Sfx.hit('fire');
+      } else if (e.tier === 'fire') {
         arena.addText('🔥 PERFECT ' + kind + '!', '#ff7b00', true);
         arena.jumboFlash('🔥 PERFECT!', '#ff7b00');
       }
       else if (e.tier === 'gold') arena.addText('✨ GREAT ' + kind + curve, '#ffd60a', false, x, y);
       else arena.addText(kind + curve, '#ffffff', false, x, y);
       const p = playerBySlot(e.slot);
-      if (p) p.swingT = performance.now();
+      if (p) {
+        p.swingT = performance.now();
+        p.lastTier = e.special ? 'special' : e.tier;
+      }
       if (e.slot === mySlot() && e.tier === 'none') {
         // 내 타이밍이 얼마나 어긋났는지 알려준다
         const ms = Math.round(e.diff * 1000);
@@ -522,6 +534,13 @@
     } else if (e.type === 'toss') {
       Sfx.toss();
     }
+  });
+
+  socket.on('special', (e) => {
+    S.special = { slot: e.slot, kind: e.kind, at: performance.now(), dur: e.ms };
+    Sfx.special();
+    Music.swell();
+    arena.jumboFlash('⚡ 필살기!', '#c77dff');
   });
 
   socket.on('point', (e) => {
@@ -593,7 +612,28 @@
     arena.addText(text, color, false, arena.w / 2, arena.h * 0.62);
   }
 
-  function attempt(kind) {
+  // 클릭 순간 마우스를 앞(위)으로 밀고 있으면 드라이브, 그냥 클릭하면 커트
+  const DRIVE_PUSH = 0.22;
+  function shotKind(sw) {
+    return sw.sy > DRIVE_PUSH ? 'drive' : 'cut';
+  }
+
+  function myEnergy() {
+    const st = S.snap;
+    return st && st.energy ? st.energy[mySlot()] || 0 : 0;
+  }
+
+  function toggleSpecial() {
+    Sfx.unlock();
+    if (myEnergy() < 3) return;
+    S.specialArmed = !S.specialArmed;
+    if (S.specialArmed) {
+      Sfx.toss();
+      feedback('⚡ 필살기 장전! 다음 공을 타이밍에 맞춰 치세요', '#c77dff');
+    }
+  }
+
+  function attempt(ctOverride, swOverride) {
     Sfx.unlock();
     const st = S.snap;
     if (!st || !S.match) return;
@@ -603,38 +643,48 @@
     }
     const ideal = myIdeal();
     if (!ideal || S.cooldown > 0) return;
-    const ct = serverNow();
+    const ct = ctOverride || serverNow();
     const diff = (ct - ideal.at) / 1000;
+    const win = st.sp ? P.SPECIAL_WINDOW : P.TIMING_WINDOW;
     S.cooldown = 0.35;
     S.swingAnim = 1;
-    if (diff < -P.TIMING_WINDOW) {
+    if (diff < -win) {
       Sfx.whiff();
       feedback('너무 빨라요!', '#adb5bd');
       return;
     }
-    if (diff > P.TIMING_WINDOW) {
+    if (diff > win) {
       Sfx.whiff();
       feedback('너무 늦었어요!', '#adb5bd');
       return;
     }
-    const sw = swingVector();
-    const aim = aimPoint();
-    socket.emit('input', { type: 'hit', kind, aimX: aim.x, aimY: aim.y, swingX: sw.sx, swingY: Math.max(0.35, sw.sy), ct });
+    const sw = swOverride || swingVector();
+    const kind = shotKind(sw);
+    const special = !!S.specialArmed && myEnergy() >= 3 && st.phase === 'rally';
+    if (special) S.specialArmed = false;
+    socket.emit('input', { type: 'hit', kind, aimX: aimPoint().x, aimY: aimPoint().y, swingX: sw.sx, swingY: Math.max(0.35, sw.sy), ct, special });
   }
 
   canvas.addEventListener('mousemove', (e) => updateCursor(e.clientX, e.clientY));
   canvas.addEventListener('mousedown', (e) => {
     updateCursor(e.clientX, e.clientY);
-    attempt(e.button === 2 || e.shiftKey || S.cutMode ? 'cut' : 'drive');
+    if (e.button === 2) return toggleSpecial(); // 오른쪽 클릭 = 필살기 장전
+    attempt();
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 터치: 탭 = 커트, 위로 쓸어올리기 = 드라이브 (타이밍은 손가락을 댄 순간 기준)
   canvas.addEventListener(
     'touchstart',
     (e) => {
       e.preventDefault();
       const t = e.touches[0];
       updateCursor(t.clientX, t.clientY);
-      attempt(S.cutMode ? 'cut' : 'drive');
+      if (isMyServeHold()) {
+        attempt();
+        S.touch = null;
+        return;
+      }
+      S.touch = { x: t.clientX, y: t.clientY, ct: serverNow(), at: performance.now() };
     },
     { passive: false }
   );
@@ -647,17 +697,39 @@
     },
     { passive: false }
   );
+  canvas.addEventListener(
+    'touchend',
+    (e) => {
+      e.preventDefault();
+      const st = S.touch;
+      S.touch = null;
+      if (!st) return;
+      const t = e.changedTouches[0];
+      const sw = { sx: P.clamp((t.clientX - st.x) / 120, -1, 1), sy: P.clamp(-(t.clientY - st.y) / 120, -1, 1) };
+      attempt(st.ct, sw);
+    },
+    { passive: false }
+  );
   window.addEventListener('keydown', (e) => {
     if (!$('game').classList.contains('active')) return;
     if (e.code === 'Space') {
       e.preventDefault();
-      attempt(e.shiftKey || S.cutMode ? 'cut' : 'drive');
+      attempt();
+    } else if (e.code === 'KeyE' || e.code === 'KeyQ') {
+      toggleSpecial();
     }
   });
-  $('cutToggle').addEventListener('click', () => {
-    S.cutMode = !S.cutMode;
-    $('cutToggle').textContent = `커트 모드: ${S.cutMode ? 'ON' : 'OFF'}`;
-  });
+  $('specialBtn').addEventListener('click', toggleSpecial);
+
+  function updateEnergyUi() {
+    const n = myEnergy();
+    document.querySelectorAll('#energyBox .pips i').forEach((el, i) => el.classList.toggle('on', i < n));
+    const btn = $('specialBtn');
+    btn.classList.toggle('hidden', n < 3);
+    btn.classList.toggle('armed', !!S.specialArmed);
+    btn.textContent = S.specialArmed ? '⚡ 장전됨! 타이밍에 클릭' : '⚡ 필살기 (E)';
+    if (n < 3) S.specialArmed = false;
+  }
   $('muteBtn').addEventListener('click', () => ($('muteBtn').textContent = Sfx.toggle() ? '🔇' : '🔊'));
 
   function turnHint() {
@@ -672,17 +744,23 @@
     if (st.phase === 'serve') {
       if (st.server === slot) {
         mine = true;
-        text = st.held ? '🏓 내 서브! 노릴 곳을 가리키고 클릭(스페이스)으로 토스' : '⬇ 원이 공에 딱 맞을 때 클릭!';
+        text = st.held ? '🏓 내 서브! 노릴 곳을 가리키고 클릭(스페이스)으로 토스' : '⬇ 원이 공에 딱 맞을 때 클릭! (위로 밀며 클릭 = 드라이브)';
       } else text = `${nm(st.server)} 서브 준비 중 → 리시브: ${nm(m.receiver)}`;
     } else if (st.phase === 'rally') {
       if (st.next === slot) {
         mine = true;
-        text = '🎯 노릴 곳을 가리키고, 줄어드는 원이 공에 닿는 순간 클릭!';
+        text = S.specialArmed ? '⚡ 필살기 장전! 원이 닿는 순간 클릭!' : '🎯 원이 닿는 순간 클릭! ⬆위로 밀며 클릭 = 드라이브 · 그냥 클릭 = 커트';
       } else if (st.next[0] === slot[0]) text = `파트너 ${nm(st.next)} 차례 (복식은 번갈아 칩니다)`;
       else text = `상대 ${nm(st.next)} 차례 — 다음 공 준비!`;
     } else if (st.phase === 'point') text = S.pointMsg || '';
+    else if (st.phase === 'special') text = `⚡ ${nm(st.special ? st.special.slot : '')} 필살기 발동!`;
     el.textContent = text;
     el.classList.toggle('mine', mine);
+  }
+
+  // 칠 순간 0.5초 전부터 라켓을 뒤로 빼는 준비 동작
+  function windupOf(remain) {
+    return remain > 0 && remain < 0.5 ? 1 - remain / 0.5 : 0;
   }
 
   /* ---------------- 렌더 루프 ---------------- */
@@ -705,7 +783,10 @@
           paddle: pd ? { x: pd[0], y: pd[1], z: pd[2] } : null,
           isMe: p.id === S.myId,
           isTurn: st && ((st.phase === 'serve' && st.server === p.slot) || (st.phase === 'rally' && st.next === p.slot)),
-          swing: swingAge < 0.25 ? Math.sin((swingAge / 0.25) * Math.PI) : 0,
+          swing: swingAge < 0.3 ? Math.sin((swingAge / 0.3) * Math.PI) : 0,
+          bigSwing: swingAge < 0.5 && (p.lastTier === 'fire' || p.lastTier === 'special') ? 1 - swingAge / 0.5 : 0,
+          windup: st && st.ideal && st.ideal.slot === p.slot ? windupOf((st.ideal.at - serverNow()) / 1000) : 0,
+          energy: st && st.energy ? st.energy[p.slot] || 0 : 0,
         };
       });
       if (S.swingAnim > 0) S.swingAnim = Math.max(0, S.swingAnim - dt * 4);
@@ -717,15 +798,17 @@
           ball,
           fx: st ? st.fx : 'none',
           players,
-          cursor: { x: S.cursor.x, y: S.cursor.y },
+          cursor: { x: S.cursor.x, y: S.cursor.y, kind: myIdeal() && !isMyServeHold() ? shotKind(swingVector()) : null, armed: S.specialArmed },
           aim: showAim ? aimPoint() : null,
           timing: ideal ? { remain: (ideal.at - serverNow()) / 1000, x: ideal.x, y: ideal.y, z: ideal.z, window: P.TIMING_WINDOW } : null,
           board: jumboBoard(st),
+          special: S.special && now - S.special.at < S.special.dur ? { slot: S.special.slot, kind: S.special.kind, t: (now - S.special.at) / 1000, dur: S.special.dur / 1000 } : null,
           celebrate: S.celebrate ? { team: S.celebrate.team, t: (now - S.celebrate.at) / 1000 } : null,
         },
         dt
       );
       turnHint();
+      updateEnergyUi();
     }
     requestAnimationFrame(loop);
   }
@@ -737,6 +820,7 @@
       return i ? (i.at - serverNow()) / 1000 : null;
     },
     holdServe: () => !!isMyServeHold(),
+    state: () => ({ phase: S.snap && S.snap.phase, energy: myEnergy(), armed: !!S.specialArmed }),
   };
 
   /* ---------------- 인터넷 연결 관리 ---------------- */

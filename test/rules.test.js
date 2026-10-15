@@ -137,3 +137,47 @@ test('재접속하면 같은 자리로 돌아온다', () => {
   assert.strictEqual(res.player.slot, slot);
   assert.strictEqual(room.players.get('s2-new').isBot, false);
 });
+
+test('정타 3번이면 에너지가 차고 필살기는 시간을 멈춘 뒤 발사된다', () => {
+  const events = [];
+  const room = new Room('SP001', { mode: 'singles', bestOf: 1 }, (ev, p) => events.push([ev, p]));
+  room.addPlayer('human', '사람', null, 'tok');
+  room.addBot('B1');
+  room.start('human');
+  room.stop();
+  const m = room.match;
+  const me = room.players.get('human');
+  const waitMyTurn = () => {
+    let t = 0;
+    while (!(m.phase === 'rally' && m.rally.canHit && m.ideal && m.ideal.slot === 'A1') && t < 300) {
+      room.tick(1 / 60);
+      t += 1 / 60;
+    }
+    return m.ideal && m.ideal.slot === 'A1';
+  };
+  me.energy = 3;
+  assert.ok(waitMyTurn(), '리시브 차례 도달');
+  const idealAt = m.ideal.at;
+  while (room.clock < idealAt) room.tick(1 / 60);
+  const ok = room.hit('A1', { kind: 'drive', aimX: 0.2, aimY: 0.9, ct: idealAt, special: true });
+  assert.strictEqual(ok, true);
+  assert.strictEqual(m.phase, 'special');
+  assert.strictEqual(me.energy, 0);
+  assert.ok(events.some(([e]) => e === 'special'));
+  const frozen = { x: m.ball.x, y: m.ball.y, z: m.ball.z };
+  room.tick(1 / 60);
+  assert.deepStrictEqual({ x: m.ball.x, y: m.ball.y, z: m.ball.z }, frozen, '연출 중 공 정지');
+  for (let i = 0; i < 200 && m.phase === 'special'; i++) room.tick(1 / 60);
+  assert.strictEqual(m.phase, 'rally');
+  assert.ok(m.ball.special && m.ball.vy > 0, '필살기 공 발사');
+  const hit = events.filter(([e, p]) => e === 'fx' && p.type === 'hit' && p.slot === 'A1').pop()[1];
+  assert.ok(hit.special && hit.tier === 'fire');
+  // 필살기 공이 상대 코트에 떨어지는지
+  let bounce = null;
+  for (let i = 0; i < 120 && !bounce; i++) {
+    const before = events.length;
+    room.tick(1 / 60);
+    bounce = events.slice(before).find(([e, p]) => e === 'fx' && p.type === 'bounce');
+  }
+  assert.ok(bounce && bounce[1].y > 0, '상대 코트 바운드');
+});

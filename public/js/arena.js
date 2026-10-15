@@ -75,18 +75,31 @@
       this.canvas.style.width = w + 'px';
       this.canvas.style.height = h + 'px';
 
-      this.eye = v(0, -5.3, 3.3);
-      const target = v(0, 1.05, -0.45);
-      this.fwd = norm(sub(target, this.eye));
+      // 위에서 비스듬히 내려다보는 중계 카메라 (공이 내 뒤쪽으로 와도 보이도록)
+      const portrait = h > w * 1.15;
+      const fy = h / 2 / Math.tan((52 * Math.PI) / 360);
+      // 세로 화면(휴대폰)은 좌우를 조금 잘라내고 확대해서 탁구대와 선수를 크게 보여준다
+      const fx = w / 2 / Math.tan(((portrait ? 44 : 62) * Math.PI) / 360);
+      this.setCamera(v(0, -5.2, 4.6), v(0, 0.55, -0.7), Math.min(fy, fx), h * (portrait ? 0.52 : 0.55));
+      this.baseCam = this.saveCamera();
+      this.buildStatic();
+    }
+
+    setCamera(eye, target, f, cy) {
+      this.eye = eye;
+      this.fwd = norm(sub(target, eye));
       this.right = norm(cross(this.fwd, v(0, 0, 1)));
       this.up = cross(this.right, this.fwd);
-      const fy = h / 2 / Math.tan((45 * Math.PI) / 360);
-      // 세로 화면(휴대폰)은 좌우를 조금 잘라내고 확대해서 탁구대와 선수를 크게 보여준다
-      const portrait = h > w * 1.15;
-      const fx = w / 2 / Math.tan(((portrait ? 40 : 60) * Math.PI) / 360);
-      this.f = Math.min(fy, fx);
-      this.cy = h * (portrait ? 0.5 : 0.47);
-      this.buildStatic();
+      this.f = f;
+      this.cy = cy;
+    }
+
+    saveCamera() {
+      return { eye: this.eye, fwd: this.fwd, right: this.right, up: this.up, f: this.f, cy: this.cy };
+    }
+
+    restoreCamera(c) {
+      Object.assign(this, c);
     }
 
     // 월드 → 화면. B팀 화면은 탁구대를 180도 돌려서 본다.
@@ -420,6 +433,11 @@
       cv.height = Math.round(h * dpr);
       const ctx = cv.getContext('2d');
       ctx.scale(dpr, dpr);
+      this.drawTableTo(ctx);
+      this.table = cv;
+    }
+
+    drawTableTo(ctx) {
       const { HL, HW, FLOOR_Z: F } = C;
       const th = 0.03;
 
@@ -480,7 +498,6 @@
       for (let z = 0; z <= NH; z += 0.03) this.poly(ctx, [[-NO, 0, z], [NO, 0, z]], null, 'rgba(255,255,255,0.18)', 0.7);
       this.poly(ctx, [[-NO, 0, NH - 0.012], [NO, 0, NH - 0.012], [NO, 0, NH], [-NO, 0, NH]], '#fff');
       for (const sx of [-NO, NO]) this.poly(ctx, [[sx - 0.01, 0, -0.02], [sx + 0.01, 0, -0.02], [sx + 0.01, 0, NH + 0.01], [sx - 0.01, 0, NH + 0.01]], '#adb5bd');
-      this.table = cv;
     }
 
     /* ---------------- 효과 ---------------- */
@@ -534,6 +551,12 @@
         sy = (Math.random() - 0.5) * k;
       }
       ctx.setTransform(dpr, 0, 0, dpr, sx * dpr, sy * dpr);
+      if (frame.special) {
+        this.drawSpecial(ctx, frame, dt);
+        this.drawTexts(ctx, dt);
+        return;
+      }
+      if (this.specialFlash > 0) this.specialFlash -= dt;
       ctx.drawImage(this.bg, 0, 0, w, h);
       this.drawCrowd(ctx, dt);
       // 광고판 (광고가 바뀌면 다시 그린다)
@@ -560,7 +583,130 @@
       this.drawEffects(ctx, dt);
       if (frame.board) this.drawJumbotron(ctx, frame.board, dt);
       if (frame.cursor) this.drawCrosshair(ctx, frame.cursor);
+      if (this.specialFlash > 0) {
+        ctx.fillStyle = `rgba(255,255,255,${this.specialFlash * 2})`;
+        ctx.fillRect(0, 0, w, h);
+      }
       this.drawTexts(ctx, dt);
+    }
+
+    /*
+     * 필살기 연출: 매트릭스처럼 시간이 멈추고 카메라가 선수 주위를 빙글 돈다.
+     * 그동안 선수는 웃긴 춤을 추고, 마지막에 라켓을 크게 젖혀 슈퍼샷 준비!
+     */
+    drawSpecial(ctx, frame, dt) {
+      const { w, h } = this;
+      const sp = frame.special;
+      const u = Math.min(1, sp.t / sp.dur);
+      const hitter = (frame.players || []).find((p) => p.slot === sp.slot);
+      const team = sp.slot[0];
+      const pad = (hitter && hitter.paddle) || { x: 0, y: team === 'A' ? -1.8 : 1.8, z: 0.2 };
+      const xs = team === 'A' ? 1 : -1;
+      const sgn = team === 'A' ? -1 : 1;
+      // 선수 몸 위치 (drawPlayer 와 같은 계산) → 보는 사람 기준 좌표
+      let bx = pad.x - 0.3 * xs;
+      let by = sgn * Math.max(C.HL + 0.45, Math.abs(pad.y) + 0.35);
+      if (this.view === 'B') {
+        bx = -bx;
+        by = -by;
+      }
+      const ease = (k) => k * k * (3 - 2 * k);
+      const a0 = Math.atan2(this.baseCam.eye.y - by, this.baseCam.eye.x - bx);
+      const ang = a0 + ease(u) * Math.PI * 1.35;
+      const R = 3.4 - 1.5 * ease(Math.min(1, u * 2.5));
+      const camZ = 0.55 + Math.sin(u * Math.PI) * 0.45;
+      const base = this.saveCamera();
+      const f = Math.min(h / 2 / Math.tan((50 * Math.PI) / 360), w / 2 / Math.tan((64 * Math.PI) / 360));
+      this.setCamera(v(bx + Math.cos(ang) * R, by + Math.sin(ang) * R, camZ), v(bx, by, 0.05), f, h * 0.55);
+
+      // 매트릭스 배경
+      const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.7);
+      g.addColorStop(0, '#0d2a1a');
+      g.addColorStop(1, '#010604');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.font = '700 16px monospace';
+      ctx.textAlign = 'center';
+      const cols = Math.ceil(w / 22);
+      for (let i = 0; i < cols; i++) {
+        const speed = 120 + ((i * 53) % 90);
+        const y0 = ((this.time * speed + i * 137) % (h + 200)) - 100;
+        for (let k = 0; k < 8; k++) {
+          ctx.fillStyle = `rgba(80,255,140,${(0.5 * (8 - k)) / 8})`;
+          const ch = String.fromCharCode(0x30a0 + ((i * 7 + k * 13 + Math.floor(this.time * 10)) % 90));
+          ctx.fillText(ch, i * 22 + 11, y0 - k * 18);
+        }
+      }
+      // 바닥 격자 (가까운 타일만 그려짐)
+      const F = C.FLOOR_Z;
+      for (let x = -4; x < 4; x += 1) {
+        for (let y = -6; y < 6; y += 1) {
+          this.poly(ctx, [[x, y, F], [x + 1, y, F], [x + 1, y + 1, F], [x, y + 1, F]], (x + y) % 2 ? 'rgba(163,38,46,0.85)' : 'rgba(140,30,40,0.85)', 'rgba(120,255,170,0.35)', 1);
+        }
+      }
+      // 탁구대 + 선수들
+      this.drawTableTo(ctx);
+      for (const p of frame.players || []) {
+        const isHitter = p.slot === sp.slot;
+        this.drawPlayer(ctx, Object.assign({}, p, isHitter ? { dance: u < 0.78 ? sp.t : null, windup: u >= 0.78 ? (u - 0.78) / 0.22 : 0, isTurn: false } : { isTurn: false }), Object.assign({}, frame, { celebrate: null }), false);
+      }
+      // 멈춘 공 + 시간 정지 파문
+      if (frame.ball) {
+        const bp = this.project(frame.ball.x, frame.ball.y, frame.ball.z);
+        if (bp) {
+          const r = Math.max(5, bp.s * C.BALL_R * 1.6);
+          for (let k = 0; k < 3; k++) {
+            const rr = r * (2 + ((this.time * 2 + k / 3) % 1) * 6);
+            ctx.strokeStyle = `rgba(160,255,200,${0.6 * (1 - (((this.time * 2 + k / 3) % 1)))})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(bp.x, bp.y, rr, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#fffdf5';
+          ctx.shadowColor = '#c77dff';
+          ctx.shadowBlur = 20;
+          ctx.beginPath();
+          ctx.arc(bp.x, bp.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+      this.restoreCamera(base);
+
+      // 집중선
+      ctx.save();
+      ctx.translate(w / 2, h * 0.5);
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      for (let i = 0; i < 48; i++) {
+        const a = (i / 48) * Math.PI * 2 + this.time * 0.3;
+        const r0 = Math.min(w, h) * (0.42 + ((i * 17) % 10) / 60);
+        ctx.lineWidth = 1 + (i % 3);
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
+        ctx.lineTo(Math.cos(a) * w, Math.sin(a) * w);
+        ctx.stroke();
+      }
+      ctx.restore();
+      // 영화 같은 위아래 검은 띠 + 자막
+      const bar = h * 0.11 * Math.min(1, sp.t * 4);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, w, bar);
+      ctx.fillRect(0, h - bar, w, bar);
+      const name = hitter ? hitter.name : '';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `italic 900 ${Math.round(Math.min(48, w * 0.07))}px system-ui, sans-serif`;
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#000';
+      const title = u < 0.78 ? `⚡ ${name} 필살기!` : sp.kind === 'smash' ? '💥 SUPER SMASH!!' : '🌪 SUPER DRIVE!!';
+      ctx.strokeText(title, w / 2, h - bar - 40);
+      ctx.fillStyle = u < 0.78 ? '#c77dff' : '#ffd60a';
+      ctx.fillText(title, w / 2, h - bar - 40);
+      ctx.font = '700 14px system-ui';
+      ctx.fillStyle = 'rgba(160,255,200,0.9)';
+      ctx.fillText('BULLET TIME', w / 2, bar / 2);
+      if (u > 0.96) this.specialFlash = 0.35;
     }
 
     drawCrowd(ctx, dt) {
@@ -794,7 +940,7 @@
       const pad = p.paddle || { x: 0, y: team === 'A' ? -1.8 : 1.8, z: 0.2 };
       const sgn = team === 'A' ? -1 : 1;
       const xs = team === 'A' ? 1 : -1;
-      const bodyY = sgn * Math.max(C.HL + (near ? 0.8 : 0.45), Math.abs(pad.y) + (near ? 0.55 : 0.35));
+      const bodyY = sgn * Math.max(C.HL + (near ? 0.6 : 0.45), Math.abs(pad.y) + 0.35);
       const bodyX = pad.x - (near ? 0.45 : 0.3) * xs;
       const dt = this.lastDt;
       const t = this.time;
@@ -806,18 +952,24 @@
       an.x = bodyX;
       an.y = bodyY;
       an.leg += dt * (5 + an.speed * 9);
+      const dance = p.dance != null ? p.dance : null;
+      if (dance != null) an.leg = dance * 14;
+      const windup = p.windup || 0;
+      const big = p.bigSwing || 0;
 
       const cel = frame.celebrate;
       const celT = cel ? cel.t : 99;
       const happy = cel && cel.team === team && celT < 1.8;
       const sad = cel && cel.team && cel.team !== team && celT < 1.8;
-      const jumpZ = happy ? Math.abs(Math.sin(celT * 7)) * 0.22 : an.speed < 0.3 ? Math.abs(Math.sin(t * 3 + p.slot.charCodeAt(1))) * 0.015 : 0;
+      let jumpZ = happy ? Math.abs(Math.sin(celT * 7)) * 0.22 : an.speed < 0.3 ? Math.abs(Math.sin(t * 3 + p.slot.charCodeAt(1))) * 0.015 : 0;
+      if (dance != null) jumpZ = Math.abs(Math.sin(dance * 7)) * 0.14;
+      jumpZ += Math.sin(big * Math.PI) * 0.2; // 강타 때 점프
 
       const ground = this.project(bodyX, bodyY, C.FLOOR_Z);
       const foot = this.project(bodyX, bodyY, C.FLOOR_Z + jumpZ);
       const hand = this.project(pad.x, pad.y, pad.z);
       if (!ground || !foot) return;
-      const k = near ? 0.78 : 1;
+      const k = near ? 0.66 : 0.82;
       const s = foot.s * k;
       if (an.sx != null) {
         const vxs = (foot.x - an.sx) / dt;
@@ -825,6 +977,9 @@
       }
       an.sx = foot.x;
       const swing = p.swing || 0;
+      const paddleSideGuess = hand && hand.x > foot.x ? 1 : -1;
+      let leanV = an.lean - windup * 0.18 * paddleSideGuess + big * 0.25 * paddleSideGuess;
+      if (dance != null) leanV = Math.sin(dance * 11) * 0.35;
 
       ctx.save();
       if (near) ctx.globalAlpha = 0.75;
@@ -852,7 +1007,7 @@
 
       const fx = foot.x;
       const fy = foot.y;
-      const runAmt = Math.min(1, an.speed / 2);
+      const runAmt = dance != null ? 1 : Math.min(1, an.speed / 2);
       const legSw = Math.sin(an.leg) * runAmt * s * 0.13;
       // 다리 + 신발
       ctx.strokeStyle = '#ffe0c2';
@@ -876,10 +1031,10 @@
       // 몸통 (기울기 + 찌그러짐)
       const squash = swing * 0.14;
       const bodyCx = fx;
-      const bodyCy = fy - s * (sad ? 0.5 : 0.56);
+      const bodyCy = fy - s * ((sad ? 0.5 : 0.56) - windup * 0.07);
       ctx.save();
       ctx.translate(fx, fy);
-      ctx.rotate(an.lean + (sad ? 0.05 : 0));
+      ctx.rotate(leanV + (sad ? 0.05 : 0));
       ctx.translate(-fx, -fy);
       ctx.fillStyle = '#1b1b2f';
       ctx.beginPath();
@@ -908,13 +1063,16 @@
       ctx.restore();
 
       const shY = bodyCy - s * 0.15;
-      const lean = an.lean;
+      const lean = leanV;
       // 반대쪽 팔 (균형 / 만세 / 축 처짐)
       const freeSide = hand && hand.x > fx ? -1 : 1;
       const sx0 = fx + freeSide * s * 0.24 + lean * s * 0.3;
       let fxh;
       let fyh;
-      if (happy) {
+      if (dance != null) {
+        fxh = sx0 + freeSide * s * (0.1 + 0.15 * Math.cos(dance * 11));
+        fyh = shY - s * 0.42 * (0.5 + 0.5 * Math.sin(dance * 11));
+      } else if (happy) {
         fxh = sx0 + freeSide * s * 0.12;
         fyh = shY - s * 0.38 - Math.abs(Math.sin(celT * 7)) * s * 0.05;
       } else if (sad) {
@@ -939,9 +1097,19 @@
       if (hand) {
         let hx = hand.x;
         let hy = hand.y;
-        if (happy) {
+        if (dance != null) {
+          // 라켓을 머리 위로 빙글빙글
+          hx = fx - freeSide * s * 0.2 + Math.cos(dance * 9) * s * 0.4;
+          hy = shY - s * 0.6 + Math.sin(dance * 9) * s * 0.15;
+        } else if (happy) {
           hx = fx - freeSide * s * 0.36;
           hy = shY - s * 0.4;
+        } else if (windup > 0) {
+          // 백스윙: 라켓을 옆뒤로 크게 젖힌다
+          const bxp = fx - freeSide * s * 0.6;
+          const byp = shY + s * 0.12;
+          hx = hx + (bxp - hx) * windup;
+          hy = hy + (byp - hy) * windup;
         }
         const ax0 = fx - freeSide * s * 0.24 + lean * s * 0.3;
         ctx.strokeStyle = '#ffe0c2';
@@ -967,7 +1135,7 @@
       const headY = bodyCy - s * 0.27 - hr * 0.85 + (sad ? s * 0.08 : 0) + Math.sin(t * 5 + p.slot.charCodeAt(1)) * s * 0.012;
       ctx.save();
       ctx.translate(headX, headY);
-      ctx.rotate(lean * 0.8 + (sad ? 0.25 * Math.sin(t * 2) : 0) + (happy ? Math.sin(celT * 14) * 0.15 : 0));
+      ctx.rotate(lean * 0.8 + (sad ? 0.25 * Math.sin(t * 2) : 0) + (happy ? Math.sin(celT * 14) * 0.15 : 0) + (dance != null ? Math.sin(dance * 13) * 0.35 : 0));
       if (p.img && p.img.complete && p.img.naturalWidth) {
         ctx.drawImage(p.img, -hr, -hr, hr * 2, hr * 2);
       } else {
@@ -977,8 +1145,26 @@
         ctx.fill();
       }
       ctx.restore();
+      // 필살기 에너지가 가득 차면 보라색 오라
+      if ((p.energy || 0) >= 3 && dance == null) {
+        ctx.strokeStyle = `rgba(199,125,255,${0.5 + 0.3 * Math.sin(t * 8)})`;
+        ctx.lineWidth = Math.max(2, s * 0.03);
+        ctx.beginPath();
+        ctx.arc(headX, headY, hr * 1.12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       // 표정 효과
-      if (happy) {
+      if (dance != null) {
+        ctx.fillStyle = '#80ffaa';
+        ctx.font = `900 ${Math.max(14, s * 0.18)}px system-ui`;
+        ctx.textAlign = 'center';
+        for (let i = 0; i < 3; i++) {
+          const ph = (dance * 0.8 + i / 3) % 1;
+          ctx.globalAlpha = 1 - ph;
+          ctx.fillText(i % 2 ? '♪' : '♫', headX + (i - 1) * hr * 0.9 + Math.sin(dance * 5 + i) * 6, headY - hr - ph * s * 0.6);
+        }
+        ctx.globalAlpha = near ? 0.75 : 1;
+      } else if (happy) {
         ctx.fillStyle = '#ffd60a';
         for (let i = 0; i < 3; i++) {
           const a = t * 3 + (i * Math.PI * 2) / 3;
@@ -1009,6 +1195,13 @@
       ctx.fillRect(headX - tw / 2, ly - 9, tw, 18);
       ctx.fillStyle = p.isTurn ? '#111' : '#fff';
       ctx.fillText(label, headX, ly);
+      // 에너지 게이지 (작은 점 3개)
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = i < (p.energy || 0) ? '#c77dff' : 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.arc(headX + (i - 1) * 9, ly + 14, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
       if (p.isTurn) {
         const by = ly - 20 - Math.abs(Math.sin(t * 6)) * 8;
         ctx.fillStyle = '#ffd60a';
@@ -1282,6 +1475,14 @@
         } else if (fx === 'gold') {
           ctx.strokeStyle = `rgba(255,214,10,${k * 0.7})`;
           ctx.lineWidth = Math.max(2, c.r * 1.8 * k);
+        } else if (b.spin === 'top') {
+          // 드라이브: 주황색 회오리 잔상
+          ctx.strokeStyle = `rgba(255,150,40,${k * 0.6})`;
+          ctx.lineWidth = Math.max(1.5, c.r * 1.6 * k);
+        } else if (b.spin === 'back') {
+          // 커트: 하늘색 둥실둥실 잔상
+          ctx.strokeStyle = `rgba(120,200,255,${k * 0.5})`;
+          ctx.lineWidth = Math.max(1, c.r * 1.3 * k);
         } else {
           ctx.strokeStyle = `rgba(255,255,255,${k * 0.35})`;
           ctx.lineWidth = Math.max(1, c.r * 1.2 * k);
@@ -1293,6 +1494,41 @@
       }
 
       const r = Math.max(3.5, p.s * C.BALL_R * 1.5);
+      // 탑스핀 회오리: 잔상 위로 돌아가는 고리
+      if (b.spin === 'top' && speed > 1.5) {
+        ctx.strokeStyle = fx === 'fire' ? 'rgba(255,240,150,0.7)' : 'rgba(255,190,90,0.75)';
+        ctx.lineWidth = 1.5;
+        for (let i = n - 2; i > 0 && i > n - 9; i -= 2) {
+          const c = this.trail[i];
+          const rot = this.time * 25 + i;
+          ctx.beginPath();
+          ctx.ellipse(c.x, c.y, c.r * 1.6, c.r * 0.7, rot, 0, Math.PI * 1.3);
+          ctx.stroke();
+        }
+        // 속도선
+        if (n > 3) {
+          const a = this.trail[n - 4];
+          const dx = p.x - a.x;
+          const dy = p.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.lineWidth = 1;
+          for (const off of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(p.x - (dx / len) * r * 2 + (-dy / len) * r * 1.8 * off, p.y - (dy / len) * r * 2 + (dx / len) * r * 1.8 * off);
+            ctx.lineTo(p.x - (dx / len) * r * 7 + (-dy / len) * r * 1.8 * off, p.y - (dy / len) * r * 7 + (dx / len) * r * 1.8 * off);
+            ctx.stroke();
+          }
+        }
+      }
+      if (b.special) {
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 6);
+        glow.addColorStop(0, 'rgba(230,180,255,0.95)');
+        glow.addColorStop(0.4, 'rgba(160,80,255,0.5)');
+        glow.addColorStop(1, 'rgba(120,0,255,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(p.x - r * 6, p.y - r * 6, r * 12, r * 12);
+      }
       if (fx === 'fire') {
         for (let i = 0; i < 3; i++) {
           this.particles.push({
@@ -1405,6 +1641,18 @@
 
     drawCrosshair(ctx, cur) {
       ctx.save();
+      if (cur.kind) {
+        // 지금 클릭하면 나갈 공 종류 미리보기
+        const label = cur.armed ? '⚡ 필살기' : cur.kind === 'drive' ? '⬆ 드라이브' : '커트';
+        ctx.font = '900 14px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.strokeText(label, cur.x + 14, cur.y + 16);
+        ctx.fillStyle = cur.armed ? '#c77dff' : cur.kind === 'drive' ? '#ffa94d' : '#74c0fc';
+        ctx.fillText(label, cur.x + 14, cur.y + 16);
+      }
       ctx.strokeStyle = 'rgba(255,255,255,0.8)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();

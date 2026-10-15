@@ -206,6 +206,18 @@
     }
     if (tier === 'fire') T *= 0.75;
     else if (tier === 'gold') T *= 0.88;
+    // 필살기: 공이 높으면 슈퍼 스매시(납작하고 매우 빠름), 낮으면 슈퍼 드라이브(크게 휘며 뚝 떨어짐)
+    let specialKind = null;
+    if (opts.special) {
+      specialKind = ball.z > 0.28 ? 'smash' : 'drive';
+      if (specialKind === 'smash') {
+        T = 0.42;
+        extraAz = 1.2;
+      } else {
+        T = 0.5;
+        extraAz = 6.5;
+      }
+    }
 
     const x0 = ball.x;
     const y0 = ball.y;
@@ -230,7 +242,7 @@
 
     const tx = aimP * xs;
     const ty = depthP * dir;
-    const ax = side * 1.9 * xs; // 사이드 스핀: 휘어 들어가는 공
+    const ax = side * (opts.special ? 2.8 : 1.9) * xs; // 사이드 스핀: 휘어 들어가는 공
     const az = -(C.G + extraAz);
 
     let v;
@@ -259,11 +271,13 @@
         vz: v.vz,
         ax,
         az,
-        spin: kind === 'drive' ? 'top' : 'back',
+        spin: kind === 'drive' || specialKind ? 'top' : 'back',
         side,
+        special: !!opts.special,
       },
-      kind,
-      tier,
+      kind: specialKind || kind,
+      special: specialKind,
+      tier: opts.special ? 'fire' : tier,
       quality: q,
       power,
     };
@@ -349,7 +363,7 @@
     }
     const vx = (tx - x0) / Ttot - 0.5 * ax * Ttot;
     return {
-      ball: { vx, vy: best.vy, vz: best.vz0, ax, az: -C.G, spin, side },
+      ball: { vx, vy: best.vy, vz: best.vz0, ax, az: -C.G, spin, side, special: false },
       kind,
       tier,
       quality: q,
@@ -394,9 +408,10 @@
 
   // 클릭 시각과 이상적 순간의 차이(초) → 타이밍 품질 0..1
   const TIMING_WINDOW = 0.3;
-  function timingQuality(diff) {
-    return clamp(1 - Math.abs(diff) / TIMING_WINDOW, 0, 1);
+  const SPECIAL_WINDOW = 0.16; // 필살기 공은 받아치기 어렵다
+  function timingQuality(diff, window) {
+    return clamp(1 - Math.abs(diff) / (window || TIMING_WINDOW), 0, 1);
   }
 
-  return { C, createBall, step, bounce, computeShot, computeServe, qualityTier, clamp, onTable, predictIdeal, timingQuality, TIMING_WINDOW };
+  return { C, createBall, step, bounce, computeShot, computeServe, qualityTier, clamp, onTable, predictIdeal, timingQuality, TIMING_WINDOW, SPECIAL_WINDOW };
 });

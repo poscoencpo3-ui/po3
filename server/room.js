@@ -11,6 +11,8 @@ const HISTORY_MS = 500; // 지연 보정용 공 상태 기록 길이
 const MAX_REWIND_MS = 350; // 인터넷 지연 보정 한도
 const FAULT_GRACE_MS = 300; // "못 받아침" 판정 유예 (지연된 클릭이 도착할 시간)
 const RUN_SPEED = 5.5; // 캐릭터 자동 이동 속도 (m/s)
+const ENERGY_MAX = 3; // 정타(GREAT 이상) 3번이면 필살기 게이지가 가득 찬다
+const SPECIAL_MS = 2800; // 필살기 연출 동안 시간이 멈춘다
 
 const BOT_NAMES = ['로봇 핑', '로봇 퐁', '알파 스매시', '사이보그 커트', '메카 드라이브'];
 
@@ -239,6 +241,7 @@ class Room {
       lastPoint: null,
     };
     this.history = [];
+    for (const p of this.players.values()) p.energy = 0;
     this.setupServe();
     this.emit('started', { mode: this.mode, bestOf: this.bestOf });
     this.emitLobby(true);
@@ -369,7 +372,9 @@ class Room {
     const { t: ct, rec } = this.rewind(opts.ct);
     if (!rec) return false;
     const diff = (ct - m.ideal.at) / 1000;
-    const quality = P.timingQuality(diff);
+    const quality = P.timingQuality(diff, m.ball.special ? P.SPECIAL_WINDOW : P.TIMING_WINDOW);
+    const hp = this.playerInSlot(slot);
+    const useSpecial = !!opts.special && m.phase === 'rally' && hp && (hp.energy || 0) >= ENERGY_MAX;
     if (quality <= 0) {
       if (socketId) this.emitTo(socketId, 'fx', { type: 'whiff', slot, diff });
       return false;
@@ -395,7 +400,7 @@ class Room {
       if (r.nextHitter !== slot) return false;
       ball = Object.assign({}, rec.ball);
       if ((team === 'A' && ball.y > 0.15) || (team === 'B' && ball.y < -0.15)) return false;
-      shot = P.computeShot(ball, team, Object.assign({}, opts, { quality }), this.rng);
+      shot = P.computeShot(ball, team, Object.assign({}, opts, { quality: useSpecial ? 1 : quality, special: useSpecial }), this.rng);
       r.serveFlight = false;
       r.idx = (r.idx + 1) % r.order.length;
       r.pending = null;
@@ -404,7 +409,6 @@ class Room {
     } else {
       return false;
     }
-    Object.assign(m.ball, ball, shot.ball);
     r.bounces = 0;
     r.netTouch = false;
     r.canHit = false;
@@ -412,10 +416,29 @@ class Room {
     r.lastTeam = team;
     r.lastHitAt = this.clock;
     r.nextHitter = r.order[(r.idx + 1) % r.order.length];
+    if (hp) {
+      hp.paddle = { x: ball.x, y: ball.y, z: ball.z };
+      if (useSpecial) hp.energy = 0;
+      else if (shot.tier !== 'none' && !r.serveFlight) hp.energy = Math.min(ENERGY_MAX, (hp.energy || 0) + 1);
+    }
+    if (useSpecial) {
+      // 필살기: 공을 멈춰 세우고 연출이 끝나면 발사
+      Object.assign(m.ball, ball, { vx: 0, vy: 0, vz: 0, ax: 0, az: 0 });
+      m.phase = 'special';
+      m.ideal = null;
+      m.special = { slot, until: this.clock + SPECIAL_MS, shot, ball, diff };
+      this.emit('special', { slot, kind: shot.kind, ms: SPECIAL_MS });
+      return true;
+    }
+    Object.assign(m.ball, ball, shot.ball);
     m.fx = shot.tier;
-    const hp = this.playerInSlot(slot);
-    if (hp) hp.paddle = { x: ball.x, y: ball.y, z: ball.z };
     this.updateIdeal();
+    this.emitHit(slot, shot, ball, diff);
+    return true;
+  }
+
+  emitHit(slot, shot, ball, diff) {
+    const r = this.match.rally;
     this.emit('fx', {
       type: 'hit',
       slot,
@@ -428,8 +451,20 @@ class Room {
       x: ball.x,
       y: ball.y,
       z: ball.z,
+      special: !!shot.special,
     });
-    return true;
+  }
+
+  finishSpecial() {
+    const m = this.match;
+    const sp = m.special;
+    m.special = null;
+    m.phase = 'rally';
+    Object.assign(m.ball, sp.ball, sp.shot.ball);
+    m.fx = 'fire';
+    this.match.rally.lastHitAt = this.clock;
+    this.updateIdeal();
+    this.emitHit(sp.slot, sp.shot, sp.ball, sp.diff);
   }
 
   onBounce(x, y) {
@@ -622,6 +657,8 @@ class Room {
       }
       if (r.pending && this.clock - r.pending.at > FAULT_GRACE_MS) this.awardPoint(r.pending.team, r.pending.reason);
       if (m.phase === 'point' && m.phaseTime > POINT_PAUSE) this.afterPoint();
+    } else if (m.phase === 'special') {
+      if (this.clock >= m.special.until) this.finishSpecial();
     } else if (m.phase === 'gameover') {
       if (m.phaseTime > GAME_PAUSE) this.nextGame();
     }
@@ -649,6 +686,7 @@ class Room {
   movePlayers(dt) {
     const m = this.match;
     const r = m.rally;
+    if (m.phase === 'special') return; // 필살기 연출 중에는 모두 정지
     for (const p of this.players.values()) {
       let target = this.homePosition(p.slot);
       if (m.phase === 'serve' && m.server === p.slot) {
@@ -678,13 +716,20 @@ class Room {
     const b = m.ball;
     const r = m.rally;
     const paddles = {};
-    for (const p of this.players.values()) paddles[p.slot] = [round(p.paddle.x), round(p.paddle.y), round(p.paddle.z)];
+    const energy = {};
+    for (const p of this.players.values()) {
+      paddles[p.slot] = [round(p.paddle.x), round(p.paddle.y), round(p.paddle.z)];
+      energy[p.slot] = p.energy || 0;
+    }
     this.emit('state', {
       t: Math.round(this.clock),
       phase: m.phase,
       ball: [b.x, b.y, b.z, b.vx, b.vy, b.vz, b.ax, b.az].map(round),
       spin: b.spin,
       side: round(b.side),
+      sp: !!b.special,
+      energy,
+      special: m.special ? { slot: m.special.slot, left: Math.max(0, Math.round(m.special.until - this.clock)) } : null,
       fx: m.fx,
       held: r.held,
       tossed: r.tossed,
@@ -734,7 +779,8 @@ class Room {
         const ready = m.phase === 'serve' ? r.tossed : r.canHit;
         if (ready) {
           bot.plan.done = true;
-          this.hit(p.slot, Object.assign(opts(), { ct: Math.min(this.clock, Math.max(bot.plan.at, this.clock - 20)) }));
+          const special = (p.energy || 0) >= ENERGY_MAX && Math.random() < 0.6;
+          this.hit(p.slot, Object.assign(opts(), { special, ct: Math.min(this.clock, Math.max(bot.plan.at, this.clock - 20)) }));
         }
       }
     }
