@@ -11,7 +11,9 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.View
+import android.widget.Button
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -20,11 +22,18 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
 import com.wakeupcall.duo.databinding.ActivityMainBinding
+import com.wakeupcall.duo.databinding.ItemConnectionBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private var pairListener: ListenerRegistration? = null
+
+    /** One live Firestore listener per pairing, only while this screen is visible. */
+    private val uiListeners = mutableMapOf<String, ListenerRegistration>()
+
+    /** Latest "ack.nonce" seen per pairing code, used to render each row's sent/confirmed status. */
+    private val ackNonces = mutableMapOf<String, Long>()
+
     private val previewHandler = Handler(Looper.getMainLooper())
     private var previewRunnable: Runnable? = null
     private var isPreviewPlaying = false
@@ -57,19 +66,18 @@ class MainActivity : AppCompatActivity() {
         startWakeService()
         setupListeners()
         setupSoundSettings()
-        refreshUi()
+        rebuildConnectionsList()
     }
 
     override fun onStart() {
         super.onStart()
-        attachLiveStatusListener()
+        attachAllLiveListeners()
         refreshFullScreenIntentStatus()
     }
 
     override fun onStop() {
         super.onStop()
-        pairListener?.remove()
-        pairListener = null
+        detachAllLiveListeners()
         cancelPreview()
     }
 
@@ -91,8 +99,6 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         binding.buttonCreateCode.setOnClickListener { onCreateCode() }
         binding.buttonJoinCode.setOnClickListener { onJoinCode() }
-        binding.buttonWake.setOnClickListener { onSendWake() }
-        binding.buttonUnpair.setOnClickListener { onUnpair() }
 
         binding.buttonBatteryOptimization.setOnClickListener {
             startActivity(
@@ -209,9 +215,10 @@ class MainActivity : AppCompatActivity() {
         FirestoreRepo.createPair(deviceId, name) { code, error ->
             binding.buttonCreateCode.isEnabled = true
             if (code != null) {
-                PrefsManager.savePairing(this, code, "A", "")
-                attachLiveStatusListener()
-                refreshUi()
+                PrefsManager.addPairing(this, code, "A", "")
+                restartWakeServiceListener()
+                attachAllLiveListeners()
+                rebuildConnectionsList()
             } else {
                 Toast.makeText(this, error ?: getString(R.string.error_create_failed), Toast.LENGTH_SHORT).show()
             }
@@ -235,10 +242,11 @@ class MainActivity : AppCompatActivity() {
         FirestoreRepo.joinPair(code, deviceId, name) { partnerName, error ->
             binding.buttonJoinCode.isEnabled = true
             if (partnerName != null) {
-                PrefsManager.savePairing(this, code, "B", partnerName)
+                PrefsManager.addPairing(this, code, "B", partnerName)
+                binding.editJoinCode.setText("")
                 restartWakeServiceListener()
-                attachLiveStatusListener()
-                refreshUi()
+                attachAllLiveListeners()
+                rebuildConnectionsList()
                 Toast.makeText(this, getString(R.string.toast_partner_connected, partnerName), Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, error ?: getString(R.string.error_create_failed), Toast.LENGTH_SHORT).show()
@@ -246,15 +254,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onSendWake() {
-        val code = PrefsManager.getPairCode(this) ?: return
-        val role = PrefsManager.getMyRole(this) ?: return
-        binding.buttonWake.isEnabled = false
-        FirestoreRepo.sendWake(code, role) { success, nonce ->
-            binding.buttonWake.isEnabled = true
+    private fun sendWakeTo(pairing: Pairing, statusView: TextView, button: Button) {
+        button.isEnabled = false
+        FirestoreRepo.sendWake(pairing.code, pairing.role) { success, nonce ->
+            button.isEnabled = true
             if (success) {
-                PrefsManager.setLastSentNonce(this, nonce)
-                binding.textWakeStatus.text = getString(R.string.status_sent_waiting)
+                PrefsManager.setLastSentNonce(this, pairing.code, nonce)
+                statusView.text = getString(R.string.status_sent_waiting)
                 Toast.makeText(this, getString(R.string.toast_wake_sent), Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, getString(R.string.toast_wake_failed), Toast.LENGTH_SHORT).show()
@@ -262,12 +268,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onUnpair() {
-        PrefsManager.clearPairing(this)
-        pairListener?.remove()
-        pairListener = null
+    private fun onUnpairOne(code: String) {
+        PrefsManager.removePairing(this, code)
+        ackNonces.remove(code)
+        uiListeners.remove(code)?.remove()
         restartWakeServiceListener()
-        refreshUi()
+        rebuildConnectionsList()
     }
 
     private fun restartWakeServiceListener() {
@@ -278,60 +284,71 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun attachLiveStatusListener() {
-        val code = PrefsManager.getPairCode(this) ?: return
-        pairListener?.remove()
-        pairListener = FirestoreRepo.listenPair(code) { snapshot -> handlePairSnapshot(snapshot) }
+    private fun attachAllLiveListeners() {
+        detachAllLiveListeners()
+        PrefsManager.getPairings(this).forEach { pairing ->
+            uiListeners[pairing.code] = FirestoreRepo.listenPair(pairing.code) { snapshot ->
+                handlePairSnapshot(pairing.code, snapshot)
+            }
+        }
     }
 
-    private fun handlePairSnapshot(snapshot: DocumentSnapshot?) {
+    private fun detachAllLiveListeners() {
+        uiListeners.values.forEach { it.remove() }
+        uiListeners.clear()
+    }
+
+    private fun handlePairSnapshot(code: String, snapshot: DocumentSnapshot?) {
         if (snapshot == null || !snapshot.exists()) return
-        val role = PrefsManager.getMyRole(this) ?: return
+        val pairing = PrefsManager.getPairings(this).find { it.code == code } ?: return
 
         @Suppress("UNCHECKED_CAST")
         val deviceA = snapshot.get("deviceA") as? Map<String, Any?>
         @Suppress("UNCHECKED_CAST")
         val deviceB = snapshot.get("deviceB") as? Map<String, Any?>
-        val partner = if (role == "A") deviceB else deviceA
+        val partner = if (pairing.role == "A") deviceB else deviceA
         val partnerName = partner?.get("name") as? String
-        if (!partnerName.isNullOrEmpty() && partnerName != PrefsManager.getPartnerName(this)) {
-            PrefsManager.updatePartnerName(this, partnerName)
+        if (!partnerName.isNullOrEmpty() && partnerName != pairing.partnerName) {
+            PrefsManager.updatePartnerName(this, code, partnerName)
         }
 
         @Suppress("UNCHECKED_CAST")
         val ack = snapshot.get("ack") as? Map<String, Any?>
-        val ackNonce = (ack?.get("nonce") as? Long) ?: 0L
-        val lastSent = PrefsManager.getLastSentNonce(this)
-        if (lastSent > 0) {
-            binding.textWakeStatus.text = if (ackNonce == lastSent) {
-                getString(R.string.status_confirmed)
-            } else {
-                getString(R.string.status_sent_waiting)
-            }
-        }
+        ackNonces[code] = (ack?.get("nonce") as? Long) ?: 0L
 
-        refreshUi()
+        rebuildConnectionsList()
     }
 
-    private fun refreshUi() {
-        val code = PrefsManager.getPairCode(this)
-        val partnerName = PrefsManager.getPartnerName(this)
+    private fun rebuildConnectionsList() {
+        binding.connectionsContainer.removeAllViews()
+        PrefsManager.getPairings(this).forEach { pairing ->
+            val row = ItemConnectionBinding.inflate(layoutInflater, binding.connectionsContainer, false)
 
-        if (code != null && partnerName.isNotEmpty()) {
-            binding.groupSetup.visibility = View.GONE
-            binding.groupConnected.visibility = View.VISIBLE
-            binding.textConnectedWith.text = getString(R.string.status_connected_with, partnerName)
-        } else {
-            binding.groupConnected.visibility = View.GONE
-            binding.groupSetup.visibility = View.VISIBLE
-            if (code != null) {
-                binding.textGeneratedCode.text = code
-                binding.textGeneratedCode.visibility = View.VISIBLE
-                binding.textGeneratedCodeHint.visibility = View.VISIBLE
+            if (pairing.partnerName.isNotEmpty()) {
+                row.textConnectionName.text = getString(R.string.status_connected_with, pairing.partnerName)
+                row.textConnectionCode.visibility = View.GONE
+                row.buttonConnectionWake.visibility = View.VISIBLE
+                row.buttonConnectionWake.setOnClickListener {
+                    sendWakeTo(pairing, row.textConnectionStatus, row.buttonConnectionWake)
+                }
+
+                val lastSent = PrefsManager.getLastSentNonce(this, pairing.code)
+                val ackNonce = ackNonces[pairing.code] ?: 0L
+                row.textConnectionStatus.text = when {
+                    lastSent == 0L -> ""
+                    ackNonce == lastSent -> getString(R.string.status_confirmed)
+                    else -> getString(R.string.status_sent_waiting)
+                }
             } else {
-                binding.textGeneratedCode.visibility = View.GONE
-                binding.textGeneratedCodeHint.visibility = View.GONE
+                row.textConnectionName.text = getString(R.string.status_connected_waiting)
+                row.textConnectionCode.visibility = View.VISIBLE
+                row.textConnectionCode.text = pairing.code
+                row.buttonConnectionWake.visibility = View.GONE
+                row.textConnectionStatus.text = getString(R.string.hint_waiting_partner)
             }
+
+            row.buttonConnectionUnpair.setOnClickListener { onUnpairOne(pairing.code) }
+            binding.connectionsContainer.addView(row.root)
         }
     }
 }

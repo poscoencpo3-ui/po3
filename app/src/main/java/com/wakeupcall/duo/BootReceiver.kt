@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED && PrefsManager.getPairCode(context) != null) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED && PrefsManager.hasAnyPairing(context)) {
             ContextCompat.startForegroundService(
                 context,
                 Intent(context, WakeForegroundService::class.java)

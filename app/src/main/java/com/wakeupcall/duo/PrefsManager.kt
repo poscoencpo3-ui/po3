@@ -4,15 +4,18 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.util.UUID
 
+/** One side of a pairing, as stored locally on this device. */
+data class Pairing(val code: String, val role: String, val partnerName: String)
+
 object PrefsManager {
     private const val PREFS_NAME = "wakeupcall_prefs"
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_MY_NAME = "my_name"
-    private const val KEY_PAIR_CODE = "pair_code"
-    private const val KEY_MY_ROLE = "my_role"
-    private const val KEY_PARTNER_NAME = "partner_name"
+    private const val KEY_PAIR_CODES = "pair_codes"
+    private const val KEY_ROLE_PREFIX = "role_"
+    private const val KEY_PARTNER_PREFIX = "partner_"
     private const val KEY_LAST_HANDLED_NONCE_PREFIX = "last_handled_nonce_"
-    private const val KEY_LAST_SENT_NONCE = "last_sent_nonce"
+    private const val KEY_LAST_SENT_NONCE_PREFIX = "last_sent_nonce_"
     private const val KEY_ALARM_SOUND_URI = "alarm_sound_uri"
     private const val KEY_ALARM_VOLUME_PERCENT = "alarm_volume_percent"
     const val DEFAULT_ALARM_VOLUME_PERCENT = 100
@@ -36,29 +39,45 @@ object PrefsManager {
         prefs(context).edit().putString(KEY_MY_NAME, name).apply()
     }
 
-    fun getPairCode(context: Context): String? = prefs(context).getString(KEY_PAIR_CODE, null)
+    /** All connections this device currently holds (e.g. one to a spouse, one to a child). */
+    fun getPairings(context: Context): List<Pairing> {
+        val p = prefs(context)
+        val codes = p.getStringSet(KEY_PAIR_CODES, emptySet()) ?: emptySet()
+        return codes.mapNotNull { code ->
+            val role = p.getString(KEY_ROLE_PREFIX + code, null) ?: return@mapNotNull null
+            val partnerName = p.getString(KEY_PARTNER_PREFIX + code, "") ?: ""
+            Pairing(code, role, partnerName)
+        }.sortedBy { it.code }
+    }
 
-    fun getMyRole(context: Context): String? = prefs(context).getString(KEY_MY_ROLE, null)
+    fun hasAnyPairing(context: Context): Boolean =
+        (prefs(context).getStringSet(KEY_PAIR_CODES, emptySet()) ?: emptySet()).isNotEmpty()
 
-    fun getPartnerName(context: Context): String = prefs(context).getString(KEY_PARTNER_NAME, "") ?: ""
-
-    fun savePairing(context: Context, code: String, role: String, partnerName: String) {
-        prefs(context).edit()
-            .putString(KEY_PAIR_CODE, code)
-            .putString(KEY_MY_ROLE, role)
-            .putString(KEY_PARTNER_NAME, partnerName)
+    fun addPairing(context: Context, code: String, role: String, partnerName: String) {
+        val p = prefs(context)
+        val codes = (p.getStringSet(KEY_PAIR_CODES, emptySet()) ?: emptySet()).toMutableSet()
+        codes.add(code)
+        p.edit()
+            .putStringSet(KEY_PAIR_CODES, codes)
+            .putString(KEY_ROLE_PREFIX + code, role)
+            .putString(KEY_PARTNER_PREFIX + code, partnerName)
             .apply()
     }
 
-    fun updatePartnerName(context: Context, partnerName: String) {
-        prefs(context).edit().putString(KEY_PARTNER_NAME, partnerName).apply()
+    fun updatePartnerName(context: Context, code: String, partnerName: String) {
+        prefs(context).edit().putString(KEY_PARTNER_PREFIX + code, partnerName).apply()
     }
 
-    fun clearPairing(context: Context) {
-        prefs(context).edit()
-            .remove(KEY_PAIR_CODE)
-            .remove(KEY_MY_ROLE)
-            .remove(KEY_PARTNER_NAME)
+    fun removePairing(context: Context, code: String) {
+        val p = prefs(context)
+        val codes = (p.getStringSet(KEY_PAIR_CODES, emptySet()) ?: emptySet()).toMutableSet()
+        codes.remove(code)
+        p.edit()
+            .putStringSet(KEY_PAIR_CODES, codes)
+            .remove(KEY_ROLE_PREFIX + code)
+            .remove(KEY_PARTNER_PREFIX + code)
+            .remove(KEY_LAST_SENT_NONCE_PREFIX + code)
+            .remove(KEY_LAST_HANDLED_NONCE_PREFIX + code)
             .apply()
     }
 
@@ -69,13 +88,14 @@ object PrefsManager {
         prefs(context).edit().putLong(KEY_LAST_HANDLED_NONCE_PREFIX + code, nonce).apply()
     }
 
-    fun getLastSentNonce(context: Context): Long = prefs(context).getLong(KEY_LAST_SENT_NONCE, 0L)
+    fun getLastSentNonce(context: Context, code: String): Long =
+        prefs(context).getLong(KEY_LAST_SENT_NONCE_PREFIX + code, 0L)
 
-    fun setLastSentNonce(context: Context, nonce: Long) {
-        prefs(context).edit().putLong(KEY_LAST_SENT_NONCE, nonce).apply()
+    fun setLastSentNonce(context: Context, code: String, nonce: Long) {
+        prefs(context).edit().putLong(KEY_LAST_SENT_NONCE_PREFIX + code, nonce).apply()
     }
 
-    /** Null means "use the device's default alarm sound". */
+    /** Null means "use the device's default alarm sound". Applies to every incoming pairing. */
     fun getAlarmSoundUri(context: Context): String? = prefs(context).getString(KEY_ALARM_SOUND_URI, null)
 
     fun setAlarmSoundUri(context: Context, uri: String?) {

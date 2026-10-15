@@ -23,8 +23,7 @@ import com.google.firebase.firestore.ListenerRegistration
  */
 class WakeForegroundService : Service() {
 
-    private var listenerRegistration: ListenerRegistration? = null
-    private var listeningCode: String? = null
+    private val listeners = mutableMapOf<String, ListenerRegistration>()
 
     companion object {
         const val ACTION_REFRESH_PAIRING = "com.wakeupcall.duo.action.REFRESH_PAIRING"
@@ -35,12 +34,12 @@ class WakeForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         startAsForeground()
-        attachPairListenerIfNeeded()
+        reconcileListeners()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_REFRESH_PAIRING) {
-            attachPairListenerIfNeeded(force = true)
+            reconcileListeners()
         }
         return START_STICKY
     }
@@ -48,7 +47,8 @@ class WakeForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        listenerRegistration?.remove()
+        listeners.values.forEach { it.remove() }
+        listeners.clear()
         super.onDestroy()
     }
 
@@ -76,25 +76,24 @@ class WakeForegroundService : Service() {
         )
     }
 
-    private fun attachPairListenerIfNeeded(force: Boolean = false) {
-        val code = PrefsManager.getPairCode(this)
-        if (code == null) {
-            listenerRegistration?.remove()
-            listenerRegistration = null
-            listeningCode = null
-            return
-        }
-        if (!force && code == listeningCode && listenerRegistration != null) return
-        listenerRegistration?.remove()
-        listeningCode = code
-        listenerRegistration = FirestoreRepo.listenPair(code) { snapshot ->
-            handleSnapshot(code, snapshot)
+    /** Adds a listener for every currently-paired code and drops any for codes no longer paired. */
+    private fun reconcileListeners() {
+        val currentCodes = PrefsManager.getPairings(this).map { it.code }.toSet()
+
+        val stale = listeners.keys.filterNot { it in currentCodes }
+        stale.forEach { code -> listeners.remove(code)?.remove() }
+
+        val missing = currentCodes.filterNot { listeners.containsKey(it) }
+        missing.forEach { code ->
+            listeners[code] = FirestoreRepo.listenPair(code) { snapshot ->
+                handleSnapshot(code, snapshot)
+            }
         }
     }
 
     private fun handleSnapshot(code: String, snapshot: DocumentSnapshot?) {
         if (snapshot == null || !snapshot.exists()) return
-        val myRole = PrefsManager.getMyRole(this) ?: return
+        val myRole = PrefsManager.getPairings(this).find { it.code == code }?.role ?: return
 
         @Suppress("UNCHECKED_CAST")
         val wake = snapshot.get("wake") as? Map<String, Any?> ?: return
