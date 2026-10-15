@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ping Pong Arena</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- 홈: 캐릭터 만들기 + 방 만들기/코드로 입장 -->
+    <section id="home" class="screen active">
+      <div class="hero">
+        <h1>🏓 PING PONG <span>ARENA</span></h1>
+        <p>친구에게 코드를 알려주고 1:1 단식 · 2:2 복식으로 겨뤄보세요!</p>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <h2>1. 내 캐릭터</h2>
+          <div class="avatar-row">
+            <div class="avatar-wrap">
+              <img id="avatarPreview" alt="캐릭터" />
+              <div id="avatarSpinner" class="spinner hidden"></div>
+            </div>
+            <div class="avatar-ctrl">
+              <label class="btn ghost" for="photoInput">📷 사진 올리기</label>
+              <input id="photoInput" type="file" accept="image/*" hidden />
+              <p id="avatarStatus" class="hint">사진을 넣으면 우스운 큰머리 캐릭터로 변신!</p>
+            </div>
+          </div>
+          <label class="field">닉네임 <input id="nameInput" maxlength="16" placeholder="예: 탁구왕" /></label>
+        </div>
+        <div class="card">
+          <h2>2. 게임장 만들기</h2>
+          <div class="seg" id="modeSeg">
+            <button data-mode="singles" class="on">1:1 단식</button>
+            <button data-mode="doubles">2:2 복식</button>
+          </div>
+          <label class="field">경기 방식
+            <select id="bestOf">
+              <option value="1">1게임 (11점)</option>
+              <option value="3" selected>3게임 중 2선승</option>
+              <option value="5">5게임 중 3선승</option>
+              <option value="7">7게임 중 4선승</option>
+            </select>
+          </label>
+          <button id="createBtn" class="btn primary">게임장 만들기</button>
+        </div>
+        <div class="card">
+          <h2>3. 코드로 입장</h2>
+          <input id="codeInput" class="code-input" maxlength="5" placeholder="ABCDE" autocomplete="off" />
+          <button id="joinBtn" class="btn primary">입장하기</button>
+          <p class="hint">친구가 알려준 5자리 코드를 입력하세요.</p>
+        </div>
+      </div>
+      <p id="homeError" class="error"></p>
+    </section>
+
+    <!-- 대기실 -->
+    <section id="lobby" class="screen">
+      <div class="lobby-head">
+        <div>
+          <div class="hint">게임장 코드</div>
+          <div id="roomCode" class="room-code">-----</div>
+        </div>
+        <div class="lobby-actions">
+          <button id="copyLink" class="btn ghost">🔗 초대 링크 복사</button>
+          <button id="leaveBtn" class="btn ghost">나가기</button>
+        </div>
+      </div>
+      <div id="lobbyInfo" class="hint center"></div>
+      <div class="teams">
+        <div class="team team-a"><h3>RED 팀</h3><div class="slots" id="slotsA"></div></div>
+        <div class="vs">VS</div>
+        <div class="team team-b"><h3>BLUE 팀</h3><div class="slots" id="slotsB"></div></div>
+      </div>
+      <div class="center">
+        <button id="startBtn" class="btn primary big">경기 시작!</button>
+        <p id="lobbyError" class="error"></p>
+      </div>
+      <div class="howto">
+        <h3>조작법</h3>
+        <ul>
+          <li><b>서브</b>: 내 서브 차례에 클릭(또는 스페이스) → 공 토스 → 공이 떨어질 때 공을 클릭!</li>
+          <li><b>리턴</b>: 공이 내 코트에 바운드되면 마우스로 따라가서 공을 클릭</li>
+          <li><b>왼쪽 클릭 = 드라이브</b>(탑스핀, 빠르고 낮게) · <b>오른쪽 클릭 / Shift+클릭 = 커트</b>(백스핀, 느리고 뜸)</li>
+          <li>클릭하면서 마우스를 <b>앞(위)으로 휘두르면 파워</b>, <b>좌우로 휘두르면 공이 휘어서</b> 들어갑니다</li>
+          <li>공 한가운데를 정점 타이밍에 맞히면 <b style="color:#ffd60a">황금공</b>, 완벽하면 <b style="color:#ff7b00">🔥불꽃공</b>!</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 경기 -->
+    <section id="game" class="screen">
+      <canvas id="canvas"></canvas>
+      <div id="scoreboard" class="scoreboard"></div>
+      <div id="turnHint" class="turn-hint"></div>
+      <div class="game-btns">
+        <button id="cutToggle" class="btn ghost small" title="터치 화면용: 탭을 커트로">커트 모드: OFF</button>
+        <button id="muteBtn" class="btn ghost small">🔊</button>
+        <button id="exitBtn" class="btn ghost small">나가기</button>
+      </div>
+      <div id="banner" class="banner hidden"></div>
+    </section>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/shared/physics.js"></script>
+    <script src="/js/audio.js"></script>
+    <script src="/js/caricature.js"></script>
+    <script src="/js/arena.js"></script>
+    <script src="/js/game.js"></script>
+  </body>
+</html>

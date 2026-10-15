@@ -1,0 +1,19 @@
+{
+  "name": "pingpong-arena",
+  "version": "1.0.0",
+  "description": "올림픽 스타일 멀티플레이 탁구 게임 (1:1 단식 / 2:2 복식, 방 코드 입장, Higgsfield 캐릭터 생성)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
