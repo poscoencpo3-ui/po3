@@ -1,0 +1,66 @@
+{
+  "rotateSec": 8,
+  "jumbotronEverySec": 30,
+  "ads": [
+    {
+      "id": "house-arena",
+      "slots": ["board", "jumbotron"],
+      "title": "PING PONG ARENA",
+      "sub": "친구를 초대해서 2:2 복식!",
+      "bg": "#0b3d91",
+      "fg": "#ffffff",
+      "weight": 3
+    },
+    {
+      "id": "house-smash",
+      "slots": ["board"],
+      "title": "SMASH!",
+      "bg": "#ffd60a",
+      "fg": "#10142a",
+      "weight": 2
+    },
+    {
+      "id": "house-fire",
+      "slots": ["board", "jumbotron"],
+      "title": "🔥 PERFECT = 불꽃공",
+      "sub": "타이밍 ±0.05초에 도전!",
+      "bg": "#ef476f",
+      "fg": "#ffffff",
+      "weight": 2
+    },
+    {
+      "id": "house-ad-here",
+      "slots": ["board", "jumbotron", "lobby"],
+      "title": "이 자리에 광고하세요",
+      "sub": "광고판 · 전광판 · 대기실 배너",
+      "bg": "#06d6a0",
+      "fg": "#10142a",
+      "weight": 1
+    },
+    {
+      "id": "house-fairplay",
+      "slots": ["board"],
+      "title": "FAIR PLAY",
+      "bg": "#118ab2",
+      "fg": "#ffffff",
+      "weight": 1
+    },
+    {
+      "id": "house-2026",
+      "slots": ["board"],
+      "title": "2026 GAMES",
+      "bg": "#ffffff",
+      "fg": "#10142a",
+      "weight": 1
+    },
+    {
+      "id": "house-lobby",
+      "slots": ["lobby"],
+      "title": "🏓 PING PONG ARENA",
+      "sub": "사진을 올리면 나만의 큰머리 캐릭터로 경기할 수 있어요",
+      "bg": "#1d7bf2",
+      "fg": "#ffffff",
+      "weight": 1
+    }
+  ]
+}

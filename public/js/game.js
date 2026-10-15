@@ -50,6 +50,8 @@
     store.set('pp_token', S.token);
   }
 
+  Ads.init();
+
   /* ---------------- 화면 전환 ---------------- */
   function show(id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
@@ -142,7 +144,10 @@
     history.replaceState(null, '', '?room=' + res.code);
     renderLobby();
     if (res.lobby.started && res.match && res.match.phase !== 'matchover') enterGame();
-    else show('lobby');
+    else {
+      Ads.renderLobbyBanner();
+      show('lobby');
+    }
   }
 
   $('createBtn').addEventListener('click', () => {
@@ -161,6 +166,7 @@
   $('codeInput').addEventListener('keydown', (e) => e.key === 'Enter' && $('joinBtn').click());
 
   function leave() {
+    Music.stop();
     socket.emit('leave');
     S.inRoom = false;
     S.roomCode = null;
@@ -308,6 +314,73 @@
     arena.setView(myTeam());
     show('game');
     renderScoreboard();
+    Music.start();
+    syncMusicBtn();
+  }
+
+  function syncMusicBtn() {
+    $('musicBtn').textContent = Music.enabled ? '🎵' : '🎵̸';
+    $('musicBtn').style.opacity = Music.enabled ? '1' : '0.5';
+  }
+  $('musicBtn').addEventListener('click', () => {
+    Sfx.unlock();
+    Music.toggle();
+    syncMusicBtn();
+  });
+
+  // 전광판에 보여줄 정보
+  function jumboBoard(st) {
+    const m = S.match;
+    if (!m || !S.lobby) return null;
+    const mine = myTeam();
+    const other = mine === 'A' ? 'B' : 'A';
+    const side = (team) => {
+      const ps = namesOf(team);
+      return {
+        team,
+        names: ps.map((p) => p.name),
+        imgs: ps.map((p) => S.imgs[p.slot]),
+        score: m.score[team],
+        games: m.games[team],
+        serving: m.server && m.server[0] === team && (m.phase === 'serve' || m.phase === 'rally'),
+      };
+    };
+    // 점수가 바뀌면 숫자가 톡 튀어나오게
+    const sc = `${m.score.A}:${m.score.B}`;
+    if (S.lastScore !== sc) {
+      if (S.lastScore) {
+        const [a, b] = S.lastScore.split(':').map(Number);
+        S.pop = { team: m.score.A > a ? 'A' : m.score.B > b ? 'B' : null, at: performance.now() };
+      }
+      S.lastScore = sc;
+    }
+    let ticker = '';
+    let tickerColor = '#ffb703';
+    const nm = (slot) => (playerBySlot(slot) ? playerBySlot(slot).name : slot);
+    const need = Math.floor(m.bestOf / 2) + 1;
+    const lead = m.score.A === m.score.B ? null : m.score.A > m.score.B ? 'A' : 'B';
+    const atPoint = lead && m.score[lead] >= 10;
+    if (m.phase === 'point' && S.pointMsg) ticker = S.pointMsg;
+    else if (atPoint && m.games[lead] === need - 1) {
+      ticker = `🏆 MATCH POINT — ${namesOf(lead).map((p) => p.name).join(' · ')}`;
+      tickerColor = '#ff6b6b';
+    } else if (atPoint) {
+      ticker = `⭐ GAME POINT — ${namesOf(lead).map((p) => p.name).join(' · ')}`;
+      tickerColor = '#ffd60a';
+    } else if (m.deuce) {
+      ticker = '🔥 DEUCE! 2점 차가 나야 이깁니다';
+      tickerColor = '#ff7b00';
+    } else if (m.phase === 'serve') ticker = `🏓 서브 ${nm(m.server)} → 리시브 ${nm(m.receiver)}`;
+    else ticker = `${m.bestOf === 1 ? '단판' : `${m.bestOf}게임 중 ${need}선승`} · ${S.lobby.mode === 'doubles' ? '2:2 복식' : '1:1 단식'} · PING PONG ARENA`;
+    return {
+      left: side(mine),
+      right: side(other),
+      gameNo: m.gameNo,
+      phase: st ? st.phase : m.phase,
+      ticker,
+      tickerColor,
+      pop: S.pop ? { team: S.pop.team, t: (performance.now() - S.pop.at) / 1000 } : null,
+    };
   }
 
   socket.on('started', () => {
@@ -369,6 +442,8 @@
       if (again) again.onclick = () => socket.emit('start', null, (res) => res && res.error && alert(res.error));
       $('toLobby').onclick = () => {
         banner.classList.add('hidden');
+        Music.stop();
+        Ads.renderLobbyBanner();
         show('lobby');
       };
       arena.celebrate(m.winner);
@@ -422,7 +497,10 @@
       const curve = Math.abs(e.curve) > 0.45 ? (e.curve > 0 ? ' ↪커브' : ' ↩커브') : '';
       const x = pr ? pr.x : null;
       const y = pr ? pr.y - 50 : null;
-      if (e.tier === 'fire') arena.addText('🔥 PERFECT ' + kind + '!', '#ff7b00', true);
+      if (e.tier === 'fire') {
+        arena.addText('🔥 PERFECT ' + kind + '!', '#ff7b00', true);
+        arena.jumboFlash('🔥 PERFECT!', '#ff7b00');
+      }
       else if (e.tier === 'gold') arena.addText('✨ GREAT ' + kind + curve, '#ffd60a', false, x, y);
       else arena.addText(kind + curve, '#ffffff', false, x, y);
       const p = playerBySlot(e.slot);
@@ -454,7 +532,11 @@
     }
     const mine = e.team === myTeam();
     arena.celebrate(e.team);
+    S.celebrate = { team: e.team, at: performance.now() };
     Sfx.cheer(e.fx === 'fire');
+    Music.swell();
+    const scorers = namesOf(e.team).map((p) => p.name).join(' · ');
+    arena.jumboFlash(`POINT! ${scorers}`, TEAM_COLOR[e.team]);
     arena.addText(mine ? '득점! 🎉' : '실점 😵', mine ? '#06d6a0' : '#ff6b6b', true);
     S.pointMsg = e.reason;
   });
@@ -627,6 +709,7 @@
         };
       });
       if (S.swingAnim > 0) S.swingAnim = Math.max(0, S.swingAnim - dt * 4);
+      Music.intensity = S.match && S.match.deuce ? 1 : 0;
       const ideal = myIdeal();
       const showAim = st && ((st.phase === 'rally' && st.next === mySlot()) || (st.phase === 'serve' && st.server === mySlot()));
       arena.draw(
@@ -637,6 +720,8 @@
           cursor: { x: S.cursor.x, y: S.cursor.y },
           aim: showAim ? aimPoint() : null,
           timing: ideal ? { remain: (ideal.at - serverNow()) / 1000, x: ideal.x, y: ideal.y, z: ideal.z, window: P.TIMING_WINDOW } : null,
+          board: jumboBoard(st),
+          celebrate: S.celebrate ? { team: S.celebrate.team, t: (now - S.celebrate.at) / 1000 } : null,
         },
         dt
       );

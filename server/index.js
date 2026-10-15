@@ -10,6 +10,7 @@ const express = require('express');
 const { Server } = require('socket.io');
 const { Room } = require('./room');
 const higgsfield = require('./higgsfield');
+const ads = require('./ads');
 
 const PORT = Number(process.env.PORT || 3000);
 const app = express();
@@ -25,6 +26,15 @@ app.get('/healthz', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
 
 app.get('/api/config', (_req, res) => {
   res.json({ higgsfield: higgsfield.isConfigured() });
+});
+
+// 광고(스폰서) — server/ads.json 참고
+app.get('/api/ads', (_req, res) => res.json(ads.publicConfig()));
+app.post('/api/ads/events', (req, res) => res.json({ ok: true, recorded: ads.record(req.body && req.body.events) }));
+app.get('/api/ads/stats', (req, res) => {
+  const key = process.env.ADS_ADMIN_KEY;
+  if (!key || req.query.key !== key) return res.status(404).json({ error: 'not found' });
+  res.json(ads.getStats());
 });
 
 app.post('/api/caricature', async (req, res) => {

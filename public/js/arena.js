@@ -50,6 +50,9 @@
       this.cheer = 0;
       this.cheerSide = null;
       this.time = 0;
+      this.anim = {};
+      this.jumbo = { flash: null };
+      this.lastDt = 1 / 60;
       this.resize();
     }
 
@@ -78,9 +81,11 @@
       this.right = norm(cross(this.fwd, v(0, 0, 1)));
       this.up = cross(this.right, this.fwd);
       const fy = h / 2 / Math.tan((45 * Math.PI) / 360);
-      const fx = w / 2 / Math.tan((60 * Math.PI) / 360);
+      // 세로 화면(휴대폰)은 좌우를 조금 잘라내고 확대해서 탁구대와 선수를 크게 보여준다
+      const portrait = h > w * 1.15;
+      const fx = w / 2 / Math.tan(((portrait ? 40 : 60) * Math.PI) / 360);
       this.f = Math.min(fy, fx);
-      this.cy = h * 0.47;
+      this.cy = h * (portrait ? 0.5 : 0.47);
       this.buildStatic();
     }
 
@@ -137,6 +142,9 @@
     /* ---------------- 정적 배경 (경기장) ---------------- */
     buildStatic() {
       const { w, h, dpr } = this;
+      // 경기장 배경은 "보는 사람 기준" 좌표로 그린다 (B팀 화면도 똑같이 보이도록)
+      const realView = this.view;
+      this.view = 'A';
       const bg = document.createElement('canvas');
       bg.width = Math.round(w * dpr);
       bg.height = Math.round(h * dpr);
@@ -204,36 +212,22 @@
       }
 
       // 바닥: 바깥은 짙은 남색, 코트는 빨간 경기용 매트
-      this.poly(ctx, [[-14, -3.2, F], [14, -3.2, F], [14, 14, F], [-14, 14, F]], '#14182c');
-      this.poly(ctx, [[-4.2, -3.2, F], [4.2, -3.2, F], [4.2, 5.6, F], [-4.2, 5.6, F]], '#a3262e');
+      this.poly(ctx, [[-14, -4.9, F], [14, -4.9, F], [14, 14, F], [-14, 14, F]], '#14182c');
+      this.poly(ctx, [[-4.2, -4.9, F], [4.2, -4.9, F], [4.2, 5.6, F], [-4.2, 5.6, F]], '#a3262e');
       // 코트 매트 결
-      for (let i = -3; i <= 5; i += 1) this.poly(ctx, [[-4.2, i, F], [4.2, i, F]], null, 'rgba(0,0,0,0.12)', 1);
+      for (let i = -4; i <= 5; i += 1) this.poly(ctx, [[-4.2, i, F], [4.2, i, F]], null, 'rgba(0,0,0,0.12)', 1);
 
-      // 펜스(광고판) — 뒤쪽 + 양옆
+      // 펜스(광고판) 위치 — 광고 내용은 buildBoards() 에서 별도 레이어로 그린다
       const boardH = 0.72;
-      const boards = [];
+      this.boardQuads = [];
       for (let i = 0; i < 6; i++) {
         const x0 = -4.2 + i * 1.4;
-        boards.push([[x0, 5.6, F], [x0 + 1.4, 5.6, F], [x0 + 1.4, 5.6, F + boardH], [x0, 5.6, F + boardH], i]);
+        this.boardQuads.push([[x0, 5.6, F], [x0 + 1.4, 5.6, F], [x0 + 1.4, 5.6, F + boardH], [x0, 5.6, F + boardH]]);
       }
       for (const sgn of [-1, 1]) {
         for (let i = 0; i < 6; i++) {
           const y0 = -1.6 + i * 1.2;
-          boards.push([[sgn * 4.2, y0, F], [sgn * 4.2, y0 + 1.2, F], [sgn * 4.2, y0 + 1.2, F + boardH], [sgn * 4.2, y0, F + boardH], i + 2]);
-        }
-      }
-      const slogans = ['PING PONG ARENA', 'SMASH!', '2026 GAMES', 'TOPSPIN', 'FAIR PLAY', 'GO!'];
-      const boardColors = ['#0b3d91', '#ffd60a', '#06d6a0', '#ef476f', '#118ab2', '#ffffff'];
-      for (const b of boards) {
-        const col = boardColors[b[4] % boardColors.length];
-        this.poly(ctx, b.slice(0, 4), col, 'rgba(0,0,0,0.5)', 1);
-        const c0 = this.project((b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2, F + boardH / 2);
-        if (c0) {
-          ctx.fillStyle = col === '#ffffff' || col === '#ffd60a' || col === '#06d6a0' ? '#10142a' : '#ffffff';
-          ctx.font = `900 ${Math.max(7, Math.min(c0.s * 0.2, 26))}px system-ui, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(slogans[b[4] % slogans.length], c0.x, c0.y);
+          this.boardQuads.push([[sgn * 4.2, y0, F], [sgn * 4.2, y0 + 1.2, F], [sgn * 4.2, y0 + 1.2, F + boardH], [sgn * 4.2, y0, F + boardH]]);
         }
       }
 
@@ -248,7 +242,7 @@
       }
 
       // 심판석 (오른쪽, 네트 옆)
-      const ux = this.view === 'A' ? 2.4 : -2.4;
+      const ux = 2.4;
       const seat = this.project(ux, 0, F + 0.75);
       const base = this.project(ux, 0, F);
       if (seat && base) {
@@ -278,16 +272,102 @@
       }
       this.bg = bg;
 
-      this.buildCrowd();
+      this.buildCrowd(realView);
+      this.view = realView;
       this.buildTable();
+      this.boardsKey = null;
     }
 
-    buildCrowd() {
+    // 텍스처(광고 이미지)를 3D 사각형(광고판)에 원근감 있게 붙인다 (아핀 변환 근사)
+    drawQuad(ctx, tex, quad) {
+      const ps = quad.map((q) => this.project(q[0], q[1], q[2]));
+      if (ps.some((p) => !p)) return;
+      let [bl, br, tr, tl] = ps;
+      if (br.x < bl.x) [bl, br, tr, tl] = [br, bl, tl, tr]; // 글자가 뒤집히지 않도록
+      const W = tex.width;
+      const H = tex.height;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(bl.x, bl.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(tl.x, tl.y);
+      ctx.closePath();
+      ctx.clip();
+      ctx.transform((tr.x - tl.x) / W, (tr.y - tl.y) / W, (bl.x - tl.x) / H, (bl.y - tl.y) / H, tl.x, tl.y);
+      ctx.drawImage(tex, 0, 0);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bl.x, bl.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(tl.x, tl.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    // 광고 한 장 → 광고판 텍스처
+    adTexture(ad) {
+      const c = document.createElement('canvas');
+      c.width = 360;
+      c.height = 72;
+      const g = c.getContext('2d');
+      g.fillStyle = ad.bg;
+      g.fillRect(0, 0, 360, 72);
+      // LED 느낌의 밝은 테두리
+      g.fillStyle = 'rgba(255,255,255,0.12)';
+      g.fillRect(0, 0, 360, 6);
+      let x = 180;
+      let maxW = 340;
+      const img = window.Ads && Ads.image(ad);
+      if (img) {
+        const ih = 56;
+        const iw = Math.min(110, (img.width / img.height) * ih);
+        g.drawImage(img, 10, 8, iw, ih);
+        x = 10 + iw + (350 - iw) / 2;
+        maxW = 340 - iw - 10;
+      }
+      g.fillStyle = ad.fg;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.font = `900 ${ad.sub ? 30 : 38}px system-ui, sans-serif`;
+      g.fillText(ad.title, x, ad.sub ? 28 : 38, maxW);
+      if (ad.sub) {
+        g.font = '700 17px system-ui, sans-serif';
+        g.fillText(ad.sub, x, 56, maxW);
+      }
+      return c;
+    }
+
+    buildBoards(ads) {
+      const { w, h, dpr } = this;
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(h * dpr);
+      const ctx = cv.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const realView = this.view;
+      this.view = 'A';
+      const cache = new Map();
+      this.boardQuads.forEach((q, i) => {
+        const ad = ads[i % Math.max(1, ads.length)] || { id: 'x', title: 'PING PONG ARENA', bg: '#0b3d91', fg: '#fff' };
+        if (!cache.has(ad.id)) cache.set(ad.id, this.adTexture(ad));
+        this.drawQuad(ctx, cache.get(ad.id), q);
+      });
+      this.view = realView;
+      this.boards = cv;
+    }
+
+    buildCrowd(realView) {
       const rnd = mulberry(7);
       const F = C.FLOOR_Z;
       const people = [];
-      const shirt = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffb703', '#fb8500', '#8338ec', '#06d6a0', '#ff006e', '#3a86ff', '#ffffff', '#222'];
-      const skin = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac'];
+      const shirt = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffb703', '#fb8500', '#8338ec', '#06d6a0', '#ff006e', '#3a86ff', '#ffffff', '#ffd6e0'];
+      const skin = ['#ffe0c2', '#f6c9a0', '#e0ac69', '#c68642', '#8d5524'];
+      const hair = ['#2b2118', '#2b2118', '#5a3825', '#e9c46a', '#d1495b', '#3a86ff'];
+      const signs = ['화이팅!', 'NICE!', '최고!', 'GO GO!', '♥', 'PERFECT', '대박!'];
       const tiers = 10;
       for (let i = 0; i < tiers; i++) {
         const y = 6.2 + i * 0.75 + 0.35;
@@ -311,19 +391,22 @@
       for (const p of people) {
         const pr = this.project(p.x, p.y, p.z);
         if (!pr || pr.x < -40 || pr.x > this.w + 40 || pr.y < -40) continue;
-        const s = pr.s;
+        const team = realView === 'A' ? p.team : p.team === 'A' ? 'B' : 'A';
+        const r = rnd();
         this.crowd.push({
           x: pr.x,
           y: pr.y,
-          s,
-          shirt: shirt[Math.floor(rnd() * shirt.length)],
+          s: pr.s,
+          shirt: rnd() < 0.35 ? TEAM_COLOR[team] : shirt[Math.floor(rnd() * shirt.length)],
           skin: skin[Math.floor(rnd() * skin.length)],
-          hair: rnd() < 0.7 ? '#2b2118' : '#e9c46a',
+          hair: hair[Math.floor(rnd() * hair.length)],
+          hat: rnd() < 0.18 ? (rnd() < 0.5 ? 'cap' : 'band') : null,
           phase: rnd() * Math.PI * 2,
           speed: 2 + rnd() * 3,
-          flag: rnd() < 0.08 ? (rnd() < 0.5 ? TEAM_COLOR.A : TEAM_COLOR.B) : null,
-          sign: rnd() < 0.03,
-          team: this.view === 'A' ? p.team : p.team === 'A' ? 'B' : 'A',
+          // 소품: 깃발 / 응원 피켓 / 응원봉
+          prop: r < 0.07 ? 'flag' : r < 0.11 ? 'sign' : r < 0.17 ? 'stick' : null,
+          sign: signs[Math.floor(rnd() * signs.length)],
+          team,
         });
       }
       // 멀리 있는 사람부터 그린다
@@ -440,6 +523,7 @@
       const ctx = this.ctx;
       const { w, h, dpr } = this;
       this.time += dt;
+      this.lastDt = Math.max(1 / 240, dt);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       let sx = 0;
       let sy = 0;
@@ -452,10 +536,18 @@
       ctx.setTransform(dpr, 0, 0, dpr, sx * dpr, sy * dpr);
       ctx.drawImage(this.bg, 0, 0, w, h);
       this.drawCrowd(ctx, dt);
+      // 광고판 (광고가 바뀌면 다시 그린다)
+      const set = window.Ads ? Ads.boards(this.boardQuads.length, Date.now()) : { key: 'none', ads: [] };
+      if (set.key !== this.boardsKey || !this.boards) {
+        this.boardsKey = set.key;
+        this.buildBoards(set.ads);
+      }
+      ctx.drawImage(this.boards, 0, 0, w, h);
+      this.drawMascots(ctx);
 
       const players = frame.players || [];
       const viewTeam = this.view;
-      const far = players.filter((p) => p.slot[0] !== viewTeam);
+      const far = players.filter((p) => p.slot[0] !== viewTeam).sort((a, b) => Math.abs(b.paddle ? b.paddle.y : 0) - Math.abs(a.paddle ? a.paddle.y : 0));
       const near = players.filter((p) => p.slot[0] === viewTeam);
 
       for (const p of far) this.drawPlayer(ctx, p, frame, false);
@@ -466,6 +558,7 @@
       if (frame.timing && frame.ball) this.drawTiming(ctx, frame.timing);
 
       this.drawEffects(ctx, dt);
+      if (frame.board) this.drawJumbotron(ctx, frame.board, dt);
       if (frame.cursor) this.drawCrosshair(ctx, frame.cursor);
       this.drawTexts(ctx, dt);
     }
@@ -474,147 +567,670 @@
       if (this.cheer > 0) this.cheer -= dt;
       const t = this.time;
       const cheering = this.cheer > 0;
+      // 20초마다 6초 동안 파도타기 응원
+      const waveOn = t % 20 < 6;
+      const waveX = ((t % 20) / 6) * (this.w + 400) - 200;
       for (const c of this.crowd) {
-        const excited = cheering && (!this.cheerSide || c.team === this.cheerSide || Math.random() < 0.002);
-        const amp = excited ? 0.28 : 0.03;
-        const bob = Math.abs(Math.sin(t * c.speed * (excited ? 2.2 : 0.6) + c.phase)) * amp * c.s;
+        const excited = cheering && (!this.cheerSide || c.team === this.cheerSide);
+        const inWave = waveOn && Math.abs(c.x - waveX) < 70;
         const s = c.s;
+        let bob = Math.abs(Math.sin(t * c.speed * (excited ? 2.2 : 0.6) + c.phase)) * (excited ? 0.28 : 0.03) * s;
+        if (inWave) bob = Math.max(bob, (1 - Math.abs(c.x - waveX) / 70) * 0.35 * s);
         const y = c.y - bob;
+        const armsUp = excited || inWave;
+        const hr = s * 0.15;
+        const hy = y - s * 0.5;
+        // 몸
         ctx.fillStyle = c.shirt;
-        ctx.fillRect(c.x - s * 0.17, y - s * 0.34, s * 0.34, s * 0.36);
+        ctx.beginPath();
+        ctx.ellipse(c.x, y - s * 0.17, s * 0.18, s * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // 팔
+        if (armsUp) {
+          ctx.strokeStyle = c.skin;
+          ctx.lineWidth = Math.max(1, s * 0.06);
+          ctx.lineCap = 'round';
+          const wv = Math.sin(t * 10 + c.phase) * s * 0.06;
+          ctx.beginPath();
+          ctx.moveTo(c.x - s * 0.14, y - s * 0.28);
+          ctx.lineTo(c.x - s * 0.24 + wv, y - s * 0.72);
+          ctx.moveTo(c.x + s * 0.14, y - s * 0.28);
+          ctx.lineTo(c.x + s * 0.24 - wv, y - s * 0.72);
+          ctx.stroke();
+        }
+        // 머리 (귀엽게 크게)
         ctx.fillStyle = c.skin;
         ctx.beginPath();
-        ctx.arc(c.x, y - s * 0.46, s * 0.12, 0, Math.PI * 2);
+        ctx.arc(c.x, hy, hr, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = c.hair;
         ctx.beginPath();
-        ctx.arc(c.x, y - s * 0.5, s * 0.12, Math.PI, Math.PI * 2);
+        ctx.arc(c.x, hy - hr * 0.15, hr * 1.02, Math.PI * 1.05, Math.PI * 1.95);
         ctx.fill();
-        if (excited) {
-          // 만세!
-          ctx.strokeStyle = c.skin;
-          ctx.lineWidth = Math.max(1, s * 0.05);
+        if (c.hat === 'cap') {
+          ctx.fillStyle = TEAM_COLOR[c.team];
           ctx.beginPath();
-          ctx.moveTo(c.x - s * 0.15, y - s * 0.3);
-          ctx.lineTo(c.x - s * 0.25, y - s * 0.7);
-          ctx.moveTo(c.x + s * 0.15, y - s * 0.3);
-          ctx.lineTo(c.x + s * 0.25, y - s * 0.7);
-          ctx.stroke();
+          ctx.arc(c.x, hy - hr * 0.3, hr * 0.95, Math.PI, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(c.x - hr * 0.2, hy - hr * 0.38, hr * 1.25, hr * 0.22);
+        } else if (c.hat === 'band') {
+          ctx.fillStyle = TEAM_COLOR[c.team];
+          ctx.fillRect(c.x - hr, hy - hr * 0.55, hr * 2, hr * 0.28);
         }
-        if (c.flag) {
+        // 얼굴 (가까운 관중만)
+        if (s > 16) {
+          ctx.fillStyle = '#1b1b2f';
+          const ey = hy + hr * 0.05;
+          ctx.beginPath();
+          ctx.arc(c.x - hr * 0.38, ey, Math.max(0.8, hr * 0.13), 0, Math.PI * 2);
+          ctx.arc(c.x + hr * 0.38, ey, Math.max(0.8, hr * 0.13), 0, Math.PI * 2);
+          ctx.fill();
+          if (armsUp) {
+            ctx.beginPath();
+            ctx.ellipse(c.x, hy + hr * 0.5, hr * 0.25, hr * 0.22, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.strokeStyle = '#1b1b2f';
+            ctx.lineWidth = Math.max(0.8, hr * 0.1);
+            ctx.beginPath();
+            ctx.arc(c.x, hy + hr * 0.3, hr * 0.28, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+          }
+          ctx.fillStyle = 'rgba(255,90,120,0.35)';
+          ctx.beginPath();
+          ctx.arc(c.x - hr * 0.62, hy + hr * 0.35, hr * 0.18, 0, Math.PI * 2);
+          ctx.arc(c.x + hr * 0.62, hy + hr * 0.35, hr * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // 소품
+        if (c.prop === 'flag') {
           const wave = Math.sin(t * 3 + c.phase) * s * 0.08;
           ctx.strokeStyle = '#ddd';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(c.x + s * 0.18, y - s * 0.2);
-          ctx.lineTo(c.x + s * 0.18, y - s * 0.95);
+          ctx.moveTo(c.x + s * 0.2, y - s * 0.2);
+          ctx.lineTo(c.x + s * 0.2, y - s * 1.0);
           ctx.stroke();
-          ctx.fillStyle = c.flag;
-          ctx.fillRect(c.x + s * 0.18, y - s * 0.95 + wave, s * 0.4, s * 0.25);
-        }
-        if (c.sign) {
+          ctx.fillStyle = TEAM_COLOR[c.team];
+          ctx.fillRect(c.x + s * 0.2, y - s * 1.0 + wave, s * 0.42, s * 0.26);
+        } else if (c.prop === 'sign') {
+          const lift = armsUp ? s * 0.25 : 0;
           ctx.fillStyle = '#fff';
-          ctx.fillRect(c.x - s * 0.35, y - s * 1.0, s * 0.7, s * 0.3);
-          ctx.fillStyle = '#d00000';
-          ctx.font = `900 ${Math.max(6, s * 0.17)}px system-ui`;
+          ctx.fillRect(c.x - s * 0.42, y - s * 1.0 - lift, s * 0.84, s * 0.32);
+          ctx.strokeStyle = TEAM_COLOR[c.team];
+          ctx.lineWidth = Math.max(1, s * 0.03);
+          ctx.strokeRect(c.x - s * 0.42, y - s * 1.0 - lift, s * 0.84, s * 0.32);
+          ctx.fillStyle = TEAM_COLOR[c.team];
+          ctx.font = `900 ${Math.max(6, s * 0.16)}px system-ui`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('NICE!', c.x, y - s * 0.85);
+          ctx.fillText(c.sign, c.x, y - s * 0.84 - lift);
+        } else if (c.prop === 'stick') {
+          const sw = Math.sin(t * (armsUp ? 9 : 3) + c.phase) * 0.5;
+          const tx = c.x + s * 0.18 + Math.sin(sw) * s * 0.3;
+          const ty = y - s * 0.65 - Math.cos(sw) * s * 0.25;
+          ctx.strokeStyle = TEAM_COLOR[c.team];
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(2, s * 0.07);
+          ctx.beginPath();
+          ctx.moveTo(c.x + s * 0.16, y - s * 0.3);
+          ctx.lineTo(tx, ty);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          ctx.beginPath();
+          ctx.arc(tx, ty, Math.max(1.5, s * 0.05), 0, Math.PI * 2);
+          ctx.fill();
         }
       }
     }
 
+    // 코트 옆 마스코트 "핑퐁이": 탁구공 모양 캐릭터가 춤춘다
+    drawMascots(ctx) {
+      const t = this.time;
+      const cheer = this.cheer > 0;
+      const spots = [
+        { x: -3.55, y: 4.7, team: this.view === 'A' ? 'A' : 'B', ph: 0 },
+        { x: 3.55, y: 4.7, team: this.view === 'A' ? 'B' : 'A', ph: 1.7 },
+      ];
+      for (const m of spots) {
+        // 배경 좌표(보는 사람 기준)
+        const realView = this.view;
+        this.view = 'A';
+        const foot = this.project(m.x, m.y, C.FLOOR_Z);
+        this.view = realView;
+        if (!foot) continue;
+        const s = foot.s;
+        const happy = cheer && (!this.cheerSide || this.cheerSide === m.team);
+        const jump = Math.abs(Math.sin(t * (happy ? 9 : 4) + m.ph)) * s * (happy ? 0.45 : 0.12);
+        const sway = Math.sin(t * 3 + m.ph) * 0.25 + (happy ? Math.sin(t * 14) * 0.2 : 0);
+        const r = s * 0.42;
+        const cx = foot.x;
+        const cy = foot.y - r - s * 0.22 - jump;
+        // 그림자
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot.y, r * 0.8 * (1 - jump / (s * 1.2)), r * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(sway * 0.4);
+        // 다리
+        ctx.strokeStyle = '#1b1b2f';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = s * 0.07;
+        const kick = Math.sin(t * 8 + m.ph) * s * 0.08;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.35, r * 0.85);
+        ctx.lineTo(-r * 0.4 + kick, r + s * 0.2);
+        ctx.moveTo(r * 0.35, r * 0.85);
+        ctx.lineTo(r * 0.4 - kick, r + s * 0.2);
+        ctx.stroke();
+        ctx.fillStyle = TEAM_COLOR[m.team];
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.42 + kick, r + s * 0.22, s * 0.1, s * 0.055, 0, 0, Math.PI * 2);
+        ctx.ellipse(r * 0.42 - kick, r + s * 0.22, s * 0.1, s * 0.055, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // 팔 (만세 / 흔들기)
+        const armA = happy ? -2.4 : -0.6 + Math.sin(t * 6 + m.ph) * 0.6;
+        ctx.strokeStyle = '#1b1b2f';
+        ctx.lineWidth = s * 0.06;
+        for (const sd of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(sd * r * 0.9, 0);
+          ctx.lineTo(sd * (r * 0.9 + Math.cos(armA) * s * 0.3), Math.sin(armA) * s * 0.3);
+          ctx.stroke();
+        }
+        // 몸 = 탁구공
+        const g = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(1, '#ffd8a8');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#e8590c';
+        ctx.lineWidth = Math.max(1, s * 0.02);
+        ctx.stroke();
+        // 머리띠
+        ctx.fillStyle = TEAM_COLOR[m.team];
+        ctx.fillRect(-r * 0.92, -r * 0.62, r * 1.84, r * 0.22);
+        // 얼굴
+        ctx.fillStyle = '#1b1b2f';
+        const blink = Math.sin(t * 1.3 + m.ph) > 0.97;
+        if (happy || blink) {
+          ctx.lineWidth = Math.max(1, s * 0.035);
+          ctx.beginPath();
+          ctx.arc(-r * 0.32, -r * 0.05, r * 0.14, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.moveTo(r * 0.46, -r * 0.05);
+          ctx.arc(r * 0.32, -r * 0.05, r * 0.14, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.ellipse(-r * 0.32, -r * 0.08, r * 0.1, r * 0.14, 0, 0, Math.PI * 2);
+          ctx.ellipse(r * 0.32, -r * 0.08, r * 0.1, r * 0.14, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(0, r * 0.22, r * (happy ? 0.3 : 0.2), 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,90,120,0.45)';
+        ctx.beginPath();
+        ctx.arc(-r * 0.6, r * 0.18, r * 0.13, 0, Math.PI * 2);
+        ctx.arc(r * 0.6, r * 0.18, r * 0.13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /*
+     * 귀여운 2등신 캐릭터: 큰 머리(사진 캐리커처) + 동글동글한 몸
+     * - 달릴 때 다리가 빨리 움직이고 몸이 기울며 먼지가 난다
+     * - 칠 때 몸이 찌그러졌다 늘어나고(squash & stretch) 라켓을 크게 휘두른다
+     * - 득점하면 폴짝폴짝 만세, 실점하면 고개를 떨군다
+     * - 칠 차례인 선수는 발밑에 빛나는 고리와 ▼ 표시
+     */
     drawPlayer(ctx, p, frame, near) {
       const team = p.slot[0];
       const pad = p.paddle || { x: 0, y: team === 'A' ? -1.8 : 1.8, z: 0.2 };
       const sgn = team === 'A' ? -1 : 1;
-      // 몸은 패들보다 살짝 뒤/바깥쪽에 선다
-      const bodyY = sgn * Math.max(C.HL + (near ? 0.8 : 0.45), Math.abs(pad.y) + (near ? 0.55 : 0.35));
       const xs = team === 'A' ? 1 : -1;
-      const bodyX = pad.x - (near ? 0.5 : 0.3) * xs;
-      const foot = this.project(bodyX, bodyY, C.FLOOR_Z);
-      const hip = this.project(bodyX, bodyY, -0.05);
-      const shoulder = this.project(bodyX, bodyY, 0.35);
-      const headC = this.project(bodyX, bodyY, 0.72);
-      const hand = this.project(pad.x, pad.y, pad.z);
-      if (!foot || !hip || !shoulder || !headC) return;
-      const s = shoulder.s;
-      ctx.save();
-      if (near) ctx.globalAlpha = 0.5;
+      const bodyY = sgn * Math.max(C.HL + (near ? 0.8 : 0.45), Math.abs(pad.y) + (near ? 0.55 : 0.35));
+      const bodyX = pad.x - (near ? 0.45 : 0.3) * xs;
+      const dt = this.lastDt;
+      const t = this.time;
 
+      // 애니메이션 상태
+      const an = this.anim[p.slot] || (this.anim[p.slot] = { x: bodyX, y: bodyY, speed: 0, leg: 0, lean: 0, sx: null });
+      const sp = Math.hypot(bodyX - an.x, bodyY - an.y) / dt;
+      an.speed += (Math.min(sp, 8) - an.speed) * Math.min(1, dt * 10);
+      an.x = bodyX;
+      an.y = bodyY;
+      an.leg += dt * (5 + an.speed * 9);
+
+      const cel = frame.celebrate;
+      const celT = cel ? cel.t : 99;
+      const happy = cel && cel.team === team && celT < 1.8;
+      const sad = cel && cel.team && cel.team !== team && celT < 1.8;
+      const jumpZ = happy ? Math.abs(Math.sin(celT * 7)) * 0.22 : an.speed < 0.3 ? Math.abs(Math.sin(t * 3 + p.slot.charCodeAt(1))) * 0.015 : 0;
+
+      const ground = this.project(bodyX, bodyY, C.FLOOR_Z);
+      const foot = this.project(bodyX, bodyY, C.FLOOR_Z + jumpZ);
+      const hand = this.project(pad.x, pad.y, pad.z);
+      if (!ground || !foot) return;
+      const k = near ? 0.78 : 1;
+      const s = foot.s * k;
+      if (an.sx != null) {
+        const vxs = (foot.x - an.sx) / dt;
+        an.lean += (Math.max(-0.35, Math.min(0.35, vxs / 900)) - an.lean) * Math.min(1, dt * 8);
+      }
+      an.sx = foot.x;
+      const swing = p.swing || 0;
+
+      ctx.save();
+      if (near) ctx.globalAlpha = 0.75;
+
+      // 칠 차례 표시: 발밑 빛나는 고리
+      if (p.isTurn) {
+        const pulse = 1 + Math.sin(t * 8) * 0.12;
+        ctx.strokeStyle = 'rgba(255,214,10,0.95)';
+        ctx.lineWidth = Math.max(2, s * 0.03);
+        ctx.beginPath();
+        ctx.ellipse(ground.x, ground.y, s * 0.42 * pulse, s * 0.12 * pulse, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = `${TEAM_COLOR[team]}55`;
+        ctx.fill();
+      }
       // 그림자
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
-      ctx.ellipse(foot.x, foot.y, s * 0.35, s * 0.08, 0, 0, Math.PI * 2);
+      ctx.ellipse(ground.x, ground.y, s * 0.3 * (1 - jumpZ), s * 0.08, 0, 0, Math.PI * 2);
       ctx.fill();
-      // 다리 (짧고 귀엽게)
-      ctx.strokeStyle = '#f1c27d';
-      ctx.lineWidth = s * 0.09;
+      // 달리기 먼지
+      if (an.speed > 1.6 && Math.random() < dt * 25) {
+        this.particles.push({ x: ground.x + (Math.random() - 0.5) * s * 0.2, y: ground.y, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 20, life: 0.4, age: 0, kind: 'dust', r: s * 0.05 });
+      }
+
+      const fx = foot.x;
+      const fy = foot.y;
+      const runAmt = Math.min(1, an.speed / 2);
+      const legSw = Math.sin(an.leg) * runAmt * s * 0.13;
+      // 다리 + 신발
+      ctx.strokeStyle = '#ffe0c2';
       ctx.lineCap = 'round';
-      const step = Math.sin(this.time * 8 + (team === 'A' ? 0 : 1)) * s * 0.04;
+      ctx.lineWidth = s * 0.1;
       ctx.beginPath();
-      ctx.moveTo(hip.x - s * 0.1, hip.y);
-      ctx.lineTo(foot.x - s * 0.12 + step, foot.y);
-      ctx.moveTo(hip.x + s * 0.1, hip.y);
-      ctx.lineTo(foot.x + s * 0.12 - step, foot.y);
+      ctx.moveTo(fx - s * 0.1, fy - s * 0.3);
+      ctx.lineTo(fx - s * 0.1 + legSw, fy - s * 0.05 - Math.max(0, Math.sin(an.leg)) * runAmt * s * 0.08);
+      ctx.moveTo(fx + s * 0.1, fy - s * 0.3);
+      ctx.lineTo(fx + s * 0.1 - legSw, fy - s * 0.05 - Math.max(0, -Math.sin(an.leg)) * runAmt * s * 0.08);
       ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.ellipse(foot.x - s * 0.13 + step, foot.y, s * 0.09, s * 0.05, 0, 0, Math.PI * 2);
-      ctx.ellipse(foot.x + s * 0.13 - step, foot.y, s * 0.09, s * 0.05, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // 반바지
+      for (const [dx, lift] of [[-s * 0.1 + legSw, Math.max(0, Math.sin(an.leg))], [s * 0.1 - legSw, Math.max(0, -Math.sin(an.leg))]]) {
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(fx + dx, fy - s * 0.03 - lift * runAmt * s * 0.08, s * 0.1, s * 0.06, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = TEAM_COLOR[team];
+        ctx.fillRect(fx + dx - s * 0.08, fy - s * 0.05 - lift * runAmt * s * 0.08, s * 0.16, s * 0.025);
+      }
+
+      // 몸통 (기울기 + 찌그러짐)
+      const squash = swing * 0.14;
+      const bodyCx = fx;
+      const bodyCy = fy - s * (sad ? 0.5 : 0.56);
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(an.lean + (sad ? 0.05 : 0));
+      ctx.translate(-fx, -fy);
       ctx.fillStyle = '#1b1b2f';
-      ctx.fillRect(hip.x - s * 0.2, hip.y - s * 0.1, s * 0.4, s * 0.18);
-      // 유니폼
+      ctx.beginPath();
+      ctx.ellipse(bodyCx, fy - s * 0.33, s * 0.2, s * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = TEAM_COLOR[team];
       ctx.beginPath();
-      ctx.moveTo(shoulder.x - s * 0.26, shoulder.y);
-      ctx.lineTo(shoulder.x + s * 0.26, shoulder.y);
-      ctx.lineTo(hip.x + s * 0.21, hip.y - s * 0.08);
-      ctx.lineTo(hip.x - s * 0.21, hip.y - s * 0.08);
-      ctx.closePath();
+      ctx.ellipse(bodyCx, bodyCy, s * 0.25 * (1 + squash), s * 0.27 * (1 - squash), 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = Math.max(1, s * 0.015);
+      ctx.stroke();
+      // 흰 줄무늬 + 등번호
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = Math.max(1.5, s * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(bodyCx - s * 0.12, bodyCy - s * 0.24);
+      ctx.lineTo(bodyCx, bodyCy - s * 0.12);
+      ctx.lineTo(bodyCx + s * 0.12, bodyCy - s * 0.24);
+      ctx.stroke();
       ctx.fillStyle = '#fff';
-      ctx.font = `900 ${Math.min(s * 0.2, 40)}px system-ui`;
+      ctx.font = `900 ${Math.max(9, Math.min(s * 0.17, 36))}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(p.slot[1], (shoulder.x + hip.x) / 2, (shoulder.y + hip.y) / 2);
-      // 팔 → 라켓
-      if (hand) {
-        ctx.strokeStyle = '#f1c27d';
-        ctx.lineWidth = s * 0.08;
-        const sx0 = shoulder.x + (hand.x > shoulder.x ? 1 : -1) * s * 0.22;
-        ctx.beginPath();
-        ctx.moveTo(sx0, shoulder.y + s * 0.03);
-        const mx = (sx0 + hand.x) / 2;
-        const my = Math.max(shoulder.y, hand.y) + s * 0.08;
-        ctx.quadraticCurveTo(mx, my, hand.x, hand.y);
-        ctx.stroke();
-        this.drawPaddle(ctx, hand.x, hand.y, hand.s * 0.15, p.swing || 0);
-      }
-      // 머리 (캐리커처)
-      const hr = s * (near ? 0.27 : 0.36);
-      if (p.img && p.img.complete && p.img.naturalWidth) {
-        const bob = Math.sin(this.time * 5 + p.slot.charCodeAt(1)) * s * 0.02;
-        ctx.drawImage(p.img, headC.x - hr, headC.y - hr * 1.15 + bob, hr * 2, hr * 2);
+      ctx.fillText(p.slot[1], bodyCx, bodyCy + s * 0.05);
+      ctx.restore();
+
+      const shY = bodyCy - s * 0.15;
+      const lean = an.lean;
+      // 반대쪽 팔 (균형 / 만세 / 축 처짐)
+      const freeSide = hand && hand.x > fx ? -1 : 1;
+      const sx0 = fx + freeSide * s * 0.24 + lean * s * 0.3;
+      let fxh;
+      let fyh;
+      if (happy) {
+        fxh = sx0 + freeSide * s * 0.12;
+        fyh = shY - s * 0.38 - Math.abs(Math.sin(celT * 7)) * s * 0.05;
+      } else if (sad) {
+        fxh = sx0 + freeSide * s * 0.04;
+        fyh = shY + s * 0.28;
       } else {
-        ctx.fillStyle = '#f1c27d';
+        fxh = sx0 + freeSide * s * 0.16 + Math.sin(an.leg) * runAmt * s * 0.1;
+        fyh = shY + s * 0.14;
+      }
+      ctx.strokeStyle = '#ffe0c2';
+      ctx.lineWidth = s * 0.085;
+      ctx.beginPath();
+      ctx.moveTo(sx0, shY);
+      ctx.lineTo(fxh, fyh);
+      ctx.stroke();
+      ctx.fillStyle = '#ffe0c2';
+      ctx.beginPath();
+      ctx.arc(fxh, fyh, s * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 라켓 든 팔 (휘두를 때 크게 호를 그린다)
+      if (hand) {
+        let hx = hand.x;
+        let hy = hand.y;
+        if (happy) {
+          hx = fx - freeSide * s * 0.36;
+          hy = shY - s * 0.4;
+        }
+        const ax0 = fx - freeSide * s * 0.24 + lean * s * 0.3;
+        ctx.strokeStyle = '#ffe0c2';
+        ctx.lineWidth = s * 0.085;
         ctx.beginPath();
-        ctx.arc(headC.x, headC.y - hr * 0.15, hr, 0, Math.PI * 2);
+        ctx.moveTo(ax0, shY);
+        ctx.quadraticCurveTo((ax0 + hx) / 2, Math.max(shY, hy) + s * 0.1, hx, hy);
+        ctx.stroke();
+        if (swing > 0.05) {
+          // 스윙 궤적
+          ctx.strokeStyle = `rgba(255,255,255,${swing * 0.7})`;
+          ctx.lineWidth = Math.max(2, s * 0.04);
+          ctx.beginPath();
+          ctx.arc(ax0, shY, Math.hypot(hx - ax0, hy - shY), -Math.PI * 0.9, -Math.PI * 0.9 + swing * Math.PI * 0.8);
+          ctx.stroke();
+        }
+        this.drawPaddle(ctx, hx, hy, Math.max(7, s * 0.13), swing);
+      }
+
+      // 머리 (캐리커처) — 크게!
+      const hr = s * (near ? 0.36 : 0.42);
+      const headX = fx + lean * s * 0.6;
+      const headY = bodyCy - s * 0.27 - hr * 0.85 + (sad ? s * 0.08 : 0) + Math.sin(t * 5 + p.slot.charCodeAt(1)) * s * 0.012;
+      ctx.save();
+      ctx.translate(headX, headY);
+      ctx.rotate(lean * 0.8 + (sad ? 0.25 * Math.sin(t * 2) : 0) + (happy ? Math.sin(celT * 14) * 0.15 : 0));
+      if (p.img && p.img.complete && p.img.naturalWidth) {
+        ctx.drawImage(p.img, -hr, -hr, hr * 2, hr * 2);
+      } else {
+        ctx.fillStyle = '#ffe0c2';
+        ctx.beginPath();
+        ctx.arc(0, 0, hr, 0, Math.PI * 2);
         ctx.fill();
       }
-      // 이름표
-      ctx.globalAlpha = 1;
-      ctx.font = `700 ${Math.max(11, Math.min(s * 0.11, 17))}px system-ui`;
-      const label = (p.isTurn ? '▶ ' : '') + p.name;
-      const tw = ctx.measureText(label).width + 12;
-      const ly = headC.y - hr * 1.25 - 12;
-      ctx.fillStyle = p.isTurn ? 'rgba(255,214,10,0.95)' : 'rgba(0,0,0,0.55)';
-      ctx.fillRect(headC.x - tw / 2, ly - 9, tw, 18);
-      ctx.fillStyle = p.isTurn ? '#111' : '#fff';
-      ctx.fillText(label, headC.x, ly);
       ctx.restore();
+      // 표정 효과
+      if (happy) {
+        ctx.fillStyle = '#ffd60a';
+        for (let i = 0; i < 3; i++) {
+          const a = t * 3 + (i * Math.PI * 2) / 3;
+          this.star(ctx, headX + Math.cos(a) * hr * 1.3, headY + Math.sin(a) * hr * 0.6 - hr * 0.3, Math.max(4, s * 0.06));
+        }
+      } else if (sad) {
+        ctx.fillStyle = '#74c0fc';
+        const dy = ((t * 1.5) % 1) * s * 0.2;
+        ctx.beginPath();
+        ctx.ellipse(headX + hr * 0.85, headY - hr * 0.3 + dy, s * 0.03, s * 0.05, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (an.speed > 2.5) {
+        ctx.fillStyle = 'rgba(160,220,255,0.9)';
+        ctx.beginPath();
+        ctx.ellipse(headX - freeSide * hr * 0.9, headY - hr * 0.4, s * 0.025, s * 0.04, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 이름표 + 차례 표시
+      ctx.globalAlpha = 1;
+      ctx.font = `700 ${Math.max(11, Math.min(s * 0.11, 16))}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const label = p.name;
+      const tw = ctx.measureText(label).width + 12;
+      const ly = headY - hr - 14;
+      ctx.fillStyle = p.isTurn ? 'rgba(255,214,10,0.95)' : `${TEAM_DARK[team]}cc`;
+      ctx.fillRect(headX - tw / 2, ly - 9, tw, 18);
+      ctx.fillStyle = p.isTurn ? '#111' : '#fff';
+      ctx.fillText(label, headX, ly);
+      if (p.isTurn) {
+        const by = ly - 20 - Math.abs(Math.sin(t * 6)) * 8;
+        ctx.fillStyle = '#ffd60a';
+        ctx.beginPath();
+        ctx.moveTo(headX - 9, by - 8);
+        ctx.lineTo(headX + 9, by - 8);
+        ctx.lineTo(headX, by + 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    star(ctx, x, y, r) {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const a = (i * Math.PI) / 5 - Math.PI / 2;
+        const rr = i % 2 ? r * 0.45 : r;
+        ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /* ---------------- 전광판 (천장에 매달린 LED 스코어보드) ---------------- */
+    jumboFlash(text, color) {
+      this.jumbo.flash = { text, color: color || '#ffd60a', t: 0 };
+    }
+
+    ledPattern() {
+      if (this._led) return this._led;
+      const c = document.createElement('canvas');
+      c.width = c.height = 4;
+      const g = c.getContext('2d');
+      g.fillStyle = 'rgba(0,0,0,0.55)';
+      g.fillRect(0, 0, 4, 4);
+      g.clearRect(0, 0, 3, 3);
+      this._led = this.ctx.createPattern(c, 'repeat');
+      return this._led;
+    }
+
+    drawJumbotron(ctx, b, dt) {
+      const W = Math.min(620, this.w - 24);
+      const H = Math.round(Math.max(76, Math.min(98, W * 0.16)));
+      const x0 = (this.w - W) / 2;
+      const y0 = 8;
+      const t = this.time;
+      ctx.save();
+      // 매달린 줄
+      ctx.strokeStyle = 'rgba(200,200,220,0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x0 + W * 0.2, 0);
+      ctx.lineTo(x0 + W * 0.2, y0);
+      ctx.moveTo(x0 + W * 0.8, 0);
+      ctx.lineTo(x0 + W * 0.8, y0);
+      ctx.stroke();
+      // 틀
+      ctx.fillStyle = '#2b2d42';
+      this.roundRect(ctx, x0 - 5, y0 - 4, W + 10, H + 8, 12);
+      ctx.fill();
+      ctx.fillStyle = '#04060f';
+      this.roundRect(ctx, x0, y0, W, H, 8);
+      ctx.fill();
+      ctx.save();
+      this.roundRect(ctx, x0, y0, W, H, 8);
+      ctx.clip();
+
+      const flash = this.jumbo.flash;
+      if (flash) {
+        flash.t += dt;
+        if (flash.t > 1.6) this.jumbo.flash = null;
+      }
+      const ad = !flash && b.phase !== 'rally' && window.Ads ? Ads.jumbotron(Date.now()) : null;
+      ctx.textBaseline = 'middle';
+      if (flash) {
+        // 큰 글씨 번쩍
+        const on = Math.floor(flash.t * 8) % 2 === 0 || flash.t > 0.6;
+        ctx.fillStyle = on ? flash.color : '#ffffff';
+        ctx.textAlign = 'center';
+        const scale = 1 + Math.max(0, 0.3 - flash.t);
+        ctx.font = `italic 900 ${Math.round(H * 0.5 * scale)}px system-ui, sans-serif`;
+        ctx.fillText(flash.text, x0 + W / 2, y0 + H / 2, W - 20);
+      } else if (ad) {
+        ctx.fillStyle = ad.bg;
+        ctx.fillRect(x0, y0, W, H);
+        const img = Ads.image(ad);
+        let cx = x0 + W / 2;
+        if (img) {
+          const ih = H - 20;
+          const iw = Math.min(W * 0.3, (img.width / img.height) * ih);
+          ctx.drawImage(img, x0 + 14, y0 + 10, iw, ih);
+          cx = x0 + 14 + iw + (W - iw - 14) / 2;
+        }
+        ctx.fillStyle = ad.fg;
+        ctx.textAlign = 'center';
+        ctx.font = `900 ${Math.round(H * 0.32)}px system-ui, sans-serif`;
+        ctx.fillText(ad.title, cx, y0 + H * (ad.sub ? 0.38 : 0.5), W * 0.8);
+        if (ad.sub) {
+          ctx.font = `700 ${Math.round(H * 0.17)}px system-ui, sans-serif`;
+          ctx.fillText(ad.sub, cx, y0 + H * 0.72, W * 0.8);
+        }
+        ctx.font = '700 10px system-ui';
+        ctx.textAlign = 'right';
+        ctx.fillText('SPONSOR', x0 + W - 8, y0 + 10);
+      } else {
+        this.drawJumboScore(ctx, b, x0, y0, W, H);
+      }
+      // LED 도트 질감 + 반사광
+      ctx.fillStyle = this.ledPattern();
+      ctx.fillRect(x0, y0, W, H);
+      const gl = ctx.createLinearGradient(0, y0, 0, y0 + H);
+      gl.addColorStop(0, 'rgba(255,255,255,0.10)');
+      gl.addColorStop(0.5, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl;
+      ctx.fillRect(x0, y0, W, H);
+      ctx.restore();
+      ctx.restore();
+    }
+
+    drawJumboScore(ctx, b, x0, y0, W, H) {
+      const t = this.time;
+      const tickH = Math.round(H * 0.2);
+      const mainH = H - tickH;
+      const half = W / 2;
+      const sides = [
+        { s: b.left, x: x0, align: 'left' },
+        { s: b.right, x: x0 + half, align: 'right' },
+      ];
+      for (const sd of sides) {
+        const team = sd.s.team;
+        const g = ctx.createLinearGradient(sd.x, 0, sd.x + half, 0);
+        const col = TEAM_COLOR[team];
+        if (sd.align === 'left') {
+          g.addColorStop(0, col);
+          g.addColorStop(0.55, `${col}33`);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+        } else {
+          g.addColorStop(0, 'rgba(0,0,0,0)');
+          g.addColorStop(0.45, `${col}33`);
+          g.addColorStop(1, col);
+        }
+        ctx.fillStyle = g;
+        ctx.fillRect(sd.x, y0, half, mainH);
+        // 얼굴 + 이름
+        const r = Math.min(mainH * 0.28, 22);
+        sd.s.imgs.forEach((img, i) => {
+          const cx = sd.align === 'left' ? sd.x + 12 + r + i * (r * 1.5) : sd.x + half - 12 - r - i * (r * 1.5);
+          const cy = y0 + 8 + r;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.clip();
+          if (img && img.complete && img.naturalWidth) ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+          else {
+            ctx.fillStyle = '#ffe0c2';
+            ctx.fill();
+          }
+          ctx.restore();
+        });
+        ctx.fillStyle = '#fff';
+        ctx.font = `700 ${Math.round(mainH * 0.15)}px system-ui`;
+        ctx.textAlign = sd.align;
+        const nx = sd.align === 'left' ? sd.x + 12 : sd.x + half - 12;
+        const names = sd.s.names.join(' · ');
+        ctx.fillText((sd.s.serving && sd.align === 'left' ? '● ' : '') + names + (sd.s.serving && sd.align === 'right' ? ' ●' : ''), nx, y0 + mainH * 0.8, half * 0.55);
+        // 큰 점수 (LED 숫자)
+        ctx.fillStyle = '#ffd60a';
+        ctx.shadowColor = '#ffb703';
+        ctx.shadowBlur = 12;
+        ctx.font = `900 ${Math.round(mainH * 0.78)}px 'Courier New', monospace`;
+        ctx.textAlign = 'center';
+        const scx = sd.align === 'left' ? x0 + half * 0.78 : x0 + half + half * 0.22;
+        const pop = b.pop && b.pop.team === team ? 1 + Math.max(0, 0.5 - b.pop.t) : 1;
+        ctx.save();
+        ctx.translate(scx, y0 + mainH * 0.54);
+        ctx.scale(pop, pop);
+        ctx.fillText(String(sd.s.score), 0, 0);
+        ctx.restore();
+        ctx.shadowBlur = 0;
+      }
+      // 가운데: 게임 정보
+      ctx.fillStyle = '#04060fcc';
+      ctx.fillRect(x0 + half - 34, y0 + 6, 68, mainH - 12);
+      ctx.fillStyle = '#9aa5d1';
+      ctx.textAlign = 'center';
+      ctx.font = `700 ${Math.round(mainH * 0.14)}px system-ui`;
+      ctx.fillText(`GAME ${b.gameNo}`, x0 + half, y0 + mainH * 0.28);
+      ctx.fillStyle = '#06d6a0';
+      ctx.font = `900 ${Math.round(mainH * 0.26)}px 'Courier New', monospace`;
+      ctx.fillText(`${b.left.games}-${b.right.games}`, x0 + half, y0 + mainH * 0.62);
+      // 아래 흐르는 글씨
+      ctx.fillStyle = '#111426';
+      ctx.fillRect(x0, y0 + mainH, W, tickH);
+      ctx.fillStyle = b.tickerColor || '#ffb703';
+      ctx.font = `700 ${Math.round(tickH * 0.68)}px system-ui`;
+      ctx.textAlign = 'left';
+      const text = b.ticker || '';
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, y0 + mainH, W, tickH);
+      ctx.clip();
+      const tw = ctx.measureText(text).width + 80;
+      if (tw - 80 < W - 20) {
+        ctx.textAlign = 'center';
+        ctx.fillText(text, x0 + W / 2, y0 + mainH + tickH / 2);
+      } else {
+        const off = (t * 70) % tw;
+        ctx.fillText(text, x0 + 10 - off, y0 + mainH + tickH / 2);
+        ctx.fillText(text, x0 + 10 - off + tw, y0 + mainH + tickH / 2);
+      }
+      ctx.restore();
+    }
+
+    roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
     }
 
     drawPaddle(ctx, x, y, r, swing) {
@@ -747,10 +1363,12 @@
         p.y += p.vy * dt;
         p.vx *= 0.94;
         p.vy *= 0.94;
+        if (p.kind === 'dust') p.r += dt * 20;
         const k = 1 - p.age / p.life;
         if (k <= 0) continue;
         let col;
-        if (p.kind === 'fire') col = k > 0.6 ? `rgba(255,240,150,${k})` : k > 0.3 ? `rgba(255,130,0,${k})` : `rgba(200,30,0,${k})`;
+        if (p.kind === 'dust') col = `rgba(120,120,130,${k * 0.35})`;
+        else if (p.kind === 'fire') col = k > 0.6 ? `rgba(255,240,150,${k})` : k > 0.3 ? `rgba(255,130,0,${k})` : `rgba(200,30,0,${k})`;
         else if (p.kind === 'spark-gold') col = `rgba(255,214,10,${k})`;
         else col = `rgba(255,255,255,${k})`;
         ctx.fillStyle = col;

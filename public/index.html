@@ -74,6 +74,7 @@
         <div class="vs">VS</div>
         <div class="team team-b"><h3>BLUE 팀</h3><div class="slots" id="slotsB"></div></div>
       </div>
+      <div id="lobbyAd" class="lobby-ad hidden"></div>
       <div class="center">
         <button id="startBtn" class="btn primary big">경기 시작!</button>
         <p id="lobbyError" class="error"></p>
@@ -100,7 +101,8 @@
       <div class="game-btns">
         <button id="cutToggle" class="btn ghost small" title="터치 화면용: 탭을 커트로">커트 모드: OFF</button>
         <span id="pingInfo" class="ping">📶 -</span>
-        <button id="muteBtn" class="btn ghost small">🔊</button>
+        <button id="musicBtn" class="btn ghost small" title="배경음악 켜기/끄기">🎵</button>
+        <button id="muteBtn" class="btn ghost small" title="효과음 켜기/끄기">🔊</button>
         <button id="exitBtn" class="btn ghost small">나가기</button>
       </div>
       <div id="banner" class="banner hidden"></div>
@@ -110,6 +112,7 @@
     <script src="/shared/physics.js"></script>
     <script src="/js/audio.js"></script>
     <script src="/js/caricature.js"></script>
+    <script src="/js/ads.js"></script>
     <script src="/js/arena.js"></script>
     <script src="/js/game.js"></script>
   </body>
