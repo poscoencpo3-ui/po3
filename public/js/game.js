@@ -38,9 +38,17 @@
     hist: [],
     cutMode: false,
     cooldown: 0,
-    lastPaddleSend: 0,
-    myPaddle: null,
+    token: store.get('pp_token') || null,
+    roomCode: null,
+    rtt: 0,
+    aim: null,
   };
+
+  // 재접속 시 같은 자리로 돌아오기 위한 개인 토큰
+  if (!S.token) {
+    S.token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    store.set('pp_token', S.token);
+  }
 
   /* ---------------- 화면 전환 ---------------- */
   function show(id) {
@@ -126,7 +134,9 @@
     }
     Sfx.unlock();
     S.inRoom = true;
+    S.roomCode = res.code;
     S.myId = res.you;
+    $('banner').classList.add('hidden');
     S.lobby = res.lobby;
     S.match = res.match;
     history.replaceState(null, '', '?room=' + res.code);
@@ -137,7 +147,7 @@
 
   $('createBtn').addEventListener('click', () => {
     $('homeError').textContent = '';
-    socket.emit('create', { name: myName(), avatar: S.avatar, mode: S.mode, bestOf: $('bestOf').value }, (res) => onEntered(res, 'homeError'));
+    socket.emit('create', { name: myName(), avatar: S.avatar, token: S.token, mode: S.mode, bestOf: $('bestOf').value }, (res) => onEntered(res, 'homeError'));
   });
   $('joinBtn').addEventListener('click', () => {
     $('homeError').textContent = '';
@@ -146,13 +156,14 @@
       $('homeError').textContent = '5자리 코드를 입력하세요.';
       return;
     }
-    socket.emit('join', { code, name: myName(), avatar: S.avatar }, (res) => onEntered(res, 'homeError'));
+    socket.emit('join', { code, name: myName(), avatar: S.avatar, token: S.token }, (res) => onEntered(res, 'homeError'));
   });
   $('codeInput').addEventListener('keydown', (e) => e.key === 'Enter' && $('joinBtn').click());
 
   function leave() {
     socket.emit('leave');
     S.inRoom = false;
+    S.roomCode = null;
     S.lobby = null;
     S.match = null;
     S.snap = null;
@@ -211,6 +222,8 @@
     if (!L) return;
     updateImages();
     $('roomCode').textContent = L.code;
+    const local = /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname);
+    $('netWarn').classList.toggle('hidden', !local);
     const isHost = L.hostId === S.myId;
     $('lobbyInfo').textContent = `${L.mode === 'doubles' ? '2:2 복식' : '1:1 단식'} · ${L.bestOf === 1 ? '1게임' : `${L.bestOf}게임 중 ${Math.floor(L.bestOf / 2) + 1}선승`} · ${isHost ? '당신이 방장입니다' : '방장이 시작하기를 기다리는 중'}`;
     const slots = L.mode === 'doubles' ? ['A1', 'A2', 'B1', 'B2'] : ['A1', 'B1'];
@@ -402,8 +415,7 @@
 
   socket.on('fx', (e) => {
     if (e.type === 'hit') {
-      const b = S.snap ? ballFromSnap(S.snap) : null;
-      const pr = b && arena.project(b.x, b.y, b.z);
+      const pr = arena.project(e.x, e.y, e.z);
       if (pr) arena.impact(pr.x, pr.y, e.tier);
       Sfx.hit(e.tier);
       const kind = e.serve ? '서브' : e.kind === 'drive' ? '드라이브' : '커트';
@@ -415,6 +427,14 @@
       else arena.addText(kind + curve, '#ffffff', false, x, y);
       const p = playerBySlot(e.slot);
       if (p) p.swingT = performance.now();
+      if (e.slot === mySlot() && e.tier === 'none') {
+        // 내 타이밍이 얼마나 어긋났는지 알려준다
+        const ms = Math.round(e.diff * 1000);
+        feedback(ms < 0 ? `조금 빨랐어요 (${-ms}ms)` : `조금 늦었어요 (${ms}ms)`, '#cfd6ff');
+      }
+    } else if (e.type === 'whiff') {
+      Sfx.whiff();
+      feedback(e.diff < 0 ? '헛스윙! 너무 빨라요' : '헛스윙! 너무 늦었어요', '#adb5bd');
     } else if (e.type === 'bounce') {
       arena.bounceFx(e.x, e.y);
       Sfx.bounce();
@@ -439,7 +459,11 @@
     S.pointMsg = e.reason;
   });
 
-  /* ---------------- 입력 ---------------- */
+  /* ---------------- 입력 ----------------
+   * 캐릭터는 공을 따라 자동으로 움직인다.
+   * 플레이어는 (1) 마우스로 상대 코트의 노릴 곳을 가리키고 (2) 타이밍에 맞춰 클릭한다.
+   * 클릭 순간 마우스를 좌우로 휘두르면 커브, 위로 휘두르면 더 빠른 공.
+   */
   function updateCursor(x, y) {
     const t = performance.now();
     S.cursor.x = x;
@@ -454,61 +478,72 @@
     const a = h[0];
     const b = h[h.length - 1];
     const dt = Math.max(16, b.t - a.t) / 1000;
-    const vx = (b.x - a.x) / dt;
-    const vy = (b.y - a.y) / dt;
-    return { sx: P.clamp(vx / 1300, -1, 1), sy: P.clamp(-vy / 1300, -1, 1) };
+    return { sx: P.clamp((b.x - a.x) / dt / 1300, -1, 1), sy: P.clamp(-(b.y - a.y) / dt / 1300, -1, 1) };
   }
 
-  function isMyTurn() {
+  // 지금 서버 시각 추정 (마지막 상태의 서버 시각 + 경과 시간)
+  function serverNow() {
+    return S.snap ? S.snap.t + (performance.now() - S.snapAt) : 0;
+  }
+
+  // 마우스 위치 → 상대 코트 위 조준점
+  function aimPoint() {
+    const team = myTeam();
+    const dir = team === 'A' ? 1 : -1;
+    const p = arena.unproject(S.cursor.x, S.cursor.y, 0);
+    return {
+      x: P.clamp(p.x, -C.HW + 0.08, C.HW - 0.08),
+      y: dir * P.clamp(p.y * dir, 0.3, C.HL - 0.08),
+    };
+  }
+
+  function myIdeal() {
     const st = S.snap;
-    if (!st || !S.match) return false;
-    const slot = mySlot();
-    if (st.phase === 'serve') return st.server === slot;
-    if (st.phase === 'rally') return st.canHit && st.next === slot;
-    return false;
+    return st && st.ideal && st.ideal.slot === mySlot() ? st.ideal : null;
   }
 
-  function hitRadius() {
-    const bs = arena.ballScreen;
-    return Math.max(48, bs ? bs.r * 7 : 48);
+  function isMyServeHold() {
+    const st = S.snap;
+    return st && st.phase === 'serve' && st.server === mySlot() && st.held;
+  }
+
+  function feedback(text, color) {
+    arena.addText(text, color, false, arena.w / 2, arena.h * 0.62);
   }
 
   function attempt(kind) {
     Sfx.unlock();
     const st = S.snap;
-    if (!st || !isMyTurn()) return;
-    if (st.phase === 'serve' && st.held) {
+    if (!st || !S.match) return;
+    if (isMyServeHold()) {
       socket.emit('input', { type: 'toss' });
       return;
     }
-    if (S.cooldown > 0) return;
-    const bs = arena.ballScreen;
-    const ball = predictedBall();
-    if (!bs || !ball) return;
-    const R = hitRadius();
-    const d = Math.hypot(S.cursor.x - bs.x, S.cursor.y - bs.y);
-    if (d > R) {
-      S.cooldown = 0.25;
+    const ideal = myIdeal();
+    if (!ideal || S.cooldown > 0) return;
+    const ct = serverNow();
+    const diff = (ct - ideal.at) / 1000;
+    S.cooldown = 0.35;
+    S.swingAnim = 1;
+    if (diff < -P.TIMING_WINDOW) {
       Sfx.whiff();
-      arena.addText('헛스윙!', '#adb5bd', false, S.cursor.x, S.cursor.y - 40);
+      feedback('너무 빨라요!', '#adb5bd');
       return;
     }
-    const dq = 1 - d / R;
-    let tq;
-    if (st.phase === 'serve') tq = ball.vz < 0 ? 1 - Math.min(1, Math.abs(ball.z - 0.3) / 0.35) : 0.35;
-    else tq = 1 - Math.min(1, Math.abs(ball.vz) / 1.6);
-    const quality = P.clamp(0.55 * dq + 0.45 * tq, 0, 1);
+    if (diff > P.TIMING_WINDOW) {
+      Sfx.whiff();
+      feedback('너무 늦었어요!', '#adb5bd');
+      return;
+    }
     const sw = swingVector();
-    S.cooldown = 0.3;
-    S.swingAnim = 1;
-    socket.emit('input', { type: 'hit', kind, swingX: sw.sx, swingY: sw.sy, quality });
+    const aim = aimPoint();
+    socket.emit('input', { type: 'hit', kind, aimX: aim.x, aimY: aim.y, swingX: sw.sx, swingY: Math.max(0.35, sw.sy), ct });
   }
 
   canvas.addEventListener('mousemove', (e) => updateCursor(e.clientX, e.clientY));
   canvas.addEventListener('mousedown', (e) => {
     updateCursor(e.clientX, e.clientY);
-    const cut = e.button === 2 || e.shiftKey || S.cutMode;
-    attempt(cut ? 'cut' : 'drive');
+    attempt(e.button === 2 || e.shiftKey || S.cutMode ? 'cut' : 'drive');
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener(
@@ -543,19 +578,6 @@
   });
   $('muteBtn').addEventListener('click', () => ($('muteBtn').textContent = Sfx.toggle() ? '🔇' : '🔊'));
 
-  function sendPaddle(now, ball) {
-    if (now - S.lastPaddleSend < 50 || !S.match) return;
-    S.lastPaddleSend = now;
-    const team = myTeam();
-    const p = arena.unproject(S.cursor.x, S.cursor.y, 0.15);
-    const sgn = team === 'A' ? -1 : 1;
-    let y = sgn * P.clamp(p.y * sgn, 0.3, 3.2);
-    const x = P.clamp(p.x, -2.2, 2.2);
-    const z = ball && isMyTurn() ? P.clamp(ball.z, -0.5, 1) : 0.2;
-    S.myPaddle = { x, y, z };
-    socket.emit('input', { type: 'paddle', x, y, z });
-  }
-
   function turnHint() {
     const st = S.snap;
     const m = S.match;
@@ -568,12 +590,12 @@
     if (st.phase === 'serve') {
       if (st.server === slot) {
         mine = true;
-        text = st.held ? '🏓 내 서브! 클릭(스페이스)으로 공을 토스' : '⬇ 공이 떨어질 때 공을 클릭! (좌:드라이브 / 우:커트, 휘두르며 커브)';
+        text = st.held ? '🏓 내 서브! 노릴 곳을 가리키고 클릭(스페이스)으로 토스' : '⬇ 원이 공에 딱 맞을 때 클릭!';
       } else text = `${nm(st.server)} 서브 준비 중 → 리시브: ${nm(m.receiver)}`;
     } else if (st.phase === 'rally') {
       if (st.next === slot) {
         mine = true;
-        text = st.canHit ? '🔥 지금! 공을 따라가 클릭 — 정점에서 치면 불꽃공!' : '공이 내 코트에 바운드되면 칠 수 있어요';
+        text = '🎯 노릴 곳을 가리키고, 줄어드는 원이 공에 닿는 순간 클릭!';
       } else if (st.next[0] === slot[0]) text = `파트너 ${nm(st.next)} 차례 (복식은 번갈아 칩니다)`;
       else text = `상대 ${nm(st.next)} 차례 — 다음 공 준비!`;
     } else if (st.phase === 'point') text = S.pointMsg || '';
@@ -591,36 +613,30 @@
       const st = S.snap;
       if (st) ballRot += dt * (st.spin === 'top' ? 25 : st.spin === 'back' ? -25 : 6);
       const ball = st ? predictedBall() : null;
-      sendPaddle(now, ball);
-      const slot = mySlot();
       const players = S.lobby.players.map((p) => {
-        let paddle = st && st.paddles[p.slot] ? { x: st.paddles[p.slot][0], y: st.paddles[p.slot][1], z: st.paddles[p.slot][2] } : null;
-        if (p.id === S.myId && S.myPaddle) paddle = S.myPaddle;
+        const pd = st && st.paddles[p.slot];
         const swingAge = p.swingT ? (now - p.swingT) / 1000 : 9;
         return {
           slot: p.slot,
-          name: p.name,
+          name: p.name + (p.away ? ' (재접속 대기)' : ''),
           img: S.imgs[p.slot],
-          paddle,
+          paddle: pd ? { x: pd[0], y: pd[1], z: pd[2] } : null,
           isMe: p.id === S.myId,
           isTurn: st && ((st.phase === 'serve' && st.server === p.slot) || (st.phase === 'rally' && st.next === p.slot)),
           swing: swingAge < 0.25 ? Math.sin((swingAge / 0.25) * Math.PI) : 0,
         };
       });
       if (S.swingAnim > 0) S.swingAnim = Math.max(0, S.swingAnim - dt * 4);
-      const myTurn = isMyTurn() && !(st && st.phase === 'serve' && st.held);
-      const bs = arena.ballScreen;
-      const R = hitRadius();
-      const sweet = bs && Math.hypot(S.cursor.x - bs.x, S.cursor.y - bs.y) < R * 0.28;
+      const ideal = myIdeal();
+      const showAim = st && ((st.phase === 'rally' && st.next === mySlot()) || (st.phase === 'serve' && st.server === mySlot()));
       arena.draw(
         {
           ball,
           fx: st ? st.fx : 'none',
           players,
-          cursor: { x: S.cursor.x, y: S.cursor.y, swing: S.swingAnim ? Math.sin(S.swingAnim * Math.PI) : 0 },
-          myTurn,
-          hitRadius: myTurn ? R : 0,
-          sweetSpot: sweet,
+          cursor: { x: S.cursor.x, y: S.cursor.y },
+          aim: showAim ? aimPoint() : null,
+          timing: ideal ? { remain: (ideal.at - serverNow()) / 1000, x: ideal.x, y: ideal.y, z: ideal.z, window: P.TIMING_WINDOW } : null,
         },
         dt
       );
@@ -629,12 +645,47 @@
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+  // 디버그/자동 테스트용
+  window.__pp = {
+    remain: () => {
+      const i = myIdeal();
+      return i ? (i.at - serverNow()) / 1000 : null;
+    },
+    holdServe: () => !!isMyServeHold(),
+  };
+
+  /* ---------------- 인터넷 연결 관리 ---------------- */
+  setInterval(() => {
+    const t0 = performance.now();
+    socket.emit('ping2', null, () => {
+      S.rtt = Math.round(performance.now() - t0);
+      const el = $('pingInfo');
+      if (el) {
+        el.textContent = `📶 ${S.rtt}ms`;
+        el.style.color = S.rtt < 100 ? '#06d6a0' : S.rtt < 200 ? '#ffd60a' : '#ff6b6b';
+      }
+    });
+  }, 2000);
 
   socket.on('disconnect', () => {
-    if (S.inRoom) {
-      S.inRoom = false;
-      $('homeError').textContent = '서버 연결이 끊겼습니다. 다시 입장해 주세요.';
-      show('home');
-    }
+    if (!S.roomCode) return;
+    const banner = $('banner');
+    banner.innerHTML = '<h2>재연결 중...</h2><div>인터넷 연결이 잠시 끊겼어요. 다시 연결되면 같은 자리로 돌아갑니다. (그동안은 봇이 대신 칩니다)</div>';
+    banner.classList.remove('hidden');
+  });
+
+  socket.on('connect', () => {
+    if (!S.roomCode) return;
+    socket.emit('join', { code: S.roomCode, name: myName(), avatar: S.avatar, token: S.token }, (res) => {
+      if (!res || res.error) {
+        S.inRoom = false;
+        S.roomCode = null;
+        $('banner').classList.add('hidden');
+        $('homeError').textContent = '게임장에 다시 들어가지 못했습니다: ' + ((res && res.error) || '연결 실패');
+        show('home');
+        return;
+      }
+      onEntered(res, 'homeError');
+    });
   });
 })();

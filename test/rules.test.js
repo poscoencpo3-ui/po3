@@ -95,3 +95,45 @@ test('봇끼리 경기를 끝까지 진행할 수 있다', () => {
     assert.ok(hits > 20, `${mode} 랠리 발생 (${hits})`);
   }
 });
+
+test('인터넷 지연 보정: 늦게 도착한 클릭도 클릭한 순간 기준으로 판정', () => {
+  const events = [];
+  const room = new Room('LAG01', { mode: 'singles', bestOf: 1 }, (ev, p) => events.push([ev, p]));
+  room.addPlayer('human', '사람', null, 'tok');
+  room.addBot('B1');
+  room.start('human');
+  room.stop();
+  const m = room.match;
+  let t = 0;
+  // 사람(A1)이 받아칠 차례가 될 때까지 진행
+  while (!(m.phase === 'rally' && m.rally.canHit && m.ideal && m.ideal.slot === 'A1') && t < 120) {
+    room.tick(1 / 60);
+    t += 1 / 60;
+  }
+  assert.ok(m.ideal && m.ideal.slot === 'A1', '리시브 차례 도달');
+  const idealAt = m.ideal.at;
+  // 정확한 순간에 클릭했지만 패킷이 150ms 늦게 도착한 상황
+  while (room.clock < idealAt + 150) room.tick(1 / 60);
+  const ok = room.hit('A1', { kind: 'drive', aimX: 0.3, aimY: 0.9, ct: idealAt });
+  assert.strictEqual(ok, true);
+  const hit = events.filter(([e, p]) => e === 'fx' && p.type === 'hit' && p.slot === 'A1').pop()[1];
+  assert.strictEqual(hit.tier, 'fire');
+  assert.strictEqual(m.rally.nextHitter, 'B1');
+});
+
+test('재접속하면 같은 자리로 돌아온다', () => {
+  const room = new Room('RJ001', { mode: 'doubles', bestOf: 1 }, () => {});
+  room.addPlayer('s1', '하나', null, 'tokA');
+  room.addPlayer('s2', '둘', null, 'tokB');
+  room.addBot('B1');
+  room.addBot('B2');
+  room.start('s1');
+  room.stop();
+  const slot = room.players.get('s2').slot;
+  room.removePlayer('s2', true);
+  assert.strictEqual(room.playerInSlot(slot).isBot, true);
+  const res = room.addPlayer('s2-new', '둘', null, 'tokB');
+  assert.strictEqual(res.rejoined, true);
+  assert.strictEqual(res.player.slot, slot);
+  assert.strictEqual(room.players.get('s2-new').isBot, false);
+});

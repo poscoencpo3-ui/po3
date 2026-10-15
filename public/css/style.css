@@ -454,3 +454,21 @@ select {
   padding: 4px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
+.warn {
+  max-width: 1000px;
+  margin: 8px auto;
+  background: rgba(255, 214, 10, 0.12);
+  border: 1px solid rgba(255, 214, 10, 0.5);
+  color: #ffe58a;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.ping {
+  align-self: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4px 8px;
+  border-radius: 8px;
+}

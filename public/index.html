@@ -68,6 +68,7 @@
         </div>
       </div>
       <div id="lobbyInfo" class="hint center"></div>
+      <p id="netWarn" class="warn hidden">⚠️ 지금 주소(localhost)는 이 컴퓨터에서만 열립니다. 친구가 인터넷으로 들어오려면 서버를 배포하거나 터널을 열어 주세요 (README의 "인터넷으로 친구와 하기" 참고).</p>
       <div class="teams">
         <div class="team team-a"><h3>RED 팀</h3><div class="slots" id="slotsA"></div></div>
         <div class="vs">VS</div>
@@ -80,11 +81,13 @@
       <div class="howto">
         <h3>조작법</h3>
         <ul>
-          <li><b>서브</b>: 내 서브 차례에 클릭(또는 스페이스) → 공 토스 → 공이 떨어질 때 공을 클릭!</li>
-          <li><b>리턴</b>: 공이 내 코트에 바운드되면 마우스로 따라가서 공을 클릭</li>
-          <li><b>왼쪽 클릭 = 드라이브</b>(탑스핀, 빠르고 낮게) · <b>오른쪽 클릭 / Shift+클릭 = 커트</b>(백스핀, 느리고 뜸)</li>
-          <li>클릭하면서 마우스를 <b>앞(위)으로 휘두르면 파워</b>, <b>좌우로 휘두르면 공이 휘어서</b> 들어갑니다</li>
-          <li>공 한가운데를 정점 타이밍에 맞히면 <b style="color:#ffd60a">황금공</b>, 완벽하면 <b style="color:#ff7b00">🔥불꽃공</b>!</li>
+          <li><b>캐릭터는 공을 따라 자동으로 움직입니다.</b> 여러분은 <b>타이밍</b>만 맞추면 됩니다!</li>
+          <li>공 주위의 <b>줄어드는 원이 공에 딱 닿는 순간 클릭</b>(또는 스페이스) — 바운드 후 공이 가장 높이 뜬 순간입니다</li>
+          <li><b>마우스로 상대 코트의 노릴 곳</b>을 가리키세요 (🎯 표시가 공이 떨어질 곳)</li>
+          <li><b>왼쪽 클릭 = 드라이브</b>(탑스핀, 빠르고 낮게) · <b>오른쪽 클릭 / Shift = 커트</b>(백스핀, 느리고 뜸)</li>
+          <li>클릭하는 순간 마우스를 <b>좌우로 휘두르면 공이 휘어서</b>, <b>위로 휘두르면 더 빠르게</b> 날아갑니다</li>
+          <li>타이밍이 좋으면 <b style="color:#ffd60a">황금공</b>, ±0.05초 안이면 <b style="color:#ff7b00">🔥불꽃공</b>!</li>
+          <li><b>서브</b>: 클릭으로 토스 → 원이 맞을 때 다시 클릭</li>
         </ul>
       </div>
     </section>
@@ -96,6 +99,7 @@
       <div id="turnHint" class="turn-hint"></div>
       <div class="game-btns">
         <button id="cutToggle" class="btn ghost small" title="터치 화면용: 탭을 커트로">커트 모드: OFF</button>
+        <span id="pingInfo" class="ping">📶 -</span>
         <button id="muteBtn" class="btn ghost small">🔊</button>
         <button id="exitBtn" class="btn ghost small">나가기</button>
       </div>

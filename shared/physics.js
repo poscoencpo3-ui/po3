@@ -213,6 +213,11 @@
     const ballXp = x0 * xs;
     let aimP = clamp(-ballXp * 0.3 + side * 0.5, -0.62, 0.62);
     let depthP = depth;
+    // 마우스로 조준한 지점(상대 코트 위 월드 좌표)이 있으면 그곳을 노린다
+    if (Number.isFinite(opts.aimX) && Number.isFinite(opts.aimY)) {
+      aimP = clamp(opts.aimX * xs, -0.66, 0.66);
+      depthP = clamp(opts.aimY * dir, kind === 'cut' ? 0.3 : 0.4, 1.28);
+    }
 
     // 타이밍 오차 → 목표 지점 흔들림 (실수하면 아웃/네트)
     const err = 1 - q;
@@ -288,6 +293,11 @@
     // 목표(상대 코트 두 번째 바운드) — 플레이어 기준 좌표
     let aimP = doubles ? -clamp(0.3 + Math.abs(side) * 0.3, 0.15, 0.6) : clamp(side * 0.55, -0.62, 0.62);
     let depthP = 0.5 + 0.7 * power;
+    if (Number.isFinite(opts.aimX) && Number.isFinite(opts.aimY)) {
+      aimP = clamp(opts.aimX * xs, -0.62, 0.62);
+      if (doubles) aimP = Math.min(aimP, -0.12); // 복식: 상대 오른쪽 하프(대각선)
+      depthP = clamp(opts.aimY * dir, 0.45, 1.25);
+    }
     const err = 1 - q;
     aimP += randn(rng) * err * 0.2;
     depthP += randn(rng) * err * 0.3;
@@ -347,5 +357,46 @@
     };
   }
 
-  return { C, createBall, step, bounce, computeShot, computeServe, qualityTier, clamp, onTable };
+  /*
+   * 이상적인 타격 순간 예측.
+   *  - 랠리: 공이 team 쪽 코트에 바운드한 뒤 가장 높이 솟은 순간(정점)
+   *  - 토스(서브): 토스한 공이 떨어지면서 높이 0.3m 를 지나는 순간
+   * 반환: {t(지금부터 초), x, y, z, bounceT} 또는 null
+   */
+  // mode: 'incoming'(아직 내 코트 바운드 전) | 'bounced'(이미 바운드함) | 'toss'(서브 토스)
+  function predictIdeal(ball, team, mode, maxT) {
+    const b = Object.assign({}, ball);
+    const dt = 1 / 120;
+    const limit = maxT || 3;
+    const toss = mode === 'toss';
+    let bounced = mode !== 'incoming';
+    let bounceT = bounced ? 0 : -1;
+    if (mode === 'bounced' && b.vz <= 0) return { t: 0, x: b.x, y: b.y, z: b.z, bounceT: 0 };
+    for (let t = 0; t < limit; t += dt) {
+      const pz = b.z;
+      const evs = step(b, dt);
+      for (const e of evs) {
+        if (e.type === 'floor') return null;
+        if (e.type === 'table' && !toss && (e.y < 0 ? 'A' : 'B') === team) {
+          bounced = true;
+          bounceT = t + dt;
+        }
+      }
+      if (!bounced) continue;
+      if (toss) {
+        if (b.vz < 0 && pz >= 0.3 && b.z <= 0.3) return { t: t + dt, x: b.x, y: b.y, z: b.z, bounceT };
+      } else if (b.vz <= 0 && t + dt > bounceT) {
+        return { t: t + dt, x: b.x, y: b.y, z: b.z, bounceT };
+      }
+    }
+    return null;
+  }
+
+  // 클릭 시각과 이상적 순간의 차이(초) → 타이밍 품질 0..1
+  const TIMING_WINDOW = 0.3;
+  function timingQuality(diff) {
+    return clamp(1 - Math.abs(diff) / TIMING_WINDOW, 0, 1);
+  }
+
+  return { C, createBall, step, bounce, computeShot, computeServe, qualityTier, clamp, onTable, predictIdeal, timingQuality, TIMING_WINDOW };
 });

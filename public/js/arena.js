@@ -72,15 +72,15 @@
       this.canvas.style.width = w + 'px';
       this.canvas.style.height = h + 'px';
 
-      this.eye = v(0, -4.25, 1.85);
-      const target = v(0, 0.3, -0.22);
+      this.eye = v(0, -5.3, 3.3);
+      const target = v(0, 1.05, -0.45);
       this.fwd = norm(sub(target, this.eye));
       this.right = norm(cross(this.fwd, v(0, 0, 1)));
       this.up = cross(this.right, this.fwd);
-      const fy = h / 2 / Math.tan((42 * Math.PI) / 360);
-      const fx = w / 2 / Math.tan((58 * Math.PI) / 360);
+      const fy = h / 2 / Math.tan((45 * Math.PI) / 360);
+      const fx = w / 2 / Math.tan((60 * Math.PI) / 360);
       this.f = Math.min(fy, fx);
-      this.cy = h * 0.5;
+      this.cy = h * 0.47;
       this.buildStatic();
     }
 
@@ -461,10 +461,12 @@
       for (const p of far) this.drawPlayer(ctx, p, frame, false);
       ctx.drawImage(this.table, 0, 0, w, h);
       if (frame.ball) this.drawBall(ctx, frame.ball, frame.fx, dt);
-      near.forEach((p, i) => this.drawNearPlayer(ctx, p, frame, i, near.length));
+      if (frame.aim) this.drawAim(ctx, frame.aim);
+      for (const p of near) this.drawPlayer(ctx, p, frame, true);
+      if (frame.timing && frame.ball) this.drawTiming(ctx, frame.timing);
 
       this.drawEffects(ctx, dt);
-      if (frame.cursor) this.drawCursor(ctx, frame.cursor, frame);
+      if (frame.cursor) this.drawCrosshair(ctx, frame.cursor);
       this.drawTexts(ctx, dt);
     }
 
@@ -527,9 +529,9 @@
       const pad = p.paddle || { x: 0, y: team === 'A' ? -1.8 : 1.8, z: 0.2 };
       const sgn = team === 'A' ? -1 : 1;
       // 몸은 패들보다 살짝 뒤/바깥쪽에 선다
-      const bodyY = sgn * Math.max(C.HL + (near ? 1.05 : 0.45), Math.abs(pad.y) + (near ? 0.6 : 0.35));
+      const bodyY = sgn * Math.max(C.HL + (near ? 0.8 : 0.45), Math.abs(pad.y) + (near ? 0.55 : 0.35));
       const xs = team === 'A' ? 1 : -1;
-      const bodyX = pad.x - (near ? 0.42 : 0.28) * xs;
+      const bodyX = pad.x - (near ? 0.5 : 0.3) * xs;
       const foot = this.project(bodyX, bodyY, C.FLOOR_Z);
       const hip = this.project(bodyX, bodyY, -0.05);
       const shoulder = this.project(bodyX, bodyY, 0.35);
@@ -538,7 +540,7 @@
       if (!foot || !hip || !shoulder || !headC) return;
       const s = shoulder.s;
       ctx.save();
-      if (near) ctx.globalAlpha = 0.62;
+      if (near) ctx.globalAlpha = 0.5;
 
       // 그림자
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -589,10 +591,10 @@
         const my = Math.max(shoulder.y, hand.y) + s * 0.08;
         ctx.quadraticCurveTo(mx, my, hand.x, hand.y);
         ctx.stroke();
-        if (!(near && p.isMe)) this.drawPaddle(ctx, hand.x, hand.y, hand.s * 0.15, p.swing || 0);
+        this.drawPaddle(ctx, hand.x, hand.y, hand.s * 0.15, p.swing || 0);
       }
       // 머리 (캐리커처)
-      const hr = s * (near ? 0.3 : 0.36);
+      const hr = s * (near ? 0.27 : 0.36);
       if (p.img && p.img.complete && p.img.naturalWidth) {
         const bob = Math.sin(this.time * 5 + p.slot.charCodeAt(1)) * s * 0.02;
         ctx.drawImage(p.img, headC.x - hr, headC.y - hr * 1.15 + bob, hr * 2, hr * 2);
@@ -612,54 +614,6 @@
       ctx.fillRect(headC.x - tw / 2, ly - 9, tw, 18);
       ctx.fillStyle = p.isTurn ? '#111' : '#fff';
       ctx.fillText(label, headC.x, ly);
-      ctx.restore();
-    }
-
-    // 내 팀 선수: 화면 아래쪽에 상반신만 (탁구대를 가리지 않도록 화면 좌표로 그린다)
-    drawNearPlayer(ctx, p, frame, idx, count) {
-      const team = p.slot[0];
-      let hand;
-      if (p.isMe && frame.cursor) hand = { x: frame.cursor.x, y: frame.cursor.y };
-      else if (p.paddle) hand = this.project(p.paddle.x, p.paddle.y, p.paddle.z);
-      if (!hand) hand = { x: this.w / 2, y: this.h * 0.8 };
-      const hr = Math.min(58, this.h * 0.075);
-      const lane = count > 1 ? (idx === 0 ? -1 : 1) : 0;
-      const bx = Math.max(hr + 8, Math.min(this.w - hr - 8, hand.x - hr * 1.5 + lane * hr * 0.6));
-      const hy = this.h - hr * 0.95;
-      ctx.save();
-      ctx.globalAlpha = p.isMe ? 0.92 : 0.75;
-      // 몸통
-      ctx.fillStyle = TEAM_COLOR[team];
-      ctx.beginPath();
-      ctx.moveTo(bx - hr * 1.3, this.h + 4);
-      ctx.lineTo(bx - hr * 0.9, hy + hr * 0.75);
-      ctx.lineTo(bx + hr * 0.9, hy + hr * 0.75);
-      ctx.lineTo(bx + hr * 1.3, this.h + 4);
-      ctx.closePath();
-      ctx.fill();
-      // 팔 → 라켓
-      const sx0 = bx + hr * 0.85;
-      const sy0 = hy + hr * 0.9;
-      ctx.strokeStyle = '#f1c27d';
-      ctx.lineCap = 'round';
-      ctx.lineWidth = hr * 0.28;
-      ctx.beginPath();
-      ctx.moveTo(sx0, sy0);
-      ctx.quadraticCurveTo((sx0 + hand.x) / 2 + hr * 0.6, Math.max(sy0, hand.y) + hr * 0.2, hand.x, hand.y + 8);
-      ctx.stroke();
-      if (!p.isMe) this.drawPaddle(ctx, hand.x, hand.y, 18, p.swing || 0);
-      // 머리
-      if (p.img && p.img.complete && p.img.naturalWidth) ctx.drawImage(p.img, bx - hr, hy - hr, hr * 2, hr * 2);
-      ctx.globalAlpha = 1;
-      ctx.font = '700 13px system-ui';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const label = (p.isTurn ? '▶ ' : '') + p.name;
-      const tw = ctx.measureText(label).width + 12;
-      ctx.fillStyle = p.isTurn ? 'rgba(255,214,10,0.95)' : 'rgba(0,0,0,0.55)';
-      ctx.fillRect(bx - tw / 2, hy - hr - 22, tw, 18);
-      ctx.fillStyle = p.isTurn ? '#111' : '#fff';
-      ctx.fillText(label, bx, hy - hr - 13);
       ctx.restore();
     }
 
@@ -809,26 +763,89 @@
       ctx.restore();
     }
 
-    drawCursor(ctx, cur, frame) {
+    // 상대 코트 위 조준점 🎯
+    drawAim(ctx, aim) {
+      const p = this.project(aim.x, aim.y, 0.002);
+      if (!p) return;
+      const rx = Math.max(10, p.s * 0.09);
+      const ry = rx * 0.45;
+      const pulse = 1 + Math.sin(this.time * 6) * 0.08;
       ctx.save();
-      ctx.globalAlpha = frame.myTurn ? 0.95 : 0.5;
-      this.drawPaddle(ctx, cur.x, cur.y, 26, cur.swing || 0);
-      if (frame.myTurn && this.ballScreen && frame.hitRadius) {
-        // 타격 가능 범위 표시
-        const b = this.ballScreen;
-        const d = Math.hypot(cur.x - b.x, cur.y - b.y);
-        const inRange = d <= frame.hitRadius;
-        ctx.globalAlpha = 0.9;
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = inRange ? (frame.sweetSpot ? '#ff7b00' : '#ffd60a') : 'rgba(255,255,255,0.5)';
-        ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255,214,10,0.95)';
+      ctx.lineWidth = 2.5;
+      for (const k of [1, 0.55]) {
         ctx.beginPath();
-        ctx.arc(b.x, b.y, frame.hitRadius, 0, Math.PI * 2);
+        ctx.ellipse(p.x, p.y, rx * k * pulse, ry * k * pulse, 0, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.setLineDash([]);
+      }
+      ctx.fillStyle = 'rgba(255,214,10,0.95)';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, 3, 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawCrosshair(ctx, cur) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cur.x - 9, cur.y);
+      ctx.lineTo(cur.x + 9, cur.y);
+      ctx.moveTo(cur.x, cur.y - 9);
+      ctx.lineTo(cur.x, cur.y + 9);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /*
+     * 타이밍 원: 이상적인 타격 순간까지 남은 시간만큼 큰 원이 공 주위에서 줄어든다.
+     * 원이 공의 테두리(고정 원)에 닿는 순간이 정확한 타이밍.
+     */
+    drawTiming(ctx, tm) {
+      const b = this.ballScreen;
+      if (!b) return;
+      const rem = tm.remain;
+      if (rem > 1.4 || rem < -tm.window) return;
+      ctx.save();
+      // 공이 도착할 위치 미리 보기
+      if (rem > 0.12) {
+        const g = this.project(tm.x, tm.y, tm.z);
+        if (g) {
+          ctx.setLineDash([4, 5]);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(g.x, g.y, Math.max(8, g.s * 0.05), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+      const r0 = b.r + 10;
+      const a = Math.abs(rem);
+      const col = a < 0.054 ? '255,123,0' : a < 0.114 ? '255,214,10' : '255,255,255';
+      // 고정 원 (목표)
+      ctx.strokeStyle = `rgba(${col},0.9)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r0, 0, Math.PI * 2);
+      ctx.stroke();
+      // 줄어드는 원
+      if (rem > 0) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = `rgba(${col},${Math.min(1, 1.6 - rem)})`;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, frame.hitRadius * 0.28, 0, Math.PI * 2);
+        ctx.arc(b.x, b.y, r0 + rem * 170, 0, Math.PI * 2);
         ctx.stroke();
+      }
+      if (a < 0.06) {
+        ctx.font = 'italic 900 22px system-ui';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.strokeText('NOW!', b.x, b.y - r0 - 16);
+        ctx.fillStyle = '#ff7b00';
+        ctx.fillText('NOW!', b.x, b.y - r0 - 16);
       }
       ctx.restore();
     }

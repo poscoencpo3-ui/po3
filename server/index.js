@@ -20,6 +20,9 @@ app.use(express.json({ limit: '8mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/shared', express.static(path.join(__dirname, '..', 'shared')));
 
+app.set('trust proxy', 1);
+app.get('/healthz', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
+
 app.get('/api/config', (_req, res) => {
   res.json({ higgsfield: higgsfield.isConfigured() });
 });
@@ -50,34 +53,46 @@ function newCode() {
 
 function createRoom(opts) {
   const code = newCode();
-  const room = new Room(code, opts, (ev, payload) => io.to(code).emit(ev, payload));
+  const room = new Room(
+    code,
+    opts,
+    (ev, payload) => io.to(code).emit(ev, payload),
+    (id, ev, payload) => io.to(id).emit(ev, payload)
+  );
   rooms.set(code, room);
   return room;
 }
 
+// 사람이 아무도 없으면 잠시 기다렸다가(재접속 대비) 방을 지운다
+const ROOM_GRACE_MS = 90 * 1000;
 function cleanupRoom(room) {
-  if (room.humanCount() === 0) {
-    room.stop();
-    rooms.delete(room.code);
-  }
+  if (room.humanCount() > 0) return;
+  room.emptySince = Date.now();
+  setTimeout(() => {
+    if (rooms.get(room.code) === room && room.humanCount() === 0 && Date.now() - room.emptySince >= ROOM_GRACE_MS - 50) {
+      room.stop();
+      rooms.delete(room.code);
+    }
+  }, ROOM_GRACE_MS);
 }
 
 io.on('connection', (socket) => {
   let room = null;
 
-  const enter = (r, name, avatar, ack) => {
-    const res = r.addPlayer(socket.id, name, avatar);
+  const enter = (r, msg, ack) => {
+    const token = typeof msg.token === 'string' ? msg.token.slice(0, 64) : null;
+    const res = r.addPlayer(socket.id, msg.name, msg.avatar, token);
     if (res.error) return ack && ack({ error: res.error });
     room = r;
     socket.join(r.code);
-    ack && ack({ ok: true, code: r.code, you: socket.id, slot: res.player.slot, lobby: r.lobbyState(), match: r.matchState() });
+    ack && ack({ ok: true, code: r.code, you: socket.id, slot: res.player.slot, rejoined: !!res.rejoined, lobby: r.lobbyState(), match: r.matchState() });
     r.emitLobby();
   };
 
   socket.on('create', (msg = {}, ack) => {
     if (room) return ack && ack({ error: '이미 방에 있습니다.' });
     const r = createRoom({ mode: msg.mode, bestOf: msg.bestOf });
-    enter(r, msg.name, msg.avatar, ack);
+    enter(r, msg, ack);
   });
 
   socket.on('join', (msg = {}, ack) => {
@@ -85,7 +100,7 @@ io.on('connection', (socket) => {
     const code = String(msg.code || '').trim().toUpperCase();
     const r = rooms.get(code);
     if (!r) return ack && ack({ error: `코드 ${code || '(빈값)'} 게임장을 찾을 수 없습니다.` });
-    enter(r, msg.name, msg.avatar, ack);
+    enter(r, msg, ack);
   });
 
   socket.on('slot', (slot) => room && room.moveSlot(socket.id, String(slot)));
@@ -100,6 +115,7 @@ io.on('connection', (socket) => {
     ack && ack(err ? { error: err } : { ok: true });
   });
   socket.on('input', (msg) => room && room.handleInput(socket.id, msg));
+  socket.on('ping2', (_m, ack) => typeof ack === 'function' && ack(Date.now()));
 
   socket.on('leave', () => {
     if (!room) return;
@@ -111,7 +127,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     if (!room) return;
-    room.removePlayer(socket.id);
+    room.removePlayer(socket.id, true); // 재접속하면 같은 자리로 복귀
     cleanupRoom(room);
     room = null;
   });
