@@ -3,6 +3,7 @@ package com.po3.tvremote.tv
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TvInfoTest {
@@ -21,6 +22,13 @@ class TvInfoTest {
         assertEquals("KU75UT8000FXKR", info.model)
         assertEquals("A4:30:7A:12:34:56", info.mac)
         assertFalse(info.wired)
+    }
+
+    @Test
+    fun wiredTvDoesNotOfferWifiMac() {
+        val info = TvInfo.parse("192.168.0.20", sample.replace("\"wireless\"", "\"wired\""))!!
+        assertTrue(info.wired)
+        assertNull(info.mac)
     }
 
     @Test

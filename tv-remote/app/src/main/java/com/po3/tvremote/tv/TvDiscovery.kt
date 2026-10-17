@@ -29,12 +29,14 @@ data class TvInfo(
             val device = root.optJSONObject("device") ?: return null
             val type = device.optString("type").ifEmpty { root.optString("type") }
             if (!type.contains("Samsung", ignoreCase = true)) return null
+            val wired = device.optString("networkType") == "wired"
             return TvInfo(
                 ip = ip,
                 name = device.optString("name").ifEmpty { root.optString("name") },
                 model = device.optString("modelName"),
-                mac = WakeOnLan.parseMac(device.optString("wifiMac"))?.let(WakeOnLan::format),
-                wired = device.optString("networkType") == "wired",
+                // TV는 Wi-Fi MAC만 알려준다. 랜선 연결이면 그 값으로는 TV를 켤 수 없으므로 쓰지 않는다.
+                mac = if (wired) null else WakeOnLan.parseMac(device.optString("wifiMac"))?.let(WakeOnLan::format),
+                wired = wired,
             )
         }
     }

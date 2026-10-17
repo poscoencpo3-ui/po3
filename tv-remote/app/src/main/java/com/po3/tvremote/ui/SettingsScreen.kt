@@ -158,7 +158,12 @@ fun SettingsScreen(
                     onValueChange = { mac = it },
                     label = { Text("TV MAC 주소 (선택)") },
                     placeholder = { Text("AA:BB:CC:DD:EE:FF") },
-                    supportingText = { Text("폰으로 TV를 켤 때 필요해요. 비워두면 TV에서 자동으로 가져와요.") },
+                    supportingText = {
+                        Text(
+                            "폰으로 TV를 켤 때 필요해요. TV 설정 → 지원 → 이 TV 정보에서 확인할 수 있어요. " +
+                                "TV가 랜선으로 연결돼 있으면 유선 MAC을 넣어주세요.",
+                        )
+                    },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Characters,
@@ -208,7 +213,9 @@ private fun TvRow(tv: TvInfo, selected: Boolean, onClick: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(tv.displayName, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    listOf(tv.model, tv.ip).filter { it.isNotBlank() }.joinToString(" · "),
+                    listOf(tv.model, tv.ip, if (tv.wired) "랜선 연결" else "Wi-Fi 연결")
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

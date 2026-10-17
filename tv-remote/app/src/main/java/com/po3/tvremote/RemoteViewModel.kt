@@ -92,7 +92,7 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
         val s = _settings.value
         val mac = WakeOnLan.parseMac(s.mac)
         if (mac == null) {
-            message("TV를 켜려면 설정에서 MAC 주소를 입력해주세요")
+            message("TV를 켜려면 설정에서 TV MAC 주소를 입력해주세요 (TV 설정 → 지원 → 이 TV 정보)")
             connect()
             return
         }
