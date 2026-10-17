@@ -2,7 +2,6 @@
 
 package com.po3.tvremote.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,12 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Home
@@ -54,10 +53,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,8 +75,6 @@ fun RemoteScreen(
     onReconnect: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    var showNumbers by rememberSaveable { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -118,17 +111,8 @@ fun RemoteScreen(
                 )
                 LabeledButton(Icons.Filled.SettingsInputHdmi, "입력", { onKey(RemoteKey.SOURCE) })
                 LabeledButton(Icons.Filled.Menu, "메뉴", { onKey(RemoteKey.MENU) })
-                LabeledButton(
-                    Icons.Filled.Dialpad, "숫자", { showNumbers = !showNumbers },
-                    containerColor = if (showNumbers) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                )
+                LabeledButton(Icons.AutoMirrored.Filled.ExitToApp, "나가기", { onKey(RemoteKey.EXIT) })
             }
-
-            AnimatedVisibility(visible = showNumbers) { NumberPad(onKey) }
 
             DirectionPad(onKey)
 
@@ -138,6 +122,8 @@ fun RemoteScreen(
             }
 
             VolumeAndChannel(onKey)
+
+            NumberPad(onKey)
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 IconRemoteButton(Icons.Filled.FastRewind, "되감기", { onKey(RemoteKey.REWIND) }, size = 52.dp)

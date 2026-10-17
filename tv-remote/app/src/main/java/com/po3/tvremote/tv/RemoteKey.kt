@@ -7,6 +7,7 @@ enum class RemoteKey(val code: String) {
     MENU("KEY_MENU"),
     HOME("KEY_HOME"),
     BACK("KEY_RETURN"),
+    EXIT("KEY_EXIT"),
     UP("KEY_UP"),
     DOWN("KEY_DOWN"),
     LEFT("KEY_LEFT"),
