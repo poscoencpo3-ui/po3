@@ -41,8 +41,9 @@ data class TvInfo(
 }
 
 class TvDiscovery(
+    // Wi-Fi 절전 중인 TV는 첫 응답까지 1초 가까이 걸릴 수 있어 여유를 둔다.
     private val http: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(700, TimeUnit.MILLISECONDS)
+        .connectTimeout(1500, TimeUnit.MILLISECONDS)
         .readTimeout(2, TimeUnit.SECONDS)
         .build(),
 ) {
@@ -57,7 +58,7 @@ class TvDiscovery(
     }
 
     /** 주어진 주소들에 동시에 물어보고 삼성 TV만 골라 돌려준다. */
-    suspend fun scan(hosts: List<String>, parallelism: Int = 48): List<TvInfo> = coroutineScope {
+    suspend fun scan(hosts: List<String>, parallelism: Int = 64): List<TvInfo> = coroutineScope {
         val gate = Semaphore(parallelism)
         hosts.map { host -> async { gate.withPermit { fetchInfo(host) } } }
             .awaitAll()

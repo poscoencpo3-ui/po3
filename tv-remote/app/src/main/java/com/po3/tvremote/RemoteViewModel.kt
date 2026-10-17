@@ -30,7 +30,7 @@ sealed interface ScanState {
     data object Idle : ScanState
     data object Scanning : ScanState
     data object NoWifi : ScanState
-    data class Done(val tvs: List<TvInfo>) : ScanState
+    data class Done(val tvs: List<TvInfo>, val phoneIp: String) : ScanState
 }
 
 class RemoteViewModel(application: Application) : AndroidViewModel(application) {
@@ -120,7 +120,7 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
         scanJob = viewModelScope.launch {
             _scan.value = ScanState.Scanning
             val found = discovery.scan(Subnet.hosts(network.address, network.prefixLength))
-            _scan.value = ScanState.Done(found)
+            _scan.value = ScanState.Done(found, network.address.hostAddress.orEmpty())
         }
     }
 

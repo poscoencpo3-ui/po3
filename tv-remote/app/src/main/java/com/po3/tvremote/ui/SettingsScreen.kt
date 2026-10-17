@@ -126,7 +126,12 @@ fun SettingsScreen(
                     )
                     is ScanState.Done -> if (scan.tvs.isEmpty()) {
                         Text(
-                            "TV를 찾지 못했어요. TV가 켜져 있는지 확인하거나 아래에 IP 주소를 직접 입력해주세요.",
+                            "TV를 찾지 못했어요. TV가 켜져 있는지 확인해주세요.\n\n" +
+                                "이 폰의 IP: ${scan.phoneIp}\n" +
+                                "TV의 IP(설정 → 일반 → 네트워크 → 네트워크 상태 → IP 설정)가 " +
+                                "${scan.phoneIp.substringBeforeLast('.')}.으로 시작해야 연결할 수 있어요. " +
+                                "다르면 TV와 폰이 서로 다른 공유기(Wi-Fi)에 연결된 거예요. " +
+                                "같다면 아래에 TV IP를 직접 입력해주세요.",
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     } else {
