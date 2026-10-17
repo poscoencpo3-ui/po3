@@ -1,0 +1,56 @@
+name: TV 리모컨 APK 빌드
+
+on:
+  push:
+    paths:
+      - "tv-remote/**"
+      - ".github/workflows/tv-remote-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tv-remote-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tv-remote
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 단위 테스트
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: APK 빌드
+        run: |
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk tv-remote.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tv-remote-apk
+          path: tv-remote/tv-remote.apk
+
+      # 폰에서 바로 받을 수 있도록 고정된 릴리스(tv-remote-latest)에 최신 APK를 올린다.
+      - name: 최신 APK 릴리스 갱신
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete tv-remote-latest --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create tv-remote-latest tv-remote.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "TV 리모컨 최신 APK" \
+            --notes "브랜치 ${GITHUB_REF_NAME}, 커밋 ${GITHUB_SHA::7}에서 자동으로 빌드된 APK입니다. 폰에서 tv-remote.apk를 눌러 받은 뒤 설치하세요."

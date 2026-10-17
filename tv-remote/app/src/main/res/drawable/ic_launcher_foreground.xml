@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 리모컨 모양 아이콘 (108dp 캔버스, 가운데 66dp 안전 영역) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M48,24h12a8,8 0,0 1,8 8v44a8,8 0,0 1,-8 8h-12a8,8 0,0 1,-8 -8v-44a8,8 0,0 1,8 -8z" />
+    <path
+        android:fillColor="#FFE5484D"
+        android:pathData="M54,30.5m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+    <path
+        android:strokeColor="#FF2F6FED"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,50m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" />
+    <path
+        android:fillColor="#FF2F6FED"
+        android:pathData="M54,50m-3.2,0a3.2,3.2 0,1 1,6.4 0a3.2,3.2 0,1 1,-6.4 0" />
+    <path
+        android:fillColor="#FF2F6FED"
+        android:pathData="M48,67m-2.3,0a2.3,2.3 0,1 1,4.6 0a2.3,2.3 0,1 1,-4.6 0M60,67m-2.3,0a2.3,2.3 0,1 1,4.6 0a2.3,2.3 0,1 1,-4.6 0M48,75m-2.3,0a2.3,2.3 0,1 1,4.6 0a2.3,2.3 0,1 1,-4.6 0M60,75m-2.3,0a2.3,2.3 0,1 1,4.6 0a2.3,2.3 0,1 1,-4.6 0" />
+</vector>
