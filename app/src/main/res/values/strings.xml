@@ -20,6 +20,15 @@
     <string name="toast_wake_failed">전송에 실패했어요. 인터넷 연결을 확인해주세요.</string>
     <string name="toast_partner_connected">%1$s님과 연결됐어요!</string>
 
+    <string name="hint_wake_message">메시지 (선택, 예: 얼른 일어나!)</string>
+    <string name="text_connection_sound">소리: %1$s</string>
+    <string name="button_change_sound">소리 변경</string>
+    <string name="dialog_title_pick_sound">이 사람을 깨울 때 쓸 소리</string>
+    <string name="tone_1_name">소리 1 (경쾌한 삐삐)</string>
+    <string name="tone_2_name">소리 2 (상승음)</string>
+    <string name="tone_3_name">소리 3 (긴급 삐삐)</string>
+    <string name="tone_4_name">소리 4 (부드러운 톤)</string>
+
     <string name="label_settings">알람이 확실히 울리도록 설정하기</string>
     <string name="button_battery_optimization">배터리 최적화 제외하기</string>
     <string name="button_dnd_access">방해금지 모드 접근 허용하기</string>
@@ -28,7 +37,7 @@
     <string name="status_fullscreen_allowed">✅ 전체화면 알림이 허용되어 있어요</string>
     <string name="status_fullscreen_blocked">⚠️ 전체화면 알림이 꺼져 있어요 — 바로 아래 버튼을 눌러 켜주세요. 꺼진 상태면 알림을 직접 눌러야만 알람 화면이 열립니다.</string>
 
-    <string name="label_sound_settings">내 폰에서 울릴 알람 소리 설정</string>
+    <string name="label_sound_settings">기본 알람 소리 설정 (상대방이 소리를 안 정했을 때 사용)</string>
     <string name="text_current_sound">현재 소리: %1$s</string>
     <string name="default_sound_name">기기 기본 알람음</string>
     <string name="button_pick_sound">알람 소리 선택하기</string>

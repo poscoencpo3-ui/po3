@@ -14,8 +14,9 @@ import kotlin.random.Random
  *   status: "waiting" | "connected",
  *   deviceA: { id, name },
  *   deviceB: { id, name } | null,
- *   wake: { from: "A"|"B", nonce: Long, at: serverTimestamp } | null,
- *   ack:  { nonce: Long, at: serverTimestamp } | null
+ *   wake: { from: "A"|"B", nonce: Long, message: String, at: serverTimestamp } | null,
+ *   ack:  { nonce: Long, at: serverTimestamp } | null,
+ *   soundId: String  // which bundled tone (AVAILABLE_SOUND_IDS) rings on the OTHER side
  * }
  *
  * No Cloud Functions / FCM server piece is used: both phones hold a live
@@ -25,6 +26,15 @@ import kotlin.random.Random
 object FirestoreRepo {
 
     private const val COLLECTION = "pairs"
+
+    /**
+     * Sounds that ship bundled inside the app (res/raw/tone_N.wav) so they
+     * play identically on any device - a ringtone picked from one phone's
+     * own library has no meaning on another phone (the content:// id is
+     * device-local), so the sender picks from this fixed, shared set instead.
+     */
+    val AVAILABLE_SOUND_IDS = listOf("tone_1", "tone_2", "tone_3", "tone_4")
+    const val DEFAULT_SOUND_ID = "tone_1"
 
     private fun db() = FirebaseFirestore.getInstance()
 
@@ -61,6 +71,7 @@ object FirestoreRepo {
                         "deviceB" to null,
                         "wake" to null,
                         "ack" to null,
+                        "soundId" to DEFAULT_SOUND_ID,
                         "createdAt" to FieldValue.serverTimestamp()
                     )
                     docRef.set(data)
@@ -105,7 +116,12 @@ object FirestoreRepo {
             .addOnFailureListener { e -> onResult(null, e.message) }
     }
 
-    fun sendWake(code: String, myRole: String, onResult: (success: Boolean, nonce: Long) -> Unit) {
+    fun sendWake(
+        code: String,
+        myRole: String,
+        message: String,
+        onResult: (success: Boolean, nonce: Long) -> Unit
+    ) {
         val nonce = System.currentTimeMillis()
         val docRef = db().collection(COLLECTION).document(code)
         docRef.update(
@@ -113,11 +129,17 @@ object FirestoreRepo {
                 "wake" to hashMapOf(
                     "from" to myRole,
                     "nonce" to nonce,
+                    "message" to message,
                     "at" to FieldValue.serverTimestamp()
                 )
             )
         ).addOnSuccessListener { onResult(true, nonce) }
             .addOnFailureListener { onResult(false, nonce) }
+    }
+
+    /** Which bundled tone (see AVAILABLE_SOUND_IDS) plays on the OTHER side when this pairing wakes them. */
+    fun setSoundId(code: String, soundId: String) {
+        db().collection(COLLECTION).document(code).update(mapOf("soundId" to soundId))
     }
 
     fun sendAck(code: String, nonce: Long) {

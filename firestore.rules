@@ -17,12 +17,12 @@ service cloud.firestore {
         && request.resource.data.status == 'waiting'
         && request.resource.data.deviceB == null
         && request.resource.data.keys().hasOnly(
-          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack']
+          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack', 'soundId']
         );
 
       allow update: if request.auth != null
         && request.resource.data.keys().hasOnly(
-          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack']
+          ['createdAt', 'deviceA', 'deviceB', 'status', 'wake', 'ack', 'soundId']
         );
 
       allow delete: if false;

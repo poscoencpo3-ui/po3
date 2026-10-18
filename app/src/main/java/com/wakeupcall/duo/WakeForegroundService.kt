@@ -112,11 +112,13 @@ class WakeForegroundService : Service() {
         val sender = if (from == "A") deviceA else deviceB
         val senderName = (sender?.get("name") as? String).takeUnless { it.isNullOrEmpty() }
             ?: getString(R.string.default_partner_name)
+        val message = wake["message"] as? String ?: ""
+        val soundId = snapshot.get("soundId") as? String
 
-        triggerAlarm(code, nonce, senderName)
+        triggerAlarm(code, nonce, senderName, message, soundId)
     }
 
-    private fun triggerAlarm(code: String, nonce: Long, senderName: String) {
+    private fun triggerAlarm(code: String, nonce: Long, senderName: String, message: String, soundId: String?) {
         val fullScreenIntent = Intent(this, AlarmActivity::class.java).apply {
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -126,6 +128,8 @@ class WakeForegroundService : Service() {
             putExtra(AlarmActivity.EXTRA_CODE, code)
             putExtra(AlarmActivity.EXTRA_NONCE, nonce)
             putExtra(AlarmActivity.EXTRA_SENDER_NAME, senderName)
+            putExtra(AlarmActivity.EXTRA_MESSAGE, message)
+            putExtra(AlarmActivity.EXTRA_SOUND_ID, soundId)
         }
         val pendingIntent = PendingIntent.getActivity(
             this,

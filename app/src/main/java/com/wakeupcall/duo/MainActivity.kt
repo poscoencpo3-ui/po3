@@ -10,12 +10,15 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -33,6 +36,12 @@ class MainActivity : AppCompatActivity() {
 
     /** Latest "ack.nonce" seen per pairing code, used to render each row's sent/confirmed status. */
     private val ackNonces = mutableMapOf<String, Long>()
+
+    /** Latest "soundId" seen per pairing code (which bundled tone wakes that connection). */
+    private val soundIds = mutableMapOf<String, String>()
+
+    /** In-progress message text per pairing, kept here so it survives rebuildConnectionsList(). */
+    private val draftMessages = mutableMapOf<String, String>()
 
     private val previewHandler = Handler(Looper.getMainLooper())
     private var previewRunnable: Runnable? = null
@@ -256,7 +265,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun sendWakeTo(pairing: Pairing, statusView: TextView, button: Button) {
         button.isEnabled = false
-        FirestoreRepo.sendWake(pairing.code, pairing.role) { success, nonce ->
+        val message = draftMessages[pairing.code].orEmpty()
+        FirestoreRepo.sendWake(pairing.code, pairing.role, message) { success, nonce ->
             button.isEnabled = true
             if (success) {
                 PrefsManager.setLastSentNonce(this, pairing.code, nonce)
@@ -268,9 +278,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun soundLabelFor(soundId: String?): String = when (soundId) {
+        "tone_1" -> getString(R.string.tone_1_name)
+        "tone_2" -> getString(R.string.tone_2_name)
+        "tone_3" -> getString(R.string.tone_3_name)
+        "tone_4" -> getString(R.string.tone_4_name)
+        else -> getString(R.string.tone_1_name)
+    }
+
+    private fun showSoundPickerDialog(pairing: Pairing) {
+        val ids = FirestoreRepo.AVAILABLE_SOUND_IDS
+        val labels = ids.map { soundLabelFor(it) }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_title_pick_sound))
+            .setItems(labels) { _, which ->
+                val soundId = ids[which]
+                soundIds[pairing.code] = soundId
+                FirestoreRepo.setSoundId(pairing.code, soundId)
+                rebuildConnectionsList()
+            }
+            .show()
+    }
+
     private fun onUnpairOne(code: String) {
         PrefsManager.removePairing(this, code)
         ackNonces.remove(code)
+        soundIds.remove(code)
+        draftMessages.remove(code)
         uiListeners.remove(code)?.remove()
         restartWakeServiceListener()
         rebuildConnectionsList()
@@ -316,6 +350,8 @@ class MainActivity : AppCompatActivity() {
         val ack = snapshot.get("ack") as? Map<String, Any?>
         ackNonces[code] = (ack?.get("nonce") as? Long) ?: 0L
 
+        (snapshot.get("soundId") as? String)?.let { soundIds[code] = it }
+
         rebuildConnectionsList()
     }
 
@@ -327,6 +363,17 @@ class MainActivity : AppCompatActivity() {
             if (pairing.partnerName.isNotEmpty()) {
                 row.textConnectionName.text = getString(R.string.status_connected_with, pairing.partnerName)
                 row.textConnectionCode.visibility = View.GONE
+
+                row.editConnectionMessage.visibility = View.VISIBLE
+                row.editConnectionMessage.setText(draftMessages[pairing.code].orEmpty())
+                row.editConnectionMessage.addTextChangedListener(object : TextWatcher {
+                    override fun afterTextChanged(s: Editable?) {
+                        draftMessages[pairing.code] = s?.toString().orEmpty()
+                    }
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                })
+
                 row.buttonConnectionWake.visibility = View.VISIBLE
                 row.buttonConnectionWake.setOnClickListener {
                     sendWakeTo(pairing, row.textConnectionStatus, row.buttonConnectionWake)
@@ -339,12 +386,21 @@ class MainActivity : AppCompatActivity() {
                     ackNonce == lastSent -> getString(R.string.status_confirmed)
                     else -> getString(R.string.status_sent_waiting)
                 }
+
+                row.rowSoundControl.visibility = View.VISIBLE
+                row.textConnectionSound.text = getString(
+                    R.string.text_connection_sound,
+                    soundLabelFor(soundIds[pairing.code])
+                )
+                row.buttonChangeSound.setOnClickListener { showSoundPickerDialog(pairing) }
             } else {
                 row.textConnectionName.text = getString(R.string.status_connected_waiting)
                 row.textConnectionCode.visibility = View.VISIBLE
                 row.textConnectionCode.text = pairing.code
+                row.editConnectionMessage.visibility = View.GONE
                 row.buttonConnectionWake.visibility = View.GONE
                 row.textConnectionStatus.text = getString(R.string.hint_waiting_partner)
+                row.rowSoundControl.visibility = View.GONE
             }
 
             row.buttonConnectionUnpair.setOnClickListener { onUnpairOne(pairing.code) }

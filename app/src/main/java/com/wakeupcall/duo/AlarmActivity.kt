@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,8 @@ class AlarmActivity : AppCompatActivity() {
         const val EXTRA_CODE = "extra_code"
         const val EXTRA_NONCE = "extra_nonce"
         const val EXTRA_SENDER_NAME = "extra_sender_name"
+        const val EXTRA_MESSAGE = "extra_message"
+        const val EXTRA_SOUND_ID = "extra_sound_id"
         private const val AUTO_STOP_DELAY_MS = 3 * 60 * 1000L
     }
 
@@ -52,11 +55,17 @@ class AlarmActivity : AppCompatActivity() {
         nonce = intent.getLongExtra(EXTRA_NONCE, 0L)
         val senderName = intent.getStringExtra(EXTRA_SENDER_NAME)
             ?: getString(R.string.default_partner_name)
+        val customMessage = intent.getStringExtra(EXTRA_MESSAGE).orEmpty()
+        val soundId = intent.getStringExtra(EXTRA_SOUND_ID)
 
         binding.textAlarmMessage.text = getString(R.string.alarm_message, senderName)
+        if (customMessage.isNotEmpty()) {
+            binding.textAlarmCustomMessage.text = customMessage
+            binding.textAlarmCustomMessage.visibility = View.VISIBLE
+        }
         binding.buttonStopAlarm.setOnClickListener { stopAndFinish() }
 
-        AlarmSoundPlayer.start(this)
+        AlarmSoundPlayer.start(this, soundId)
         startVibration()
         scheduleAutoStop()
     }

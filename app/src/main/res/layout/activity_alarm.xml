@@ -18,11 +18,21 @@
         android:id="@+id/textAlarmMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="64dp"
+        android:layout_marginBottom="16dp"
         android:gravity="center"
         android:textColor="@color/white"
         android:textSize="26sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/textAlarmCustomMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="64dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/buttonStopAlarm"

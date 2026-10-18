@@ -25,7 +25,12 @@ object AlarmSoundPlayer {
     private var mediaPlayer: MediaPlayer? = null
     private var previousAlarmVolume: Int = -1
 
-    fun start(context: Context) {
+    /**
+     * @param soundId A bundled tone id (see FirestoreRepo.AVAILABLE_SOUND_IDS), set by
+     *   whoever sent this wake signal and takes priority since it's what they intended
+     *   to be heard. Null falls back to this device's own local sound preference.
+     */
+    fun start(context: Context, soundId: String? = null) {
         stop(context)
 
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -35,15 +40,22 @@ object AlarmSoundPlayer {
         val targetVolume = (maxVolume * percent / 100).coerceAtLeast(1)
         audioManager.setStreamVolume(AudioManager.STREAM_ALARM, targetVolume, 0)
 
+        val bundledUri = soundId?.let { resourceUriFor(context, it) }
+        val savedUri = PrefsManager.getAlarmSoundUri(context)?.let { Uri.parse(it) }
         val defaultUri: Uri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
             ?: Settings.System.DEFAULT_ALARM_ALERT_URI
-        val savedUri = PrefsManager.getAlarmSoundUri(context)?.let { Uri.parse(it) }
 
-        // Fall back to the device default if the user's saved pick fails to play
-        // (e.g. a ringtone that was since removed).
-        if (savedUri == null || !tryPlay(context, savedUri)) {
-            tryPlay(context, defaultUri)
+        // Try the sender's chosen bundled tone first, then this device's own
+        // saved pick, then whatever the device calls its default alarm sound.
+        val candidates = listOfNotNull(bundledUri, savedUri, defaultUri)
+        for (uri in candidates) {
+            if (tryPlay(context, uri)) return
         }
+    }
+
+    private fun resourceUriFor(context: Context, soundId: String): Uri? {
+        val resId = context.resources.getIdentifier(soundId, "raw", context.packageName)
+        return if (resId != 0) Uri.parse("android.resource://${context.packageName}/$resId") else null
     }
 
     private fun tryPlay(context: Context, uri: Uri): Boolean {
