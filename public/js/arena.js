@@ -270,18 +270,7 @@
         ctx.stroke();
         ctx.fillStyle = '#495057';
         ctx.fillRect(seat.x - s * 0.22, seat.y - s * 0.04, s * 0.44, s * 0.06);
-        ctx.fillStyle = '#1d3557';
-        ctx.fillRect(seat.x - s * 0.16, seat.y - s * 0.5, s * 0.32, s * 0.48);
-        ctx.fillStyle = '#f1faee';
-        ctx.fillRect(seat.x - s * 0.04, seat.y - s * 0.5, s * 0.08, s * 0.2);
-        ctx.fillStyle = '#f1c27d';
-        ctx.beginPath();
-        ctx.arc(seat.x, seat.y - s * 0.62, s * 0.12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#2b2118';
-        ctx.beginPath();
-        ctx.arc(seat.x, seat.y - s * 0.66, s * 0.12, Math.PI, Math.PI * 2);
-        ctx.fill();
+        // 심판 본인은 매 프레임 drawOfficials() 에서 움직이며 그린다
       }
       this.bg = bg;
 
@@ -373,21 +362,400 @@
       this.boards = cv;
     }
 
+    /*
+     * 관중 스프라이트: 다양한 헤어·소품·옷의 2등신 관중을 미리 그려 둔다.
+     * 각 관중은 평소 모습(normal)과 환호 모습(cheer) 두 장.
+     */
+    makeSpectatorTraits(rnd) {
+      const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+      return {
+        skin: pick(['#ffe0c2', '#f6c9a0', '#f1c27d', '#e0ac69', '#c68642', '#8d5524']),
+        hair: pick(['#2b2118', '#2b2118', '#3d2b1f', '#6b4423', '#e9c46a', '#d1495b', '#3a86ff', '#9b5de5', '#adb5bd']),
+        style: pick(['short', 'short', 'spiky', 'bob', 'pony', 'pigtails', 'afro', 'bald', 'long', 'mohawk']),
+        shirt: pick(['#f1faee', '#a8dadc', '#457b9d', '#ffb703', '#fb8500', '#8338ec', '#06d6a0', '#ff006e', '#ffd6e0', '#2b2d42']),
+        teamShirt: rnd() < 0.45,
+        hoodie: rnd() < 0.18,
+        scarf: rnd() < 0.15,
+        hat: rnd() < 0.16 ? pick(['cap', 'beanie', 'band']) : null,
+        glasses: rnd() < 0.16 ? pick(['round', 'sun']) : null,
+        paint: rnd() < 0.18,
+        phones: rnd() < 0.12,
+        item: rnd() < 0.3 ? pick(['finger', 'popcorn', 'phone', 'drink']) : null,
+        headphones: rnd() < 0.05,
+        eyes: pick(['dot', 'dot', 'oval', 'sparkle']),
+      };
+    }
+
+    makeSpectatorSprite(tr, team, cheer) {
+      const W = 96;
+      const H = 128;
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const g = c.getContext('2d');
+      const O = '#1b1b2f';
+      const tc = TEAM_COLOR[team];
+      const shirt = tr.teamShirt ? tc : tr.shirt;
+      g.lineJoin = 'round';
+      g.lineCap = 'round';
+      const outline = (w) => {
+        g.lineWidth = w || 3;
+        g.strokeStyle = O;
+        g.stroke();
+      };
+      // 후드 (머리 뒤)
+      if (tr.hoodie) {
+        g.fillStyle = shirt;
+        g.beginPath();
+        g.ellipse(48, 76, 30, 22, 0, 0, Math.PI * 2);
+        g.fill();
+        outline(2.5);
+      }
+      // 아프로/긴머리 뒷머리
+      g.fillStyle = tr.hair;
+      if (tr.style === 'afro') {
+        g.beginPath();
+        g.arc(48, 52, 38, 0, Math.PI * 2);
+        g.fill();
+        outline(2.5);
+      } else if (tr.style === 'long') {
+        g.beginPath();
+        g.ellipse(48, 70, 33, 34, 0, 0, Math.PI * 2);
+        g.fill();
+        outline(2.5);
+      }
+      // 팔 (환호하면 만세)
+      const arm = (x0, y0, x1, y1) => {
+        g.strokeStyle = O;
+        g.lineWidth = 12;
+        g.beginPath();
+        g.moveTo(x0, y0);
+        g.lineTo(x1, y1);
+        g.stroke();
+        g.strokeStyle = tr.hoodie ? shirt : tr.skin;
+        g.lineWidth = 8;
+        g.beginPath();
+        g.moveTo(x0, y0);
+        g.lineTo(x1, y1);
+        g.stroke();
+        g.fillStyle = tr.skin;
+        g.beginPath();
+        g.arc(x1, y1, 6, 0, Math.PI * 2);
+        g.fill();
+        outline(2.5);
+      };
+      if (cheer) {
+        arm(28, 96, 12, 44);
+        arm(68, 96, 84, 44);
+      }
+      // 몸통
+      g.fillStyle = shirt;
+      g.beginPath();
+      g.ellipse(48, 112, 28, 26, 0, Math.PI, Math.PI * 2);
+      g.lineTo(76, 128);
+      g.lineTo(20, 128);
+      g.closePath();
+      g.fill();
+      outline(3);
+      // 줄무늬 / 머플러
+      if (tr.teamShirt) {
+        g.fillStyle = '#ffffff';
+        g.fillRect(30, 104, 36, 4);
+      }
+      if (tr.scarf) {
+        g.fillStyle = tc;
+        g.fillRect(28, 88, 40, 9);
+        g.fillStyle = '#ffffff';
+        for (let x = 30; x < 66; x += 8) g.fillRect(x, 88, 4, 9);
+        g.fillStyle = tc;
+        g.fillRect(56, 94, 9, 22);
+      }
+      if (!cheer) {
+        // 팔을 내리고 있거나 소품을 든다
+        if (tr.item === 'popcorn') {
+          arm(26, 104, 36, 112);
+          arm(70, 104, 60, 112);
+          g.fillStyle = '#e63946';
+          g.beginPath();
+          g.moveTo(36, 100);
+          g.lineTo(60, 100);
+          g.lineTo(57, 124);
+          g.lineTo(39, 124);
+          g.closePath();
+          g.fill();
+          outline(2);
+          g.fillStyle = '#fff';
+          g.fillRect(44, 100, 4, 24);
+          g.fillStyle = '#fff3c4';
+          for (let k = 0; k < 5; k++) {
+            g.beginPath();
+            g.arc(39 + k * 4.5, 98 - (k % 2) * 3, 4, 0, Math.PI * 2);
+            g.fill();
+          }
+        } else if (tr.item === 'drink') {
+          arm(70, 104, 62, 110);
+          g.fillStyle = '#4cc9f0';
+          g.fillRect(56, 98, 12, 18);
+          g.strokeStyle = O;
+          g.lineWidth = 2;
+          g.strokeRect(56, 98, 12, 18);
+          g.strokeStyle = '#fff';
+          g.beginPath();
+          g.moveTo(64, 98);
+          g.lineTo(68, 88);
+          g.stroke();
+        }
+      } else if (tr.item === 'finger') {
+        // 폼핑거 (#1)
+        g.fillStyle = tc;
+        g.beginPath();
+        g.ellipse(84, 34, 11, 13, 0, 0, Math.PI * 2);
+        g.fill();
+        outline(2);
+        g.fillRect(80, 8, 8, 24);
+        g.strokeStyle = O;
+        g.lineWidth = 2;
+        g.strokeRect(80, 8, 8, 24);
+        g.fillStyle = '#fff';
+        g.font = '900 10px system-ui';
+        g.textAlign = 'center';
+        g.fillText('1', 84, 38);
+      } else if (tr.item === 'phone' || tr.phones) {
+        g.fillStyle = '#212529';
+        g.fillRect(6, 26, 14, 22);
+        g.fillStyle = '#74c0fc';
+        g.fillRect(8, 28, 10, 16);
+      }
+      // 머리
+      const hx = 48;
+      const hy = 58;
+      const hr = 30;
+      g.fillStyle = tr.skin;
+      g.beginPath();
+      g.arc(hx, hy, hr, 0, Math.PI * 2);
+      g.fill();
+      outline(3);
+      // 앞머리
+      g.fillStyle = tr.hair;
+      const st = tr.style;
+      if (st === 'short' || st === 'long' || st === 'bob' || st === 'pony' || st === 'pigtails') {
+        g.beginPath();
+        g.arc(hx, hy - 4, hr + 1, Math.PI * 1.02, Math.PI * 1.98);
+        g.quadraticCurveTo(hx + 8, hy - 18, hx - 4, hy - 12);
+        g.quadraticCurveTo(hx - 18, hy - 16, hx - hr, hy - 2);
+        g.fill();
+        outline(2.5);
+        if (st === 'bob') {
+          g.beginPath();
+          g.ellipse(hx - hr + 3, hy + 6, 7, 16, 0, 0, Math.PI * 2);
+          g.ellipse(hx + hr - 3, hy + 6, 7, 16, 0, 0, Math.PI * 2);
+          g.fill();
+          outline(2);
+        }
+        if (st === 'pony') {
+          g.beginPath();
+          g.ellipse(hx + hr + 6, hy - 6, 9, 18, 0.5, 0, Math.PI * 2);
+          g.fill();
+          outline(2);
+        }
+        if (st === 'pigtails') {
+          for (const sx of [-1, 1]) {
+            g.beginPath();
+            g.arc(hx + sx * (hr + 6), hy - 12, 10, 0, Math.PI * 2);
+            g.fill();
+            outline(2);
+          }
+        }
+      } else if (st === 'spiky') {
+        g.beginPath();
+        g.moveTo(hx - hr, hy - 4);
+        for (let k = 0; k <= 6; k++) {
+          const a = Math.PI + (k / 6) * Math.PI;
+          const r = k % 2 ? hr + 12 : hr;
+          g.lineTo(hx + Math.cos(a) * r, hy - 4 + Math.sin(a) * r);
+        }
+        g.closePath();
+        g.fill();
+        outline(2.5);
+      } else if (st === 'mohawk') {
+        g.beginPath();
+        g.ellipse(hx, hy - hr + 2, 7, 16, 0, 0, Math.PI * 2);
+        g.fill();
+        outline(2);
+      } else if (st === 'afro') {
+        g.beginPath();
+        g.arc(hx, hy - 10, hr + 2, Math.PI * 1.05, Math.PI * 1.95);
+        g.fill();
+      } else if (st === 'bald') {
+        g.fillStyle = 'rgba(255,255,255,0.6)';
+        g.beginPath();
+        g.ellipse(hx - 10, hy - 18, 7, 4, -0.5, 0, Math.PI * 2);
+        g.fill();
+      }
+      // 모자
+      if (tr.hat === 'cap') {
+        g.fillStyle = tc;
+        g.beginPath();
+        g.arc(hx, hy - 8, hr, Math.PI, Math.PI * 2);
+        g.closePath();
+        g.fill();
+        outline(2.5);
+        g.beginPath();
+        g.ellipse(hx + 16, hy - 8, 20, 5, 0, 0, Math.PI * 2);
+        g.fill();
+        outline(2);
+      } else if (tr.hat === 'beanie') {
+        g.fillStyle = tc;
+        g.beginPath();
+        g.arc(hx, hy - 6, hr + 1, Math.PI, Math.PI * 2);
+        g.closePath();
+        g.fill();
+        outline(2.5);
+        g.fillStyle = '#fff';
+        g.beginPath();
+        g.arc(hx, hy - hr - 8, 7, 0, Math.PI * 2);
+        g.fill();
+        outline(2);
+      } else if (tr.hat === 'band') {
+        g.fillStyle = tc;
+        g.fillRect(hx - hr + 1, hy - 18, hr * 2 - 2, 8);
+      }
+      if (tr.headphones) {
+        g.strokeStyle = '#212529';
+        g.lineWidth = 5;
+        g.beginPath();
+        g.arc(hx, hy - 2, hr + 3, Math.PI * 1.1, Math.PI * 1.9);
+        g.stroke();
+        g.fillStyle = tc;
+        g.fillRect(hx - hr - 6, hy - 4, 9, 16);
+        g.fillRect(hx + hr - 3, hy - 4, 9, 16);
+      }
+      // 볼 페인팅 (팀 줄무늬)
+      if (tr.paint) {
+        g.fillStyle = tc;
+        g.fillRect(hx - 22, hy + 6, 9, 3);
+        g.fillRect(hx - 22, hy + 11, 9, 3);
+        g.fillStyle = '#fff';
+        g.fillRect(hx + 13, hy + 6, 9, 3);
+        g.fillStyle = tc;
+        g.fillRect(hx + 13, hy + 11, 9, 3);
+      } else {
+        g.fillStyle = 'rgba(255,90,120,0.35)';
+        g.beginPath();
+        g.ellipse(hx - 18, hy + 10, 6, 4, 0, 0, Math.PI * 2);
+        g.ellipse(hx + 18, hy + 10, 6, 4, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      // 눈
+      g.fillStyle = O;
+      g.strokeStyle = O;
+      if (cheer) {
+        // ^^ 웃는 눈
+        g.lineWidth = 3;
+        for (const sx of [-1, 1]) {
+          g.beginPath();
+          g.arc(hx + sx * 11, hy + 2, 5, Math.PI * 1.15, Math.PI * 1.85);
+          g.stroke();
+        }
+      } else if (tr.eyes === 'oval') {
+        for (const sx of [-1, 1]) {
+          g.beginPath();
+          g.ellipse(hx + sx * 11, hy, 3.5, 5.5, 0, 0, Math.PI * 2);
+          g.fill();
+        }
+      } else if (tr.eyes === 'sparkle') {
+        for (const sx of [-1, 1]) {
+          g.beginPath();
+          g.arc(hx + sx * 11, hy, 5.5, 0, Math.PI * 2);
+          g.fill();
+          g.fillStyle = '#fff';
+          g.beginPath();
+          g.arc(hx + sx * 11 - 1.5, hy - 2, 2, 0, Math.PI * 2);
+          g.fill();
+          g.fillStyle = O;
+        }
+      } else {
+        for (const sx of [-1, 1]) {
+          g.beginPath();
+          g.arc(hx + sx * 11, hy, 3.5, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+      // 안경
+      if (tr.glasses === 'round' && !cheer) {
+        g.lineWidth = 2;
+        for (const sx of [-1, 1]) {
+          g.beginPath();
+          g.arc(hx + sx * 11, hy, 8, 0, Math.PI * 2);
+          g.stroke();
+        }
+        g.beginPath();
+        g.moveTo(hx - 3, hy);
+        g.lineTo(hx + 3, hy);
+        g.stroke();
+      } else if (tr.glasses === 'sun') {
+        g.fillStyle = '#111';
+        g.beginPath();
+        g.ellipse(hx - 11, hy, 9, 6, 0, 0, Math.PI * 2);
+        g.ellipse(hx + 11, hy, 9, 6, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillRect(hx - 3, hy - 2, 6, 2);
+        g.fillStyle = 'rgba(255,255,255,0.5)';
+        g.fillRect(hx - 15, hy - 3, 5, 2);
+        g.fillRect(hx + 7, hy - 3, 5, 2);
+      }
+      // 입
+      g.fillStyle = O;
+      if (cheer) {
+        g.beginPath();
+        g.arc(hx, hy + 13, 9, 0, Math.PI);
+        g.closePath();
+        g.fill();
+        g.fillStyle = '#ff6b81';
+        g.beginPath();
+        g.arc(hx, hy + 18, 4.5, 0, Math.PI);
+        g.fill();
+      } else {
+        g.lineWidth = 2.5;
+        g.beginPath();
+        g.arc(hx, hy + 10, 6, 0.15 * Math.PI, 0.85 * Math.PI);
+        g.stroke();
+      }
+      // 환호할 때 폰 들고 사진 찍기
+      if (cheer && (tr.item === 'phone' || tr.phones)) {
+        g.fillStyle = '#212529';
+        g.fillRect(4, 22, 16, 24);
+        g.fillStyle = '#fff';
+        g.beginPath();
+        g.arc(12, 26, 2, 0, Math.PI * 2);
+        g.fill();
+      }
+      return c;
+    }
+
     buildCrowd(realView) {
       const rnd = mulberry(7);
       const F = C.FLOOR_Z;
+      // 스프라이트 묶음 (팀마다 28가지 모습 x 평소/환호)
+      if (!this.spriteSets) {
+        const srnd = mulberry(99);
+        this.spriteSets = { A: [], B: [] };
+        for (let i = 0; i < 28; i++) {
+          const tr = this.makeSpectatorTraits(srnd);
+          for (const team of ['A', 'B']) {
+            this.spriteSets[team].push({ normal: this.makeSpectatorSprite(tr, team, false), cheer: this.makeSpectatorSprite(tr, team, true), phone: tr.item === 'phone' || tr.phones });
+          }
+        }
+      }
       const people = [];
-      const shirt = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffb703', '#fb8500', '#8338ec', '#06d6a0', '#ff006e', '#3a86ff', '#ffffff', '#ffd6e0'];
-      const skin = ['#ffe0c2', '#f6c9a0', '#e0ac69', '#c68642', '#8d5524'];
-      const hair = ['#2b2118', '#2b2118', '#5a3825', '#e9c46a', '#d1495b', '#3a86ff'];
-      const signs = ['화이팅!', 'NICE!', '최고!', 'GO GO!', '♥', 'PERFECT', '대박!'];
+      const signs = ['화이팅!', 'NICE!', '최고!', 'GO GO!', '♥', 'PERFECT', '대박!', '사랑해요', '한 번 더!'];
       const tiers = 10;
       for (let i = 0; i < tiers; i++) {
         const y = 6.2 + i * 0.75 + 0.35;
         const z = F + 0.6 + i * 0.55;
         for (let x = -13.5; x <= 13.5; x += 0.55 + rnd() * 0.15) {
-          if (rnd() < 0.08) continue;
-          people.push({ x: x + rnd() * 0.1, y, z, team: x < 0 ? 'A' : 'B' });
+          if (rnd() < 0.06) continue;
+          people.push({ x: x + rnd() * 0.1, y, z, team: x < 0 ? 'A' : 'B', row: i, side: 0 });
         }
       }
       for (const sgn of [-1, 1]) {
@@ -395,8 +763,8 @@
           const x = sgn * (4.6 + i * 0.75 + 0.35);
           const z = F + 0.6 + i * 0.55;
           for (let y = -1.6; y <= 6.2; y += 0.55 + rnd() * 0.15) {
-            if (rnd() < 0.08) continue;
-            people.push({ x, y, z, team: sgn < 0 ? 'A' : 'B' });
+            if (rnd() < 0.06) continue;
+            people.push({ x, y, z, team: sgn < 0 ? 'A' : 'B', row: i, side: sgn });
           }
         }
       }
@@ -410,20 +778,35 @@
           x: pr.x,
           y: pr.y,
           s: pr.s,
-          shirt: rnd() < 0.35 ? TEAM_COLOR[team] : shirt[Math.floor(rnd() * shirt.length)],
-          skin: skin[Math.floor(rnd() * skin.length)],
-          hair: hair[Math.floor(rnd() * hair.length)],
-          hat: rnd() < 0.18 ? (rnd() < 0.5 ? 'cap' : 'band') : null,
+          sprite: this.spriteSets[team][Math.floor(rnd() * 28)],
           phase: rnd() * Math.PI * 2,
           speed: 2 + rnd() * 3,
           // 소품: 깃발 / 응원 피켓 / 응원봉
-          prop: r < 0.07 ? 'flag' : r < 0.11 ? 'sign' : r < 0.17 ? 'stick' : null,
+          prop: r < 0.06 ? 'flag' : r < 0.1 ? 'sign' : r < 0.15 ? 'stick' : null,
           sign: signs[Math.floor(rnd() * signs.length)],
           team,
+          row: p.row,
+          stand: p.side,
+          wx: p.x,
+          wy: p.y,
+          flash: 0,
         });
       }
       // 멀리 있는 사람부터 그린다
       this.crowd.sort((a, b) => a.s - b.s);
+
+      // 여러 명이 함께 드는 응원 현수막 (뒤쪽 관중석 1~3열)
+      this.banners = [];
+      const texts = { A: ['GO RED! 🔥', 'RED 최고!', '빨강 팀 화이팅!'], B: ['GO BLUE! 💙', 'BLUE 최고!', '파랑 팀 화이팅!'] };
+      for (const [x0, row, team] of [[-6.2, 1, 'A'], [-2.6, 3, 'A'], [2.2, 2, 'B'], [5.6, 1, 'B']]) {
+        const y = 6.2 + row * 0.75 + 0.35;
+        const z = F + 0.6 + row * 0.55 + 0.45;
+        const a = this.project(x0, y, z);
+        const b = this.project(x0 + 2.6, y, z);
+        if (!a || !b) continue;
+        const t = realView === 'A' ? team : team === 'A' ? 'B' : 'A';
+        this.banners.push({ a, b, team: t, text: texts[t][Math.floor(rnd() * 3)], phase: rnd() * 6 });
+      }
     }
 
     buildTable() {
@@ -522,7 +905,10 @@
           r: 2 + Math.random() * 4,
         });
       }
-      if (tier === 'fire') this.shake = 0.35;
+      if (tier === 'fire') {
+        this.shake = 0.35;
+        this.photoFlash = 0.4;
+      }
     }
 
     bounceFx(x, y) {
@@ -533,6 +919,8 @@
     celebrate(team) {
       this.cheer = 2.2;
       this.cheerSide = team;
+      this.flashBurst = 0.8;
+      this.photoFlash = 0.6;
     }
 
     /* ---------------- 프레임 그리기 ---------------- */
@@ -567,6 +955,7 @@
       }
       ctx.drawImage(this.boards, 0, 0, w, h);
       this.drawMascots(ctx);
+      this.drawOfficials(ctx, frame);
 
       const players = frame.players || [];
       const viewTeam = this.view;
@@ -711,6 +1100,7 @@
 
     drawCrowd(ctx, dt) {
       if (this.cheer > 0) this.cheer -= dt;
+      if (this.flashBurst > 0) this.flashBurst -= dt;
       const t = this.time;
       const cheering = this.cheer > 0;
       // 20초마다 6초 동안 파도타기 응원
@@ -723,70 +1113,27 @@
         let bob = Math.abs(Math.sin(t * c.speed * (excited ? 2.2 : 0.6) + c.phase)) * (excited ? 0.28 : 0.03) * s;
         if (inWave) bob = Math.max(bob, (1 - Math.abs(c.x - waveX) / 70) * 0.35 * s);
         const y = c.y - bob;
-        const armsUp = excited || inWave;
-        const hr = s * 0.15;
-        const hy = y - s * 0.5;
-        // 몸
-        ctx.fillStyle = c.shirt;
-        ctx.beginPath();
-        ctx.ellipse(c.x, y - s * 0.17, s * 0.18, s * 0.2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // 팔
-        if (armsUp) {
-          ctx.strokeStyle = c.skin;
-          ctx.lineWidth = Math.max(1, s * 0.06);
-          ctx.lineCap = 'round';
-          const wv = Math.sin(t * 10 + c.phase) * s * 0.06;
-          ctx.beginPath();
-          ctx.moveTo(c.x - s * 0.14, y - s * 0.28);
-          ctx.lineTo(c.x - s * 0.24 + wv, y - s * 0.72);
-          ctx.moveTo(c.x + s * 0.14, y - s * 0.28);
-          ctx.lineTo(c.x + s * 0.24 - wv, y - s * 0.72);
-          ctx.stroke();
-        }
-        // 머리 (귀엽게 크게)
-        ctx.fillStyle = c.skin;
-        ctx.beginPath();
-        ctx.arc(c.x, hy, hr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = c.hair;
-        ctx.beginPath();
-        ctx.arc(c.x, hy - hr * 0.15, hr * 1.02, Math.PI * 1.05, Math.PI * 1.95);
-        ctx.fill();
-        if (c.hat === 'cap') {
-          ctx.fillStyle = TEAM_COLOR[c.team];
-          ctx.beginPath();
-          ctx.arc(c.x, hy - hr * 0.3, hr * 0.95, Math.PI, Math.PI * 2);
-          ctx.fill();
-          ctx.fillRect(c.x - hr * 0.2, hy - hr * 0.38, hr * 1.25, hr * 0.22);
-        } else if (c.hat === 'band') {
-          ctx.fillStyle = TEAM_COLOR[c.team];
-          ctx.fillRect(c.x - hr, hy - hr * 0.55, hr * 2, hr * 0.28);
-        }
-        // 얼굴 (가까운 관중만)
-        if (s > 16) {
-          ctx.fillStyle = '#1b1b2f';
-          const ey = hy + hr * 0.05;
-          ctx.beginPath();
-          ctx.arc(c.x - hr * 0.38, ey, Math.max(0.8, hr * 0.13), 0, Math.PI * 2);
-          ctx.arc(c.x + hr * 0.38, ey, Math.max(0.8, hr * 0.13), 0, Math.PI * 2);
-          ctx.fill();
-          if (armsUp) {
-            ctx.beginPath();
-            ctx.ellipse(c.x, hy + hr * 0.5, hr * 0.25, hr * 0.22, 0, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.strokeStyle = '#1b1b2f';
-            ctx.lineWidth = Math.max(0.8, hr * 0.1);
-            ctx.beginPath();
-            ctx.arc(c.x, hy + hr * 0.3, hr * 0.28, 0.15 * Math.PI, 0.85 * Math.PI);
-            ctx.stroke();
-          }
-          ctx.fillStyle = 'rgba(255,90,120,0.35)';
-          ctx.beginPath();
-          ctx.arc(c.x - hr * 0.62, hy + hr * 0.35, hr * 0.18, 0, Math.PI * 2);
-          ctx.arc(c.x + hr * 0.62, hy + hr * 0.35, hr * 0.18, 0, Math.PI * 2);
-          ctx.fill();
+        const happy = excited || inWave;
+        const img = happy ? c.sprite.cheer : c.sprite.normal;
+        const scale = (s * 0.78) / 128;
+        const w = 96 * scale;
+        const h = 128 * scale;
+        // 신나면 좌우로 들썩
+        const sway = happy ? Math.sin(t * 9 + c.phase) * s * 0.03 : 0;
+        ctx.drawImage(img, c.x - w / 2 + sway, y - h, w, h);
+
+        // 폰 카메라 플래시 (평소엔 가끔, 득점 순간엔 와르르)
+        if (c.flash > 0) c.flash -= dt;
+        else if ((c.sprite.phone && Math.random() < dt * 0.15) || (this.flashBurst > 0 && Math.random() < dt * 1.2)) c.flash = 0.18;
+        if (c.flash > 0) {
+          const fx = c.x - w * 0.38;
+          const fy = y - h * 0.72;
+          const k = c.flash / 0.18;
+          const rg = ctx.createRadialGradient(fx, fy, 0, fx, fy, s * 0.35 * k + 4);
+          rg.addColorStop(0, `rgba(255,255,255,${0.95 * k})`);
+          rg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = rg;
+          ctx.fillRect(fx - s * 0.4, fy - s * 0.4, s * 0.8, s * 0.8);
         }
         // 소품
         if (c.prop === 'flag') {
@@ -800,7 +1147,7 @@
           ctx.fillStyle = TEAM_COLOR[c.team];
           ctx.fillRect(c.x + s * 0.2, y - s * 1.0 + wave, s * 0.42, s * 0.26);
         } else if (c.prop === 'sign') {
-          const lift = armsUp ? s * 0.25 : 0;
+          const lift = happy ? s * 0.25 : 0;
           ctx.fillStyle = '#fff';
           ctx.fillRect(c.x - s * 0.42, y - s * 1.0 - lift, s * 0.84, s * 0.32);
           ctx.strokeStyle = TEAM_COLOR[c.team];
@@ -810,9 +1157,9 @@
           ctx.font = `900 ${Math.max(6, s * 0.16)}px system-ui`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(c.sign, c.x, y - s * 0.84 - lift);
+          ctx.fillText(c.sign, c.x, y - s * 0.84 - lift, s * 0.8);
         } else if (c.prop === 'stick') {
-          const sw = Math.sin(t * (armsUp ? 9 : 3) + c.phase) * 0.5;
+          const sw = Math.sin(t * (happy ? 9 : 3) + c.phase) * 0.5;
           const tx = c.x + s * 0.18 + Math.sin(sw) * s * 0.3;
           const ty = y - s * 0.65 - Math.cos(sw) * s * 0.25;
           ctx.strokeStyle = TEAM_COLOR[c.team];
@@ -828,6 +1175,170 @@
           ctx.fill();
         }
       }
+      // 응원 현수막 (물결치며 흔들림)
+      for (const bn of this.banners || []) {
+        const excited = cheering && (!this.cheerSide || bn.team === this.cheerSide);
+        const hgt = Math.max(10, bn.a.s * 0.3);
+        const seg = 16;
+        const lift = excited ? Math.abs(Math.sin(t * 8)) * hgt * 0.6 : 0;
+        ctx.beginPath();
+        for (let k = 0; k <= seg; k++) {
+          const u = k / seg;
+          const x = bn.a.x + (bn.b.x - bn.a.x) * u;
+          const y = bn.a.y + (bn.b.y - bn.a.y) * u + Math.sin(t * 3 + bn.phase + u * 6) * hgt * 0.15 - lift;
+          k ? ctx.lineTo(x, y - hgt) : ctx.moveTo(x, y - hgt);
+        }
+        for (let k = seg; k >= 0; k--) {
+          const u = k / seg;
+          const x = bn.a.x + (bn.b.x - bn.a.x) * u;
+          const y = bn.a.y + (bn.b.y - bn.a.y) * u + Math.sin(t * 3 + bn.phase + u * 6) * hgt * 0.15 - lift;
+          ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = TEAM_COLOR[bn.team];
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = `900 ${Math.round(hgt * 0.62)}px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const mx = (bn.a.x + bn.b.x) / 2;
+        const my = (bn.a.y + bn.b.y) / 2 - hgt / 2 + Math.sin(t * 3 + bn.phase + 3) * hgt * 0.15 - lift;
+        ctx.fillText(bn.text, mx, my, Math.abs(bn.b.x - bn.a.x) * 0.9);
+      }
+    }
+
+    /*
+     * 심판과 사진기자: 심판은 공을 눈으로 따라가다 득점하면 팀 쪽으로 팔을 든다.
+     * 사진기자는 강타·득점 때 플래시를 터뜨린다.
+     */
+    drawOfficials(ctx, frame) {
+      const t = this.time;
+      const realView = this.view;
+      this.view = 'A';
+      const seat = this.project(2.4, 0, C.FLOOR_Z + 0.75);
+      const photogs = [this.project(-2.1, 5.25, C.FLOOR_Z), this.project(2.0, 5.25, C.FLOOR_Z)];
+      this.view = realView;
+      const O = '#1b1b2f';
+      if (seat) {
+        const s = seat.s;
+        // 공 방향 보기 (화면상 공 x)
+        const look = this.ballScreen ? Math.max(-1, Math.min(1, (this.ballScreen.x - seat.x) / (s * 2))) : 0;
+        const cel = frame.celebrate && frame.celebrate.t < 1.6 ? frame.celebrate.team : null;
+        const bx = seat.x;
+        const by = seat.y - s * 0.04;
+        // 몸 (남색 재킷 + 흰 셔츠 + 나비넥타이)
+        ctx.fillStyle = '#1d3557';
+        ctx.beginPath();
+        ctx.ellipse(bx, by - s * 0.22, s * 0.17, s * 0.22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = Math.max(1.5, s * 0.015);
+        ctx.strokeStyle = O;
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(bx - s * 0.05, by - s * 0.42);
+        ctx.lineTo(bx + s * 0.05, by - s * 0.42);
+        ctx.lineTo(bx, by - s * 0.26);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#e63946';
+        ctx.beginPath();
+        ctx.moveTo(bx - s * 0.05, by - s * 0.42);
+        ctx.lineTo(bx + s * 0.05, by - s * 0.38);
+        ctx.lineTo(bx + s * 0.05, by - s * 0.42);
+        ctx.lineTo(bx - s * 0.05, by - s * 0.38);
+        ctx.closePath();
+        ctx.fill();
+        // 팔: 득점한 팀 쪽(화면 위=상대, 아래=우리)으로 든다
+        ctx.strokeStyle = '#1d3557';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = s * 0.06;
+        const sideSign = cel ? (cel === realView ? 1 : -1) : 0;
+        ctx.beginPath();
+        ctx.moveTo(bx - s * 0.13, by - s * 0.36);
+        if (cel) ctx.lineTo(bx - s * 0.3, by - s * (0.55 + 0.1 * Math.sin(t * 10)) + sideSign * s * 0.1);
+        else ctx.lineTo(bx - s * 0.16, by - s * 0.12);
+        ctx.stroke();
+        // 머리
+        const hx = bx + look * s * 0.02;
+        const hy = by - s * 0.58;
+        const hr = s * 0.15;
+        ctx.fillStyle = '#ffe0c2';
+        ctx.beginPath();
+        ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#6c757d';
+        ctx.beginPath();
+        ctx.arc(hx, hy - hr * 0.2, hr * 1.02, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.fill();
+        // 눈이 공을 따라간다
+        ctx.fillStyle = O;
+        for (const sx of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(hx + sx * hr * 0.38 + look * hr * 0.15, hy + hr * 0.05, Math.max(1, hr * 0.12), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // 콧수염
+        ctx.fillStyle = '#495057';
+        ctx.beginPath();
+        ctx.ellipse(hx - hr * 0.2, hy + hr * 0.42, hr * 0.22, hr * 0.09, 0.3, 0, Math.PI * 2);
+        ctx.ellipse(hx + hr * 0.2, hy + hr * 0.42, hr * 0.22, hr * 0.09, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        if (cel) {
+          ctx.font = `900 ${Math.max(10, s * 0.1)}px system-ui`;
+          ctx.textAlign = 'center';
+          ctx.fillStyle = TEAM_COLOR[cel];
+          ctx.fillText('POINT!', hx, hy - hr * 1.7);
+        }
+      }
+      // 사진기자 (쭈그려 앉아 대포 렌즈)
+      if (this.photoFlash > 0) this.photoFlash -= this.lastDt;
+      photogs.forEach((p, i) => {
+        if (!p) return;
+        const s = p.s;
+        const x = p.x;
+        const y = p.y;
+        const dir = i === 0 ? 1 : -1;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x, y, s * 0.25, s * 0.06, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#343a40';
+        ctx.beginPath();
+        ctx.ellipse(x, y - s * 0.22, s * 0.2, s * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = Math.max(1.5, s * 0.015);
+        ctx.strokeStyle = O;
+        ctx.stroke();
+        ctx.fillStyle = '#ffe0c2';
+        ctx.beginPath();
+        ctx.arc(x, y - s * 0.5, s * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#212529';
+        ctx.beginPath();
+        ctx.arc(x, y - s * 0.56, s * 0.14, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(x - s * 0.15, y - s * 0.6, s * 0.3, s * 0.04);
+        // 카메라
+        ctx.fillStyle = '#111';
+        ctx.fillRect(x + dir * s * 0.02 - s * 0.08, y - s * 0.55, s * 0.16, s * 0.12);
+        ctx.fillStyle = '#495057';
+        ctx.fillRect(x + dir * s * 0.08, y - s * 0.53, dir * s * 0.18, s * 0.08);
+        if (this.photoFlash > 0 && Math.floor(t * 20 + i * 3) % 3 === 0) {
+          const fx = x + dir * s * 0.28;
+          const fy = y - s * 0.5;
+          const rg = ctx.createRadialGradient(fx, fy, 0, fx, fy, s * 0.6);
+          rg.addColorStop(0, 'rgba(255,255,255,0.95)');
+          rg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = rg;
+          ctx.fillRect(fx - s * 0.6, fy - s * 0.6, s * 1.2, s * 1.2);
+        }
+      });
     }
 
     // 코트 옆 마스코트 "핑퐁이": 탁구공 모양 캐릭터가 춤춘다
