@@ -4,6 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ping Pong Arena</title>
+    <meta name="theme-color" content="#0b1020" />
+    <meta name="description" content="친구와 코드로 입장해서 즐기는 멀티플레이 탁구 게임" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="핑퐁 아레나" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
@@ -12,6 +21,8 @@
       <div class="hero">
         <h1>🏓 PING PONG <span>ARENA</span></h1>
         <p>친구에게 코드를 알려주고 1:1 단식 · 2:2 복식으로 겨뤄보세요!</p>
+        <button id="installBtn" class="btn primary install-btn hidden">📲 앱으로 설치하기</button>
+        <p id="iosInstall" class="hint ios-install hidden">📲 앱으로 설치: Safari 아래쪽 <b>공유 버튼(□↑)</b> → <b>"홈 화면에 추가"</b></p>
       </div>
       <div class="cards">
         <div class="card">

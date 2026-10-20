@@ -56,6 +56,30 @@
 
   Ads.init();
 
+  /* ---------------- 앱 설치 (홈 화면에 추가) ---------------- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+  const standalone = window.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone;
+  let installPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // 안드로이드/PC 크롬: 설치 버튼을 직접 보여준다
+    e.preventDefault();
+    installPrompt = e;
+    if (!standalone) $('installBtn').classList.remove('hidden');
+  });
+  $('installBtn').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    $('installBtn').classList.add('hidden');
+  });
+  window.addEventListener('appinstalled', () => $('installBtn').classList.add('hidden'));
+  // 아이폰/아이패드 Safari 는 자동 설치 버튼이 없어서 방법을 안내한다
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && !standalone) $('iosInstall').classList.remove('hidden');
+
   /* ---------------- 화면 전환 ---------------- */
   function show(id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));

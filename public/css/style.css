@@ -571,3 +571,17 @@ select {
     bottom: 110px;
   }
 }
+
+/* 앱 설치 안내 */
+.install-btn {
+  margin-top: 6px;
+}
+.ios-install {
+  display: inline-block;
+  margin-top: 6px;
+  background: rgba(255, 214, 10, 0.12);
+  border: 1px solid rgba(255, 214, 10, 0.4);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: #ffe58a;
+}
