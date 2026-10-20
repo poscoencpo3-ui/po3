@@ -318,6 +318,16 @@ class Room {
     const p = this.players.get(id);
     if (!p || !msg || p.isBot) return;
     if (!this.match) return;
+    if (msg.type === 'paddle') {
+      // 사람이 직접 움직이는 라켓 위치 (자기 코트 쪽으로 제한)
+      const x = Number(msg.x);
+      const y = Number(msg.y);
+      const z = Number(msg.z);
+      if (![x, y, z].every(Number.isFinite)) return;
+      const sgn = p.slot[0] === 'A' ? -1 : 1;
+      p.ctl = { x: P.clamp(x, -2.6, 2.6), y: sgn * P.clamp(y * sgn, 0.05, 4.2), z: P.clamp(z, -0.6, 1.2), at: this.clock };
+      return;
+    }
     if (msg.type === 'toss') this.toss(p.slot);
     else if (msg.type === 'hit') this.hit(p.slot, msg, id);
   }
@@ -372,10 +382,22 @@ class Room {
     const { t: ct, rec } = this.rewind(opts.ct);
     if (!rec) return false;
     const diff = (ct - m.ideal.at) / 1000;
-    const quality = P.timingQuality(diff, m.ball.special ? P.SPECIAL_WINDOW : P.TIMING_WINDOW);
+    let quality;
+    let miss = false;
+    if (opts.mode === 'contact') {
+      // 라켓을 공에 갖다 대서 친 경우: 얼마나 공 중심에 맞았는지(acc) + 정점 타이밍
+      const acc = P.clamp(Number(opts.acc) || 0, 0, 1);
+      const tq = P.timingQuality(diff, m.ball.special ? 0.35 : 0.6);
+      quality = P.clamp(0.45 * tq + 0.55 * acc, 0.05, 1);
+      // 필살기 공은 정확히 맞혀야만 받아칠 수 있다
+      if (m.ball.special && (acc < 0.45 || tq <= 0)) miss = true;
+    } else {
+      quality = P.timingQuality(diff, m.ball.special ? P.SPECIAL_WINDOW : P.TIMING_WINDOW);
+      miss = quality <= 0;
+    }
     const hp = this.playerInSlot(slot);
     const useSpecial = !!opts.special && m.phase === 'rally' && hp && (hp.energy || 0) >= ENERGY_MAX;
-    if (quality <= 0) {
+    if (miss) {
       if (socketId) this.emitTo(socketId, 'fx', { type: 'whiff', slot, diff });
       return false;
     }
@@ -688,6 +710,14 @@ class Room {
     const r = m.rally;
     if (m.phase === 'special') return; // 필살기 연출 중에는 모두 정지
     for (const p of this.players.values()) {
+      // 사람이 라켓을 직접 움직이고 있으면 그 위치를 그대로 따른다
+      if (!p.isBot && p.ctl && this.clock - p.ctl.at < 1500) {
+        const k = Math.min(1, dt * 18);
+        p.paddle.x += (p.ctl.x - p.paddle.x) * k;
+        p.paddle.y += (p.ctl.y - p.paddle.y) * k;
+        p.paddle.z += (p.ctl.z - p.paddle.z) * k;
+        continue;
+      }
       let target = this.homePosition(p.slot);
       if (m.phase === 'serve' && m.server === p.slot) {
         const b = m.ball;

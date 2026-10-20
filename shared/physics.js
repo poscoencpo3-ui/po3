@@ -242,7 +242,9 @@
 
     const tx = aimP * xs;
     const ty = depthP * dir;
-    const ax = side * (opts.special ? 2.8 : 1.9) * xs; // 사이드 스핀: 휘어 들어가는 공
+    // 사이드 스핀: 손가락/마우스를 곡선으로 움직이면(curl) 그 방향으로 휘어 들어간다
+    const curl = Number.isFinite(Number(opts.curl)) && opts.curl !== undefined ? clamp(Number(opts.curl), -1, 1) : side;
+    const ax = curl * (opts.special ? 2.8 : 2.3) * xs;
     const az = -(C.G + extraAz);
 
     let v;
@@ -272,7 +274,7 @@
         ax,
         az,
         spin: kind === 'drive' || specialKind ? 'top' : 'back',
-        side,
+        side: curl,
         special: !!opts.special,
       },
       kind: specialKind || kind,

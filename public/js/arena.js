@@ -582,7 +582,7 @@
 
       this.drawEffects(ctx, dt);
       if (frame.board) this.drawJumbotron(ctx, frame.board, dt);
-      if (frame.cursor) this.drawCrosshair(ctx, frame.cursor);
+      if (frame.racket) this.drawRacket(ctx, frame.racket);
       if (this.specialFlash > 0) {
         ctx.fillStyle = `rgba(255,255,255,${this.specialFlash * 2})`;
         ctx.fillRect(0, 0, w, h);
@@ -967,7 +967,10 @@
 
       const ground = this.project(bodyX, bodyY, C.FLOOR_Z);
       const foot = this.project(bodyX, bodyY, C.FLOOR_Z + jumpZ);
-      const hand = this.project(pad.x, pad.y, pad.z);
+      let hand = this.project(pad.x, pad.y, pad.z);
+      // 내 캐릭터의 팔은 내가 움직이는 라켓(화면 위치)으로 뻗는다
+      const ownRacket = p.isMe && frame.racket && frame.racket.x > -50 && !frame.special;
+      if (ownRacket && hand) hand = { x: frame.racket.x, y: frame.racket.y, s: hand.s };
       if (!ground || !foot) return;
       const k = near ? 0.66 : 0.82;
       const s = foot.s * k;
@@ -1126,7 +1129,7 @@
           ctx.arc(ax0, shY, Math.hypot(hx - ax0, hy - shY), -Math.PI * 0.9, -Math.PI * 0.9 + swing * Math.PI * 0.8);
           ctx.stroke();
         }
-        this.drawPaddle(ctx, hx, hy, Math.max(7, s * 0.13), swing);
+        if (!ownRacket || dance != null || happy) this.drawPaddle(ctx, hx, hy, Math.max(7, s * 0.13), swing);
       }
 
       // 머리 (캐리커처) — 크게!
@@ -1639,6 +1642,62 @@
       ctx.restore();
     }
 
+    // 내 라켓: 손가락/마우스를 따라다닌다. 칠 수 있을 때 공 주위에 맞는 범위를 보여준다
+    drawRacket(ctx, rk) {
+      ctx.save();
+      const b = this.ballScreen;
+      if (rk.active && b) {
+        const d = Math.hypot(rk.x - b.x, rk.y - b.y);
+        const inRange = d <= rk.radius;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = inRange ? '#ffd60a' : 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, rk.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // 라켓 → 공 방향 안내선
+        if (!inRange && d < rk.radius * 6) {
+          ctx.strokeStyle = 'rgba(255,214,10,0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(rk.x, rk.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+      // 휴대폰: 손가락 위치 표시 (라켓은 손가락 위에 뜬다)
+      if (rk.touch && rk.x > -50) {
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.arc(rk.x, rk.y + 70, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(rk.x, rk.y + 48);
+        ctx.lineTo(rk.x, rk.y + 22);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = rk.active ? 0.95 : 0.6;
+      const tilt = rk.curl * 0.8;
+      this.drawPaddle(ctx, rk.x, rk.y, rk.touch ? 26 : 22, tilt);
+      ctx.globalAlpha = 1;
+      if (rk.kind && rk.active) {
+        let label = rk.armed ? '⚡ 필살기' : rk.kind === 'drive' ? '⬆ 드라이브' : '커트';
+        if (Math.abs(rk.curl) > 0.35 && !rk.armed) label += rk.curl > 0 ? ' ↪' : ' ↩';
+        ctx.font = '900 14px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.strokeText(label, rk.x + 28, rk.y);
+        ctx.fillStyle = rk.armed ? '#c77dff' : rk.kind === 'drive' ? '#ffa94d' : '#74c0fc';
+        ctx.fillText(label, rk.x + 28, rk.y);
+      }
+      ctx.restore();
+    }
+
     drawCrosshair(ctx, cur) {
       ctx.save();
       if (cur.kind) {
@@ -1686,6 +1745,30 @@
           ctx.stroke();
           ctx.setLineDash([]);
         }
+      }
+      if (tm.contact) {
+        // 라켓 모드: 공이 가장 높이 뜰 자리를 "여기!" 로 표시
+        const g = this.project(tm.x, tm.y, tm.z);
+        if (g && rem > -0.1) {
+          const pulse = 1 + Math.sin(this.time * 10) * 0.12;
+          const rr = Math.max(12, g.s * 0.07) * pulse;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = rem < 0.15 ? 'rgba(255,123,0,0.95)' : 'rgba(255,255,255,0.8)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(g.x, g.y, rr, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.font = '900 13px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#fff';
+          ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+          ctx.lineWidth = 3;
+          ctx.strokeText('여기!', g.x, g.y - rr - 9);
+          ctx.fillText('여기!', g.x, g.y - rr - 9);
+        }
+        ctx.restore();
+        return;
       }
       const r0 = b.r + 10;
       const a = Math.abs(rem);

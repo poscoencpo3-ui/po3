@@ -35,6 +35,8 @@
     snapAt: 0,
     imgs: {}, // slot -> Image
     cursor: { x: -100, y: -100, swing: 0 },
+    racket: { x: -100, y: -100 },
+    contactFor: null,
     hist: [],
     specialArmed: false,
     special: null,
@@ -561,20 +563,26 @@
   });
 
   /* ---------------- 입력 ----------------
-   * 캐릭터는 공을 따라 자동으로 움직인다.
-   * 플레이어는 (1) 마우스로 상대 코트의 노릴 곳을 가리키고 (2) 타이밍에 맞춰 클릭한다.
-   * 클릭 순간 마우스를 좌우로 휘두르면 커브, 위로 휘두르면 더 빠른 공.
+   * 라켓이 손가락(폰)/마우스(PC)를 따라 움직이고, 캐릭터는 라켓 쪽으로 달려간다.
+   * 라켓을 공에 갖다 대면 친다 (클릭 필요 없음).
+   *  - 맞는 순간 앞(위)으로 밀고 있으면 드라이브, 가만히 대면 커트(블록)
+   *  - 손가락/마우스를 곡선으로 움직이면 공이 그 방향으로 휘어 들어간다
    */
+  const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const TOUCH_LIFT = 70; // 손가락에 라켓이 가리지 않도록 위로 띄운다
+
   function updateCursor(x, y) {
     const t = performance.now();
     S.cursor.x = x;
     S.cursor.y = y;
     S.hist.push({ t, x, y });
-    while (S.hist.length && t - S.hist[0].t > 140) S.hist.shift();
+    while (S.hist.length && t - S.hist[0].t > 320) S.hist.shift();
   }
 
+  // 최근 140ms 동안의 라켓 이동 속도 (위로 = +sy)
   function swingVector() {
-    const h = S.hist;
+    const t = performance.now();
+    const h = S.hist.filter((p) => t - p.t <= 140);
     if (h.length < 2) return { sx: 0, sy: 0 };
     const a = h[0];
     const b = h[h.length - 1];
@@ -582,20 +590,26 @@
     return { sx: P.clamp((b.x - a.x) / dt / 1300, -1, 1), sy: P.clamp(-(b.y - a.y) / dt / 1300, -1, 1) };
   }
 
+  // 최근 궤적이 얼마나 휘었는지 (+ 오른쪽으로 휨, - 왼쪽으로 휨)
+  function curlOf() {
+    const t = performance.now();
+    const h = S.hist.filter((p) => t - p.t <= 300);
+    if (h.length < 4) return 0;
+    const a = h[0];
+    const m = h[Math.floor(h.length / 2)];
+    const b = h[h.length - 1];
+    const v1 = { x: m.x - a.x, y: m.y - a.y };
+    const v2 = { x: b.x - m.x, y: b.y - m.y };
+    const l1 = Math.hypot(v1.x, v1.y);
+    const l2 = Math.hypot(v2.x, v2.y);
+    if (l1 < 4 || l2 < 4) return 0;
+    const turn = (v1.x * v2.y - v1.y * v2.x) / (l1 * l2); // 회전 방향(sin)
+    return P.clamp(turn * Math.min(1, (l1 + l2) / 90) * 1.4, -1, 1);
+  }
+
   // 지금 서버 시각 추정 (마지막 상태의 서버 시각 + 경과 시간)
   function serverNow() {
     return S.snap ? S.snap.t + (performance.now() - S.snapAt) : 0;
-  }
-
-  // 마우스 위치 → 상대 코트 위 조준점
-  function aimPoint() {
-    const team = myTeam();
-    const dir = team === 'A' ? 1 : -1;
-    const p = arena.unproject(S.cursor.x, S.cursor.y, 0);
-    return {
-      x: P.clamp(p.x, -C.HW + 0.08, C.HW - 0.08),
-      y: dir * P.clamp(p.y * dir, 0.3, C.HL - 0.08),
-    };
   }
 
   function myIdeal() {
@@ -612,7 +626,6 @@
     arena.addText(text, color, false, arena.w / 2, arena.h * 0.62);
   }
 
-  // 클릭 순간 마우스를 앞(위)으로 밀고 있으면 드라이브, 그냥 클릭하면 커트
   const DRIVE_PUSH = 0.22;
   function shotKind(sw) {
     return sw.sy > DRIVE_PUSH ? 'drive' : 'cut';
@@ -629,62 +642,93 @@
     S.specialArmed = !S.specialArmed;
     if (S.specialArmed) {
       Sfx.toss();
-      feedback('⚡ 필살기 장전! 다음 공을 타이밍에 맞춰 치세요', '#c77dff');
+      feedback('⚡ 필살기 장전! 다음 공에 라켓을 갖다 대세요', '#c77dff');
     }
   }
 
-  function attempt(ctOverride, swOverride) {
-    Sfx.unlock();
+  // 지금 칠 수 있는 공인가?
+  function canContact() {
     const st = S.snap;
-    if (!st || !S.match) return;
-    if (isMyServeHold()) {
-      socket.emit('input', { type: 'toss' });
-      return;
-    }
+    if (!st || !S.match) return false;
     const ideal = myIdeal();
-    if (!ideal || S.cooldown > 0) return;
-    const ct = ctOverride || serverNow();
-    const diff = (ct - ideal.at) / 1000;
-    const win = st.sp ? P.SPECIAL_WINDOW : P.TIMING_WINDOW;
-    S.cooldown = 0.35;
-    S.swingAnim = 1;
-    if (diff < -win) {
-      Sfx.whiff();
-      feedback('너무 빨라요!', '#adb5bd');
-      return;
-    }
-    if (diff > win) {
-      Sfx.whiff();
-      feedback('너무 늦었어요!', '#adb5bd');
-      return;
-    }
-    const sw = swOverride || swingVector();
-    const kind = shotKind(sw);
-    const special = !!S.specialArmed && myEnergy() >= 3 && st.phase === 'rally';
-    if (special) S.specialArmed = false;
-    socket.emit('input', { type: 'hit', kind, aimX: aimPoint().x, aimY: aimPoint().y, swingX: sw.sx, swingY: Math.max(0.35, sw.sy), ct, special });
+    if (!ideal) return false;
+    if (st.phase === 'serve') return st.server === mySlot() && st.tossed && !st.held;
+    return st.phase === 'rally' && st.canHit && st.next === mySlot();
   }
 
-  canvas.addEventListener('mousemove', (e) => updateCursor(e.clientX, e.clientY));
+  function hitRadius() {
+    const bs = arena.ballScreen;
+    const r = bs ? bs.r : 5;
+    return IS_TOUCH ? Math.max(46, r * 6.5) : Math.max(34, r * 5);
+  }
+
+  // 매 프레임: 라켓이 공에 닿았는지 검사
+  function checkContact() {
+    if (!canContact()) return;
+    const ideal = myIdeal();
+    if (S.contactFor === ideal.at) return; // 같은 공은 한 번만
+    const bs = arena.ballScreen;
+    if (!bs) return;
+    const R = hitRadius();
+    const d = Math.hypot(S.racket.x - bs.x, S.racket.y - bs.y);
+    if (d > R) return;
+    S.contactFor = ideal.at;
+    const sw = swingVector();
+    const curl = curlOf();
+    const special = !!S.specialArmed && myEnergy() >= 3 && S.snap.phase === 'rally';
+    if (special) S.specialArmed = false;
+    S.swingAnim = 1;
+    socket.emit('input', {
+      type: 'hit',
+      mode: 'contact',
+      kind: shotKind(sw),
+      acc: 1 - d / R,
+      swingX: sw.sx,
+      swingY: Math.max(0.3, sw.sy),
+      curl,
+      ct: serverNow(),
+      special,
+    });
+  }
+
+  // 라켓 화면 위치 → 월드 좌표로 서버에 보내기 (캐릭터가 따라 움직임)
+  function sendPaddle(now, ball) {
+    if (now - (S.lastPaddleSend || 0) < 50 || !S.match) return;
+    S.lastPaddleSend = now;
+    const sgn = myTeam() === 'A' ? -1 : 1;
+    const z = ball && canContact() ? P.clamp(ball.z, -0.4, 0.9) : 0.25;
+    const p = arena.unproject(S.racket.x, S.racket.y, z);
+    const y = sgn * P.clamp(p.y * sgn, 0.05, 4.2);
+    const x = P.clamp(p.x, -2.6, 2.6);
+    S.myPaddle = { x, y, z };
+    socket.emit('input', { type: 'paddle', x, y, z });
+  }
+
+  function tossIfServing() {
+    Sfx.unlock();
+    if (isMyServeHold()) socket.emit('input', { type: 'toss' });
+  }
+
+  function moveRacket(x, y) {
+    S.racket.x = x;
+    S.racket.y = y;
+    updateCursor(x, y);
+  }
+
+  canvas.addEventListener('mousemove', (e) => moveRacket(e.clientX, e.clientY));
   canvas.addEventListener('mousedown', (e) => {
-    updateCursor(e.clientX, e.clientY);
+    moveRacket(e.clientX, e.clientY);
     if (e.button === 2) return toggleSpecial(); // 오른쪽 클릭 = 필살기 장전
-    attempt();
+    tossIfServing();
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-  // 터치: 탭 = 커트, 위로 쓸어올리기 = 드라이브 (타이밍은 손가락을 댄 순간 기준)
   canvas.addEventListener(
     'touchstart',
     (e) => {
       e.preventDefault();
       const t = e.touches[0];
-      updateCursor(t.clientX, t.clientY);
-      if (isMyServeHold()) {
-        attempt();
-        S.touch = null;
-        return;
-      }
-      S.touch = { x: t.clientX, y: t.clientY, ct: serverNow(), at: performance.now() };
+      moveRacket(t.clientX, t.clientY - TOUCH_LIFT);
+      tossIfServing();
     },
     { passive: false }
   );
@@ -693,20 +737,7 @@
     (e) => {
       e.preventDefault();
       const t = e.touches[0];
-      updateCursor(t.clientX, t.clientY);
-    },
-    { passive: false }
-  );
-  canvas.addEventListener(
-    'touchend',
-    (e) => {
-      e.preventDefault();
-      const st = S.touch;
-      S.touch = null;
-      if (!st) return;
-      const t = e.changedTouches[0];
-      const sw = { sx: P.clamp((t.clientX - st.x) / 120, -1, 1), sy: P.clamp(-(t.clientY - st.y) / 120, -1, 1) };
-      attempt(st.ct, sw);
+      moveRacket(t.clientX, t.clientY - TOUCH_LIFT);
     },
     { passive: false }
   );
@@ -714,7 +745,7 @@
     if (!$('game').classList.contains('active')) return;
     if (e.code === 'Space') {
       e.preventDefault();
-      attempt();
+      tossIfServing();
     } else if (e.code === 'KeyE' || e.code === 'KeyQ') {
       toggleSpecial();
     }
@@ -727,7 +758,7 @@
     const btn = $('specialBtn');
     btn.classList.toggle('hidden', n < 3);
     btn.classList.toggle('armed', !!S.specialArmed);
-    btn.textContent = S.specialArmed ? '⚡ 장전됨! 타이밍에 클릭' : '⚡ 필살기 (E)';
+    btn.textContent = S.specialArmed ? '⚡ 장전됨! 라켓을 공에!' : IS_TOUCH ? '⚡ 필살기' : '⚡ 필살기 (E)';
     if (n < 3) S.specialArmed = false;
   }
   $('muteBtn').addEventListener('click', () => ($('muteBtn').textContent = Sfx.toggle() ? '🔇' : '🔊'));
@@ -744,12 +775,12 @@
     if (st.phase === 'serve') {
       if (st.server === slot) {
         mine = true;
-        text = st.held ? '🏓 내 서브! 노릴 곳을 가리키고 클릭(스페이스)으로 토스' : '⬇ 원이 공에 딱 맞을 때 클릭! (위로 밀며 클릭 = 드라이브)';
+        text = st.held ? (IS_TOUCH ? '🏓 내 서브! 화면을 탭해서 토스' : '🏓 내 서브! 클릭(스페이스)으로 토스') : '⬇ 떨어지는 공에 라켓을 갖다 대세요! (위로 밀면 드라이브)';
       } else text = `${nm(st.server)} 서브 준비 중 → 리시브: ${nm(m.receiver)}`;
     } else if (st.phase === 'rally') {
       if (st.next === slot) {
         mine = true;
-        text = S.specialArmed ? '⚡ 필살기 장전! 원이 닿는 순간 클릭!' : '🎯 원이 닿는 순간 클릭! ⬆위로 밀며 클릭 = 드라이브 · 그냥 클릭 = 커트';
+        text = S.specialArmed ? '⚡ 필살기 장전! 라켓을 공에 갖다 대세요!' : '🏓 라켓을 공으로! ⬆위로 밀며 치면 드라이브 · 대기만 하면 커트 · 곡선으로 밀면 커브';
       } else if (st.next[0] === slot[0]) text = `파트너 ${nm(st.next)} 차례 (복식은 번갈아 칩니다)`;
       else text = `상대 ${nm(st.next)} 차례 — 다음 공 준비!`;
     } else if (st.phase === 'point') text = S.pointMsg || '';
@@ -773,8 +804,10 @@
       const st = S.snap;
       if (st) ballRot += dt * (st.spin === 'top' ? 25 : st.spin === 'back' ? -25 : 6);
       const ball = st ? predictedBall() : null;
+      sendPaddle(now, ball);
       const players = S.lobby.players.map((p) => {
-        const pd = st && st.paddles[p.slot];
+        let pd = st && st.paddles[p.slot];
+        if (p.id === S.myId && S.myPaddle) pd = [S.myPaddle.x, S.myPaddle.y, S.myPaddle.z];
         const swingAge = p.swingT ? (now - p.swingT) / 1000 : 9;
         return {
           slot: p.slot,
@@ -792,21 +825,30 @@
       if (S.swingAnim > 0) S.swingAnim = Math.max(0, S.swingAnim - dt * 4);
       Music.intensity = S.match && S.match.deuce ? 1 : 0;
       const ideal = myIdeal();
-      const showAim = st && ((st.phase === 'rally' && st.next === mySlot()) || (st.phase === 'serve' && st.server === mySlot()));
+      const myTurnNow = canContact();
       arena.draw(
         {
           ball,
           fx: st ? st.fx : 'none',
           players,
-          cursor: { x: S.cursor.x, y: S.cursor.y, kind: myIdeal() && !isMyServeHold() ? shotKind(swingVector()) : null, armed: S.specialArmed },
-          aim: showAim ? aimPoint() : null,
-          timing: ideal ? { remain: (ideal.at - serverNow()) / 1000, x: ideal.x, y: ideal.y, z: ideal.z, window: P.TIMING_WINDOW } : null,
+          racket: {
+            x: S.racket.x,
+            y: S.racket.y,
+            kind: ideal && !isMyServeHold() ? shotKind(swingVector()) : null,
+            curl: ideal ? curlOf() : 0,
+            armed: S.specialArmed,
+            active: myTurnNow,
+            radius: hitRadius(),
+            touch: IS_TOUCH,
+          },
+          timing: ideal ? { remain: (ideal.at - serverNow()) / 1000, x: ideal.x, y: ideal.y, z: ideal.z, window: P.TIMING_WINDOW, contact: true } : null,
           board: jumboBoard(st),
           special: S.special && now - S.special.at < S.special.dur ? { slot: S.special.slot, kind: S.special.kind, t: (now - S.special.at) / 1000, dur: S.special.dur / 1000 } : null,
           celebrate: S.celebrate ? { team: S.celebrate.team, t: (now - S.celebrate.at) / 1000 } : null,
         },
         dt
       );
+      checkContact();
       turnHint();
       updateEnergyUi();
     }
@@ -820,6 +862,8 @@
       return i ? (i.at - serverNow()) / 1000 : null;
     },
     holdServe: () => !!isMyServeHold(),
+    canContact: () => canContact(),
+    ball: () => arena.ballScreen || null,
     state: () => ({ phase: S.snap && S.snap.phase, energy: myEnergy(), armed: !!S.specialArmed }),
   };
 

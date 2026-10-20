@@ -181,3 +181,44 @@ test('정타 3번이면 에너지가 차고 필살기는 시간을 멈춘 뒤 �
   }
   assert.ok(bounce && bounce[1].y > 0, '상대 코트 바운드');
 });
+
+test('라켓 접촉 모드: 정확히 맞히면 강타, 필살기 공은 대충 대면 못 받는다', () => {
+  const setup = () => {
+    const events = [];
+    const room = new Room('CT001', { mode: 'singles', bestOf: 1 }, (ev, p) => events.push([ev, p]));
+    room.addPlayer('human', '사람', null, 'tok');
+    room.addBot('B1');
+    room.start('human');
+    room.stop();
+    const m = room.match;
+    let t = 0;
+    while (!(m.phase === 'rally' && m.rally.canHit && m.ideal && m.ideal.slot === 'A1') && t < 300) {
+      room.tick(1 / 60);
+      t += 1 / 60;
+    }
+    const idealAt = m.ideal.at;
+    while (room.clock < idealAt) room.tick(1 / 60);
+    return { room, m, events, idealAt };
+  };
+  // 정확한 접촉 + 휘는 궤적
+  {
+    const { room, events, idealAt } = setup();
+    const ok = room.hit('A1', { mode: 'contact', acc: 0.95, kind: 'drive', swingX: 0.2, swingY: 0.8, curl: 0.8, ct: idealAt });
+    assert.strictEqual(ok, true);
+    const hit = events.filter(([e, p]) => e === 'fx' && p.type === 'hit').pop()[1];
+    assert.strictEqual(hit.tier, 'fire');
+    assert.ok(hit.curve > 0.5, '커브 전달');
+  }
+  // 가장자리에 살짝 닿아도 (약하게) 넘어간다
+  {
+    const { room, idealAt } = setup();
+    assert.strictEqual(room.hit('A1', { mode: 'contact', acc: 0.1, kind: 'cut', ct: idealAt + 250 }), true);
+  }
+  // 필살기 공은 정확히 대야 받을 수 있다
+  {
+    const { room, m, idealAt } = setup();
+    m.ball.special = true;
+    assert.strictEqual(room.hit('A1', { mode: 'contact', acc: 0.3, kind: 'cut', ct: idealAt }), false);
+    assert.strictEqual(room.hit('A1', { mode: 'contact', acc: 0.8, kind: 'cut', ct: idealAt }), true);
+  }
+});
