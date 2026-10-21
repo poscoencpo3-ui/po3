@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { onRealtime, startRealtime } from '../lib/realtime'
 import { previewText } from '../lib/format'
 import { setTitleUnread, showNotification } from '../lib/notify'
+import { ensurePush, isPushActive } from '../lib/push'
 import RoomList from '../components/RoomList'
 import ChatRoom from '../components/ChatRoom'
 
@@ -36,6 +37,11 @@ export default function Messenger({ session, admin, route }) {
 
   useEffect(() => startRealtime(), [me])
 
+  // 알림이 허용된 브라우저는 푸시 구독을 이 계정으로 등록 (사이트를 닫아도 알림)
+  useEffect(() => {
+    ensurePush()
+  }, [me])
+
   useEffect(
     () =>
       onRealtime((evt) => {
@@ -46,9 +52,14 @@ export default function Messenger({ session, admin, route }) {
           const row = evt.row
           if (row.kind === 'system' || row.user_id === me) return
           const viewing = row.room_id === activeRef.current && !document.hidden && document.hasFocus()
-          if (!viewing) {
+          // 푸시가 켜져 있으면 알림은 서비스워커가 띄움 (중복 방지)
+          if (!viewing && !isPushActive()) {
             const room = roomsRef.current.find((r) => r.room_id === row.room_id)
-            showNotification(room ? room.name : '새 메시지', `${row.sender_name}: ${previewText(row.kind, row.body)}`, row.room_id)
+            showNotification(
+              (row.is_urgent ? '🚨 [긴급] ' : '') + (room ? room.name : '새 메시지'),
+              `${row.sender_name}: ${previewText(row.kind, row.kind === 'file' ? row.file_name : row.body)}`,
+              row.room_id
+            )
           }
         } else if (evt.type === 'member') {
           // 다른 사람의 읽음 표시 변경은 목록과 무관하므로 무시

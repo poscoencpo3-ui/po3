@@ -2,13 +2,20 @@ import { useState } from 'react'
 import { APP_NAME } from '../lib/supabase'
 import { formatListTime, previewText } from '../lib/format'
 import { notifyPermission, notifySupported, requestNotifyPermission } from '../lib/notify'
+import { ensurePush, isIOS, isStandalone } from '../lib/push'
+import { toast } from '../lib/toast'
 import Avatar from './Avatar'
 
 export default function RoomList({ rooms, activeRoomId, admin }) {
   const [permission, setPermission] = useState(notifyPermission)
 
   async function enableNotify() {
-    setPermission(await requestNotifyPermission())
+    const result = await requestNotifyPermission()
+    setPermission(result)
+    if (result === 'granted') {
+      const ok = await ensurePush()
+      toast(ok ? '알림이 켜졌습니다. 사이트를 닫아도 새 메시지 알림이 옵니다.' : '알림이 켜졌습니다. (사이트가 열려 있을 때 알림)')
+    }
   }
 
   return (
@@ -27,6 +34,11 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
         </div>
       </header>
 
+      {isIOS && !isStandalone && (
+        <div className="notify-banner">
+          📱 아이폰에서 알림을 받으려면: 아래 공유 버튼(□↑) → <b>홈 화면에 추가</b> → 홈 화면 아이콘으로 열기
+        </div>
+      )}
       {notifySupported && permission === 'default' && (
         <button className="notify-banner" onClick={enableNotify}>
           🔔 새 메시지 알림을 받으려면 여기를 눌러 허용해 주세요
@@ -58,8 +70,8 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
                   </div>
                   <div className="room-bottom">
                     <span className="room-preview">
-                      {r.last_kind && r.last_kind !== 'system' && r.last_sender ? `${r.last_sender}: ` : ''}
-                      {previewText(r.last_kind, r.last_body)}
+                      {r.last_kind && r.last_kind !== 'system' && !r.last_deleted && r.last_sender ? `${r.last_sender}: ` : ''}
+                      {previewText(r.last_kind, r.last_body, { deleted: r.last_deleted, urgent: r.last_urgent })}
                     </span>
                     {r.unread > 0 && <span className="badge">{r.unread > 999 ? '999+' : r.unread}</span>}
                   </div>

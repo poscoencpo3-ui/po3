@@ -70,7 +70,7 @@ from auth.users where email = 'admin@example.com';
 
 ## 7단계. 사진 자동 정리 설정 (GitHub Actions)
 
-매일 새벽 90일이 지난 사진을 지웁니다. 매일 Supabase에 접속하므로 **무료 프로젝트가 7일 비활성으로 일시정지되는 것도 막아줍니다.**
+매일 새벽 90일이 지난 사진·파일과, 사용자가 삭제한 메시지의 첨부를 지웁니다. 매일 Supabase에 접속하므로 **무료 프로젝트가 7일 비활성으로 일시정지되는 것도 막아줍니다.**
 
 1. GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
    - `SUPABASE_URL` = Project URL
@@ -84,6 +84,36 @@ from auth.users where email = 'admin@example.com';
 1. `https://<주소>/#/admin` → 관리자 로그인 → 방 만들기
 2. **초대문 복사** → 협력사에 문자나 메일로 전달
 3. 참여자는 링크를 열고 이름과 소속만 입력하면 입장됩니다. (링크에 코드가 들어 있음)
+
+---
+
+## v2 업데이트 적용 (일정·답장·삭제·파일·작업일보·멘션·푸시 알림)
+
+이미 1차 버전을 쓰고 있다면 아래 3가지만 하면 됩니다. 처음 설치라면 2단계에서 `init.sql`을 실행한 다음 이어서 진행하세요.
+
+### ① DB 업데이트
+1. **SQL Editor** → **+ New query** → **Create a new snippet**
+2. `supabase/migrations/20261022000000_v2.sql` 파일 내용을 **전부** 복사해서 붙여넣기 → **Run**
+3. `Success. No rows returned`가 나오면 완료. **한 번만** 실행하세요.
+
+### ② 푸시 알림 함수 배포 (사이트를 닫아도 알림)
+1. 왼쪽 메뉴 **Edge Functions** → **Deploy a new function** → **Via Editor**
+2. 함수 이름을 `push`로 바꿉니다. **반드시 소문자 `push`**
+3. 편집기의 예시 코드를 모두 지우고, `supabase/functions/push/index.ts` 내용을 **전부** 붙여넣기
+4. **Deploy function** 클릭
+5. 배포된 함수 화면 → **Details**(또는 Settings) → **Verify JWT with legacy secret**(Enforce JWT verification)을 **끄기(OFF)** → Save
+   - 로그인 확인은 함수 안에서 직접 하므로 꺼도 안전합니다.
+6. (권장) **Edge Functions → Secrets** → `VAPID_SUBJECT` = `mailto:본인이메일` 추가
+
+서명 키는 첫 알림을 보낼 때 자동으로 만들어지므로, 따로 키를 만들 필요가 없습니다.
+
+### ③ 웹사이트
+`main` 브랜치에 합쳐지면 Cloudflare가 자동으로 다시 배포합니다 (1~2분).
+
+### 알림 켜기 (각 사용자)
+- **PC (Chrome/Edge)**: 채팅 목록 위의 **🔔 알림 허용** 띠 클릭 → 허용
+- **안드로이드**: 같은 방법. 홈 화면에 추가하면 앱처럼 쓸 수 있습니다.
+- **아이폰**: 사파리 **공유 버튼(□↑) → 홈 화면에 추가** → 홈 화면 아이콘으로 열기 → 알림 허용 (iOS 16.4 이상)
 
 ---
 
@@ -109,6 +139,9 @@ from auth.users where email = 'admin@example.com';
 
 **Q. 참여자가 브라우저 기록을 지우면?**
 다시 입장코드를 입력하면 됩니다. 이전 대화도 그대로 보입니다. 다만 새 참여자로 등록되어 참여자 목록에 같은 이름이 한 번 더 보일 수 있습니다.
+
+**Q. 파일(PDF·엑셀)도 90일 뒤 지워지나요?**
+네. 무료 용량(1GB)을 지키기 위해 사진과 같은 90일 규칙입니다. 오래 보관해야 하는 도면 등은 따로 저장해 두세요. 기간은 `.github/workflows/cleanup-images.yml`의 `RETENTION_DAYS`로 바꿀 수 있습니다.
 
 **Q. 코드가 유출되면?**
 코드를 아는 사람은 누구나 들어올 수 있으니, 참여자 목록을 확인하세요. (강퇴와 코드 재발급은 다음 버전 후보입니다.)
