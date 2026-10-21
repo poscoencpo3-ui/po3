@@ -66,6 +66,7 @@ import com.po3.tvremote.tv.TvApp
 @Composable
 fun RemoteScreen(
     tvName: String,
+    tvIp: String,
     connection: ConnectionState,
     apps: List<TvApp>,
     snackbarHostState: SnackbarHostState,
@@ -102,7 +103,7 @@ fun RemoteScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            ConnectionBanner(connection, onReconnect)
+            ConnectionBanner(connection, tvIp, onReconnect)
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 LabeledButton(
@@ -158,7 +159,7 @@ private data class Banner(
     val progress: Boolean = false,
 )
 
-private fun bannerFor(state: ConnectionState): Banner? = when (state) {
+private fun bannerFor(state: ConnectionState, tvIp: String): Banner? = when (state) {
     ConnectionState.Connected -> null
     ConnectionState.Connecting -> Banner("TV에 연결하는 중…", retry = false, progress = true)
     ConnectionState.AwaitingApproval -> Banner(
@@ -178,13 +179,13 @@ private fun bannerFor(state: ConnectionState): Banner? = when (state) {
     is ConnectionState.Failed -> Banner(
         "TV에 연결할 수 없어요.",
         "TV가 켜져 있고 폰과 같은 Wi-Fi에 연결돼 있는지 확인해주세요. " +
-            "TV가 꺼져 있다면 전원 버튼을 눌러보세요. (${state.detail})",
+            "TV가 꺼져 있다면 전원 버튼을 눌러보세요.\n저장된 TV 주소: $tvIp (${state.detail})",
     )
 }
 
 @Composable
-private fun ConnectionBanner(state: ConnectionState, onReconnect: () -> Unit) {
-    val banner = bannerFor(state) ?: return
+private fun ConnectionBanner(state: ConnectionState, tvIp: String, onReconnect: () -> Unit) {
+    val banner = bannerFor(state, tvIp) ?: return
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),

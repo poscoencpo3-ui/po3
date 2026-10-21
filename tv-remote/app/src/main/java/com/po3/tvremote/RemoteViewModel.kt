@@ -55,6 +55,16 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
 
     private var wakeJob: Job? = null
     private var scanJob: Job? = null
+    private var rediscoverJob: Job? = null
+    private var lastRediscoveryAt = 0L
+
+    init {
+        viewModelScope.launch {
+            client.state.collect { state ->
+                if (state is ConnectionState.Failed) rediscover()
+            }
+        }
+    }
 
     private val isBusy: Boolean
         get() = when (client.state.value) {
@@ -176,6 +186,41 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
         client.connect(updated.ip, updated.token)
     }
 
+    /**
+     * 연결에 실패하면 공유기가 TV에 새 IP를 줬을 수 있으므로 같은 Wi-Fi에서 TV를 다시 찾아
+     * 저장된 TV(MAC 주소나 이름이 같은 TV)가 다른 주소에 있으면 그 주소로 옮겨 연결한다.
+     */
+    private fun rediscover() {
+        val now = System.currentTimeMillis()
+        if (rediscoverJob?.isActive == true || wakeJob?.isActive == true) return
+        if (now - lastRediscoveryAt < REDISCOVERY_INTERVAL_MS) return
+        lastRediscoveryAt = now
+        val network = LocalNetwork.wifiIpv4(getApplication())
+        if (network == null) {
+            message("폰이 Wi-Fi에 연결돼 있지 않아요")
+            return
+        }
+        rediscoverJob = viewModelScope.launch {
+            message("TV 주소가 바뀌었는지 같은 Wi-Fi에서 찾아보는 중이에요…")
+            val saved = _settings.value
+            val tvs = discovery.scan(Subnet.hosts(network.address, network.prefixLength))
+            val match = tvs.firstOrNull { it.mac != null && it.mac == saved.mac }
+                ?: tvs.firstOrNull { saved.tvName.isNotBlank() && it.displayName == saved.tvName }
+                ?: tvs.singleOrNull()
+            when {
+                match == null -> message(
+                    "같은 Wi-Fi에서 TV를 찾지 못했어요. TV가 켜져 있는지, " +
+                        "TV 네트워크 상태에서 IP 주소가 0.0.0.0이 아닌지 확인해주세요",
+                )
+                match.ip == saved.ip -> connect()
+                else -> {
+                    message("TV 주소가 ${saved.ip} → ${match.ip}(으)로 바뀌어서 새 주소로 연결해요")
+                    applySettings(saved.copy(ip = match.ip, tvName = match.displayName, mac = match.mac ?: saved.mac))
+                }
+            }
+        }
+    }
+
     private fun saveToken(token: String) {
         _settings.update { it.copy(token = token) }
         store.save(_settings.value)
@@ -205,5 +250,6 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
         /** TV의 '기기 연결 관리' 목록에 표시되는 이름. */
         const val TV_DEVICE_NAME = "TV 리모컨"
         const val WAKE_ATTEMPTS = 8
+        const val REDISCOVERY_INTERVAL_MS = 60_000L
     }
 }

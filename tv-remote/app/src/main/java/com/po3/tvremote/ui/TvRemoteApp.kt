@@ -59,6 +59,7 @@ fun TvRemoteApp(viewModel: RemoteViewModel = viewModel()) {
     } else {
         RemoteScreen(
             tvName = settings.tvName,
+            tvIp = settings.ip,
             connection = connection,
             apps = apps,
             snackbarHostState = snackbarHostState,
