@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffd6e8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+    <title>슬라임 게임</title>
+  </head>
+  <body>
+    <canvas id="cv"></canvas>
+
+    <!-- 처음 화면 -->
+    <section id="title" class="screen">
+      <div class="logo">
+        <img class="logo-mon" src="maps/saebom/monster.png" alt="" />
+        <h1>슬라임 게임</h1>
+        <p class="sub">슬라임 괴물을 피해 문까지 가요!</p>
+      </div>
+      <label class="field">
+        <span>내 이름</span>
+        <input id="name" maxlength="8" placeholder="이름을 써요" autocomplete="off" />
+      </label>
+      <div class="label">캐릭터 고르기</div>
+      <div id="chars" class="chars"></div>
+      <div class="label">맵 고르기</div>
+      <div id="maps" class="maps"></div>
+      <div class="btns">
+        <button id="solo" class="big pink">혼자 하기</button>
+        <button id="race" class="big mint">친구랑 경주</button>
+      </div>
+      <div class="btns small">
+        <button id="rankBtn">🏆 랭킹</button>
+        <button id="howBtn">❓ 하는 법</button>
+        <button class="sound">🔊</button>
+      </div>
+    </section>
+
+    <!-- 경주 방 -->
+    <section id="lobby" class="screen hidden">
+      <h2>친구랑 경주</h2>
+      <div id="lobbyJoin">
+        <button id="makeRoom" class="big pink">방 만들기</button>
+        <div class="or">또는 친구 방 번호</div>
+        <div class="join">
+          <input id="code" inputmode="numeric" maxlength="4" placeholder="1234" />
+          <button id="joinRoom" class="mint">들어가기</button>
+        </div>
+        <p id="netNote" class="note"></p>
+      </div>
+      <div id="lobbyRoom" class="hidden">
+        <div class="code-box">방 번호 <b id="roomCode">----</b></div>
+        <p class="note">친구 폰에서 같은 번호로 들어오면 같이 달려요!</p>
+        <div id="peers" class="peers"></div>
+        <div id="lobbyMap" class="note"></div>
+        <button id="startRace" class="big pink">시작!</button>
+        <p id="waitHost" class="note hidden">방장이 시작하기를 기다려요…</p>
+      </div>
+      <button id="lobbyBack" class="back">← 처음으로</button>
+    </section>
+
+    <!-- 랭킹 -->
+    <section id="rank" class="screen hidden">
+      <h2>🏆 랭킹</h2>
+      <div class="tabs" id="rankTabs">
+        <button data-tab="saebom" class="on">새봄이 맵</button>
+        <button data-tab="saebyeol">새별이 맵</button>
+        <button data-tab="points">누적 점수</button>
+      </div>
+      <ol id="rankList" class="rank-list"></ol>
+      <p id="rankNote" class="note"></p>
+      <button id="rankBack" class="back">← 돌아가기</button>
+    </section>
+
+    <!-- 하는 법 -->
+    <section id="how" class="screen hidden">
+      <h2>❓ 하는 법</h2>
+      <ul class="how">
+        <li>☁️ <b>구름(슬라임)</b>을 톡 누르면 그쪽으로 뛰어요.</li>
+        <li>⭕ 점선 동그라미 안까지만 뛸 수 있어요.</li>
+        <li>💦 구름 밖으로 뛰면 떨어져요. 원래 구름으로 돌아가요.</li>
+        <li>👾 <b>슬라임 괴물</b>에 닿으면 냠! 처음부터 다시 해요.</li>
+        <li>❗ 괴물 머리에 느낌표가 뜨면 멀리 뛰어와요. 조심!</li>
+        <li>🪜 <b>지름길</b> 표시에 내리면 사다리 → 미끄럼틀로 슝!</li>
+        <li>🚪 <b>도착 문</b>까지 가면 성공! 빠를수록 점수가 커요.</li>
+      </ul>
+      <button id="howBack" class="back">← 돌아가기</button>
+    </section>
+
+    <!-- 게임 중 -->
+    <div id="hud" class="hidden">
+      <button id="quit" class="hud-btn">✕</button>
+      <div id="timer" class="timer">0.0초</div>
+      <button class="hud-btn sound">🔊</button>
+      <div id="standings" class="standings"></div>
+    </div>
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- 결과 -->
+    <section id="result" class="screen overlay hidden">
+      <div class="card">
+        <h2 id="resTitle">성공! 🎉</h2>
+        <div id="resChar" class="res-char"></div>
+        <div id="resStars" class="stars"></div>
+        <div id="resTime" class="res-time"></div>
+        <div id="resPoints" class="res-points"></div>
+        <div id="resMsg" class="note"></div>
+        <ol id="resRace" class="rank-list hidden"></ol>
+        <div class="btns">
+          <button id="again" class="big pink">다시 하기</button>
+        </div>
+        <div class="btns small">
+          <button id="resRank">🏆 랭킹</button>
+          <button id="resHome">처음으로</button>
+        </div>
+      </div>
+    </section>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

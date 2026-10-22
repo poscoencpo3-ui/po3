@@ -1,0 +1,200 @@
+{
+ "id": "saebyeol",
+ "title": "새별이의 구름 하늘",
+ "width": 1080,
+ "height": 1606,
+ "bg": "bg.jpg",
+ "clouds": [
+  {
+   "id": 0,
+   "img": "c0.png",
+   "x": 463,
+   "y": 117,
+   "w": 178,
+   "h": 270,
+   "cx": 531,
+   "cy": 256,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 1,
+   "img": "c1.png",
+   "x": 775,
+   "y": 173,
+   "w": 177,
+   "h": 180,
+   "cx": 852,
+   "cy": 263,
+   "role": "start",
+   "face": false,
+   "drift": null
+  },
+  {
+   "id": 2,
+   "img": "c2.png",
+   "x": 159,
+   "y": 460,
+   "w": 178,
+   "h": 201,
+   "cx": 241,
+   "cy": 568,
+   "role": null,
+   "face": true,
+   "drift": {
+    "ax": 50,
+    "ay": 0,
+    "period": 8
+   }
+  },
+  {
+   "id": 3,
+   "img": "c3.png",
+   "x": 616,
+   "y": 473,
+   "w": 464,
+   "h": 409,
+   "cx": 854,
+   "cy": 672,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 4,
+   "img": "c4.png",
+   "x": 281,
+   "y": 716,
+   "w": 390,
+   "h": 345,
+   "cx": 482,
+   "cy": 882,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 5,
+   "img": "c5.png",
+   "x": 68,
+   "y": 859,
+   "w": 179,
+   "h": 137,
+   "cx": 162,
+   "cy": 930,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 6,
+   "img": "c6.png",
+   "x": 784,
+   "y": 984,
+   "w": 157,
+   "h": 322,
+   "cx": 861,
+   "cy": 1148,
+   "role": null,
+   "face": true,
+   "drift": {
+    "ax": 0,
+    "ay": 60,
+    "period": 6
+   }
+  },
+  {
+   "id": 7,
+   "img": "c7.png",
+   "x": 433,
+   "y": 1171,
+   "w": 151,
+   "h": 289,
+   "cx": 499,
+   "cy": 1325,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 8,
+   "img": "c8.png",
+   "x": 205,
+   "y": 1518,
+   "w": 191,
+   "h": 88,
+   "cx": 300,
+   "cy": 1565,
+   "role": "goal",
+   "face": false,
+   "drift": null
+  }
+ ],
+ "monster": {
+  "img": "monster.png",
+  "x": 0,
+  "y": 0,
+  "w": 324,
+  "h": 381,
+  "eyes": [
+   {
+    "x": 165,
+    "y": 173,
+    "r": 34
+   },
+   {
+    "x": 240,
+    "y": 187,
+    "r": 27
+   }
+  ],
+  "scale": 0.5,
+  "home": [
+   700,
+   560
+  ]
+ },
+ "ladder": {
+  "entry": [
+   78,
+   1112
+  ],
+  "climb": [
+   [
+    78,
+    1112
+   ],
+   [
+    325,
+    1318
+   ]
+  ],
+  "slide": [
+   [
+    338,
+    1340
+   ],
+   [
+    330,
+    1430
+   ],
+   [
+    312,
+    1520
+   ],
+   [
+    300,
+    1560
+   ]
+  ],
+  "land": [
+   300,
+   1560
+  ]
+ },
+ "door": [
+  155,
+  1548
+ ]
+}

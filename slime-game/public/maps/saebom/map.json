@@ -1,0 +1,334 @@
+{
+ "id": "saebom",
+ "title": "새봄이의 슬라임 숲",
+ "width": 1080,
+ "height": 1610,
+ "bg": "bg.jpg",
+ "clouds": [
+  {
+   "id": 0,
+   "img": "c0.png",
+   "x": 94,
+   "y": 386,
+   "w": 100,
+   "h": 89,
+   "cx": 141,
+   "cy": 432,
+   "role": "start",
+   "face": false,
+   "drift": null
+  },
+  {
+   "id": 1,
+   "img": "c1.png",
+   "x": 131,
+   "y": 533,
+   "w": 98,
+   "h": 101,
+   "cx": 176,
+   "cy": 577,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 2,
+   "img": "c2.png",
+   "x": 376,
+   "y": 604,
+   "w": 86,
+   "h": 70,
+   "cx": 415,
+   "cy": 637,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 3,
+   "img": "c3.png",
+   "x": 284,
+   "y": 636,
+   "w": 100,
+   "h": 78,
+   "cx": 332,
+   "cy": 680,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 4,
+   "img": "c4.png",
+   "x": 386,
+   "y": 795,
+   "w": 122,
+   "h": 112,
+   "cx": 445,
+   "cy": 846,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 5,
+   "img": "c5.png",
+   "x": 94,
+   "y": 863,
+   "w": 108,
+   "h": 114,
+   "cx": 143,
+   "cy": 918,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 6,
+   "img": "c6.png",
+   "x": 649,
+   "y": 893,
+   "w": 72,
+   "h": 63,
+   "cx": 681,
+   "cy": 920,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 7,
+   "img": "c7.png",
+   "x": 932,
+   "y": 887,
+   "w": 119,
+   "h": 100,
+   "cx": 984,
+   "cy": 934,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 8,
+   "img": "c8.png",
+   "x": 539,
+   "y": 983,
+   "w": 69,
+   "h": 65,
+   "cx": 573,
+   "cy": 1015,
+   "role": null,
+   "face": true,
+   "drift": {
+    "ax": 0,
+    "ay": 40,
+    "period": 5
+   }
+  },
+  {
+   "id": 9,
+   "img": "c9.png",
+   "x": 789,
+   "y": 1031,
+   "w": 98,
+   "h": 82,
+   "cx": 836,
+   "cy": 1067,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 10,
+   "img": "c10.png",
+   "x": 312,
+   "y": 1041,
+   "w": 136,
+   "h": 133,
+   "cx": 376,
+   "cy": 1104,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 11,
+   "img": "c11.png",
+   "x": 659,
+   "y": 1141,
+   "w": 108,
+   "h": 100,
+   "cx": 709,
+   "cy": 1184,
+   "role": null,
+   "face": true,
+   "drift": {
+    "ax": 70,
+    "ay": 0,
+    "period": 7
+   }
+  },
+  {
+   "id": 12,
+   "img": "c12.png",
+   "x": 112,
+   "y": 1172,
+   "w": 90,
+   "h": 75,
+   "cx": 154,
+   "cy": 1207,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 13,
+   "img": "c13.png",
+   "x": 858,
+   "y": 1239,
+   "w": 98,
+   "h": 96,
+   "cx": 901,
+   "cy": 1283,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 14,
+   "img": "c14.png",
+   "x": 504,
+   "y": 1272,
+   "w": 128,
+   "h": 124,
+   "cx": 559,
+   "cy": 1326,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 15,
+   "img": "c15.png",
+   "x": 227,
+   "y": 1352,
+   "w": 148,
+   "h": 140,
+   "cx": 295,
+   "cy": 1411,
+   "role": null,
+   "face": true,
+   "drift": {
+    "ax": 40,
+    "ay": 20,
+    "period": 9
+   }
+  },
+  {
+   "id": 16,
+   "img": "c16.png",
+   "x": 804,
+   "y": 1418,
+   "w": 103,
+   "h": 99,
+   "cx": 850,
+   "cy": 1463,
+   "role": null,
+   "face": true,
+   "drift": null
+  },
+  {
+   "id": 17,
+   "img": "c17.png",
+   "x": 532,
+   "y": 1531,
+   "w": 92,
+   "h": 79,
+   "cx": 578,
+   "cy": 1573,
+   "role": "goal",
+   "face": false,
+   "drift": null
+  },
+  {
+   "id": 18,
+   "img": "c18.png",
+   "x": 48,
+   "y": 1546,
+   "w": 91,
+   "h": 64,
+   "cx": 92,
+   "cy": 1576,
+   "role": null,
+   "face": true,
+   "drift": null
+  }
+ ],
+ "monster": {
+  "img": "monster.png",
+  "x": 481,
+  "y": 245,
+  "w": 324,
+  "h": 381,
+  "eyes": [
+   {
+    "x": 165,
+    "y": 173,
+    "r": 34
+   },
+   {
+    "x": 240,
+    "y": 187,
+    "r": 27
+   }
+  ],
+  "scale": 0.55,
+  "home": [
+   650,
+   440
+  ]
+ },
+ "ladder": {
+  "entry": [
+   540,
+   822
+  ],
+  "climb": [
+   [
+    540,
+    822
+   ],
+   [
+    872,
+    566
+   ]
+  ],
+  "slide": [
+   [
+    880,
+    600
+   ],
+   [
+    915,
+    700
+   ],
+   [
+    950,
+    800
+   ],
+   [
+    965,
+    865
+   ]
+  ],
+  "land": [
+   855,
+   1462
+  ]
+ },
+ "door": [
+  578,
+  1548
+ ]
+}
