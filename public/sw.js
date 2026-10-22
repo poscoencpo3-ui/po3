@@ -16,16 +16,16 @@ self.addEventListener('push', (event) => {
       const viewing = windows.some(
         (c) => c.focused && c.visibilityState === 'visible' && data.roomId && c.url.includes(`#/room/${data.roomId}`)
       )
-      if (viewing && !data.urgent) return
+      if (viewing && !data.urgent && !data.test) return
       await self.registration.showNotification(data.title || '새 메시지', {
         body: data.body || '',
-        tag: data.urgent ? `urgent-${Date.now()}` : data.roomId,
+        tag: data.test ? 'push-test' : data.urgent ? `urgent-${Date.now()}` : data.roomId,
         renotify: true,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
         requireInteraction: Boolean(data.urgent), // 긴급은 직접 닫을 때까지 화면에 남음
         vibrate: data.urgent ? [400, 150, 400, 150, 400] : [150],
-        data: { roomId: data.roomId },
+        data: { roomId: data.roomId, messageId: data.messageId },
       })
     })()
   )

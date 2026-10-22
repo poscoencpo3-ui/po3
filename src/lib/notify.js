@@ -11,9 +11,9 @@ export async function requestNotifyPermission() {
   return Notification.requestPermission()
 }
 
-export async function showNotification(title, body, roomId) {
+export async function showNotification(title, body, roomId, messageId) {
   if (notifyPermission() !== 'granted') return
-  const options = { body, tag: roomId, renotify: true, icon: '/icon-192.png', data: { roomId } }
+  const options = { body, tag: roomId, renotify: true, icon: '/icon-192.png', data: { roomId, messageId } }
   try {
     const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null
     if (reg) return await reg.showNotification(title, options)

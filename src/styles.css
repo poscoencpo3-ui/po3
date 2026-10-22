@@ -1951,3 +1951,74 @@ mark {
     user-select: none;
   }
 }
+
+/* 알림 테스트 */
+.room-list-footer {
+  border-top: 1px solid var(--line);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.notify-test {
+  max-width: 480px;
+}
+
+.check-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.check-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #f5f7fa;
+  font-size: 14px;
+}
+
+.check-item.ok {
+  background: #eaf7ee;
+}
+
+.check-item.bad {
+  background: #fdecea;
+}
+
+.check-item.warn {
+  background: #fff6db;
+}
+
+.check-icon {
+  flex-shrink: 0;
+}
+
+.check-label {
+  font-weight: 600;
+}
+
+.check-detail {
+  margin-top: 4px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.check-detail ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.ask-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.ask-row span {
+  margin-right: auto;
+}

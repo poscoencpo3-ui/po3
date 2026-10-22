@@ -5,9 +5,11 @@ import { notifyPermission, notifySupported, requestNotifyPermission } from '../l
 import { ensurePush, isIOS, isStandalone } from '../lib/push'
 import { toast } from '../lib/toast'
 import Avatar from './Avatar'
+import NotifyTest from './NotifyTest'
 
 export default function RoomList({ rooms, activeRoomId, admin }) {
   const [permission, setPermission] = useState(notifyPermission)
+  const [showTest, setShowTest] = useState(false)
 
   async function enableNotify() {
     const result = await requestNotifyPermission()
@@ -80,6 +82,20 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
             </li>
           ))}
       </ul>
+
+      <footer className="room-list-footer">
+        <button className="btn small ghost" onClick={() => setShowTest(true)}>
+          🔔 알림 테스트
+        </button>
+      </footer>
+      {showTest && (
+        <NotifyTest
+          onClose={() => {
+            setShowTest(false)
+            setPermission(notifyPermission())
+          }}
+        />
+      )}
     </aside>
   )
 }
