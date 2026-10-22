@@ -743,7 +743,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
             copy: () => copyText(menu.msg.kind === 'report' ? reportText(menu.msg.data) : menu.msg.body),
             openImage: () => setViewer(menu.msg),
             downloadFile: () => download(menu.msg),
-            schedule: () => setScheduleForm({ initial: { title: menu.msg.body.slice(0, 100) } }),
+            schedule: () => setScheduleForm({ initial: { title: (menu.msg.kind === 'bot' ? menu.msg.data?.text || menu.msg.body : menu.msg.body).slice(0, 100) } }),
             notice: setNoticeMessage,
             remove: () => removeMessage(menu.msg),
           }}

@@ -5,6 +5,7 @@
 //  GET              → { publicKey }  브라우저가 알림을 구독할 때 쓰는 공개키
 //  POST {message_id} → 보낸 사람 본인이 호출. 방의 다른 참여자들에게 푸시 발송
 //  POST {test: true} → 알림 테스트. 요청한 사람 본인의 기기로만 발송
+//  POST {hook, text, ...} → 외부 사이트 연동 (예: 화이트보드 포스트잇). 연동 키로 확인
 //
 //  서명 키(VAPID)는 처음 호출될 때 자동으로 만들어 app_config 테이블에 저장합니다.
 //  로그인 확인은 함수 안에서 직접 하므로, 대시보드의 "Verify JWT" 옵션은 꺼도 됩니다.
@@ -136,6 +137,10 @@ function preview(msg: Record<string, unknown>): string {
   if (msg.kind === 'image') return '사진'
   if (msg.kind === 'file') return `파일: ${msg.file_name}`
   if (msg.kind === 'report') return '📝 작업일보'
+  if (msg.kind === 'bot') {
+    const d = (msg.data || {}) as Record<string, string>
+    return [d.title, d.text].filter(Boolean).join(' · ').slice(0, 120)
+  }
   const body = String(msg.body ?? '')
   return body.length > 120 ? body.slice(0, 120) + '…' : body
 }
@@ -162,9 +167,15 @@ async function sendForMessage(env: Env, userId: string, messageId: number) {
   })
   if (!claimed.length) return { status: 200, body: { sent: 0 } }
 
+  return { status: 200, body: await notifyRoom(env, msg, userId) }
+}
+
+// 방 참여자들에게 메시지 알림 발송 (보낸 사람은 제외)
+async function notifyRoom(env: Env, msg: Record<string, any>, excludeUserId: string | null) {
   const [room] = await db(env, `rooms?id=eq.${msg.room_id}&select=name`)
-  const members = await db(env, `room_members?room_id=eq.${msg.room_id}&user_id=neq.${userId}&select=user_id`)
-  if (!members.length) return { status: 200, body: { sent: 0 } }
+  const exclude = excludeUserId ? `&user_id=neq.${excludeUserId}` : ''
+  const members = await db(env, `room_members?room_id=eq.${msg.room_id}${exclude}&select=user_id`)
+  if (!members.length) return { sent: 0, total: 0 }
   const subs = await db(
     env,
     `push_subscriptions?user_id=in.(${members.map((m: { user_id: string }) => m.user_id).join(',')})&select=endpoint,user_id,p256dh,auth`
@@ -176,7 +187,7 @@ async function sendForMessage(env: Env, userId: string, messageId: number) {
     subs.map((sub: Subscription) => {
       const mentioned = mentions.includes(sub.user_id)
       const payload = {
-        title: msg.is_urgent ? `🚨 [긴급] ${room.name}` : mentioned ? `${room.name} · @회원님` : room.name,
+        title: msg.is_urgent ? `🚨 [긴급] ${room.name}` : mentioned ? `${room.name} · @회원님` : msg.kind === 'bot' ? `📌 ${room.name}` : room.name,
         body: `${msg.sender_name}: ${preview(msg)}`,
         roomId: msg.room_id,
         messageId: msg.id,
@@ -185,7 +196,61 @@ async function sendForMessage(env: Env, userId: string, messageId: number) {
       return pushTo(env, vapid, sub, payload, msg.is_urgent || mentioned)
     })
   )
-  return { status: 200, body: { sent: results.filter((r) => r.ok).length, total: subs.length } }
+  return { sent: results.filter((r) => r.ok).length, total: subs.length }
+}
+
+// ---------------------------------------------------------------------
+// 외부 사이트 연동: 연동 키로 지정된 방에 📌 메시지를 넣고 알림 발송
+//   POST { hook: '<연동 키>', title?, text, author?, url? }
+// ---------------------------------------------------------------------
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', enc(text)))
+  return Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+const clip = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
+
+async function handleHook(env: Env, body: Record<string, unknown>) {
+  const token = String(body.hook || '')
+  if (!/^[0-9a-f]{48}$/.test(token)) return { status: 401, body: { error: 'INVALID_HOOK' } }
+  const [integration] = await db(env, `integrations?token_hash=eq.${await sha256Hex(token)}&select=id,room_id,name`)
+  if (!integration) return { status: 401, body: { error: 'INVALID_HOOK' } }
+
+  const title = clip(body.title, 100)
+  const text = clip(body.text, 1000)
+  const author = clip(body.author, 50)
+  const rawUrl = clip(body.url, 500)
+  const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : ''
+  if (!title && !text) return { status: 400, body: { error: 'EMPTY' } }
+
+  // 같은 연동으로 1분에 30건까지 (잘못된 코드로 메시지가 쏟아지는 것 방지)
+  const since = new Date(Date.now() - 60 * 1000).toISOString()
+  const recent = await db(
+    env,
+    `messages?room_id=eq.${integration.room_id}&kind=eq.bot&data->>integration_id=eq.${integration.id}&created_at=gte.${since}&select=id&limit=30`
+  )
+  if (recent.length >= 30) return { status: 429, body: { error: 'TOO_MANY' } }
+
+  const data = { integration_id: integration.id, source: integration.name, title, text, author, url }
+  const [msg] = await db(env, 'messages', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      room_id: integration.room_id,
+      user_id: null,
+      kind: 'bot',
+      sender_name: integration.name,
+      body: [title, text, author && `- ${author}`].filter(Boolean).join('\n'),
+      data,
+    }),
+  })
+  await db(env, `integrations?id=eq.${integration.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ last_used_at: new Date().toISOString() }),
+  })
+  const pushed = await notifyRoom(env, msg, null)
+  return { status: 200, body: { ok: true, message_id: msg.id, ...pushed } }
 }
 
 // 알림 테스트: 요청한 사람 본인의 기기로만 발송하고, 기기별 결과를 돌려줌
@@ -234,9 +299,15 @@ export function createHandler(env: Env) {
       if (req.method === 'GET') return json({ publicKey: (await getVapid(env)).publicKey })
       if (req.method !== 'POST') return json({ error: 'METHOD' }, 405)
 
+      const body = await req.json().catch(() => ({}))
+      if (body.hook) {
+        const result = await handleHook(env, body)
+        return json(result.body, result.status)
+      }
+
       const userId = await getUserId(env, req.headers.get('Authorization'))
       if (!userId) return json({ error: 'NOT_SIGNED_IN' }, 401)
-      const { message_id, test } = await req.json()
+      const { message_id, test } = body
       if (test) return json(await sendTest(env, userId))
       const result = await sendForMessage(env, userId, Number(message_id))
       return json(result.body, result.status)

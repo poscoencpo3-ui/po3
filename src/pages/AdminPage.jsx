@@ -3,6 +3,7 @@ import { supabase, APP_NAME } from '../lib/supabase'
 import { navigate } from '../lib/router'
 import { formatCode, formatListTime } from '../lib/format'
 import { copyText, toast } from '../lib/toast'
+import IntegrationsModal from '../components/IntegrationsModal'
 
 export default function AdminPage({ session, admin, onAdminChange }) {
   if (!session || session.user.is_anonymous) return <AdminLogin hasGuestSession={Boolean(session)} />
@@ -73,6 +74,7 @@ function AdminDashboard({ admin, onAdminChange }) {
   const [newName, setNewName] = useState('')
   const [profile, setProfile] = useState({ display_name: admin.display_name, company: admin.company })
   const [busy, setBusy] = useState(false)
+  const [integrationRoom, setIntegrationRoom] = useState(null)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -184,6 +186,9 @@ function AdminDashboard({ admin, onAdminChange }) {
                       <button className="btn small" onClick={() => copyText(inviteText(r), '초대 안내문을 복사했습니다.')}>
                         초대문 복사
                       </button>
+                      <button className="btn small" onClick={() => setIntegrationRoom(r)}>
+                        📌 연동
+                      </button>
                       <button className="btn small primary" onClick={() => enter(r)}>
                         입장
                       </button>
@@ -195,6 +200,8 @@ function AdminDashboard({ admin, onAdminChange }) {
           </div>
         )}
       </section>
+
+      {integrationRoom && <IntegrationsModal room={integrationRoom} onClose={() => setIntegrationRoom(null)} />}
 
       <section className="card">
         <h2>내 표시 정보</h2>
