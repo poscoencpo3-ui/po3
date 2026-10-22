@@ -3,7 +3,7 @@
 
 create table if not exists public.slime_runs (
   id bigint generated always as identity primary key,
-  map text not null check (map in ('saebom', 'saebyeol')),
+  map text not null check (map ~ '^(saebom|saebyeol)-[1-3]$'),  -- 맵-단계
   name text not null check (char_length(name) between 1 and 8),
   avatar text not null default 'bunny' check (char_length(avatar) <= 16),
   time_ms integer not null check (time_ms between 1000 and 3600000),

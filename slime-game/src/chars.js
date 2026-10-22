@@ -86,6 +86,32 @@ export function drawChar(ctx, id, x, y, r, o = {}) {
     ctx.lineWidth = r * 0.09
   }
 
+  // 날개 (o.wing: 0 접힘 ~ 1 활짝)
+  if (o.wing !== undefined) {
+    const w = o.wing
+    for (const s of [-1, 1]) {
+      ctx.save()
+      ctx.translate(s * r * 0.8, -r * 0.1)
+      ctx.rotate(s * (-0.3 - w * 1.0))
+      ctx.beginPath()
+      ctx.ellipse(s * r * 0.45, -r * 0.1, r * (0.42 + w * 0.2), r * 0.26, 0, 0, Math.PI * 2)
+      ctx.fillStyle = '#ffffff'
+      ctx.fill()
+      ctx.strokeStyle = line
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(s * r * 0.2, -r * 0.05)
+      ctx.lineTo(s * r * 0.65, -r * 0.08)
+      ctx.moveTo(s * r * 0.25, r * 0.06)
+      ctx.lineTo(s * r * 0.6, r * 0.06)
+      ctx.strokeStyle = 'rgba(160,170,210,0.8)'
+      ctx.lineWidth = r * 0.05
+      ctx.stroke()
+      ctx.lineWidth = r * 0.09
+      ctx.restore()
+    }
+  }
+
   // 몸
   ellipse(ctx, 0, 0, r, r * 0.95, c.body, line)
   if (c.id === 'penguin') ellipse(ctx, 0, r * 0.18, r * 0.68, r * 0.7, '#ffffff')

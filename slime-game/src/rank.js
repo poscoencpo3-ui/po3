@@ -12,10 +12,14 @@ function localRuns() {
   }
 }
 
-export function calcPoints(time, place) {
+// 랭킹 칸 이름: 맵-단계 (예: saebom-2)
+export const rankKey = (map, level) => `${map}-${level}`
+
+export function calcPoints(time, place, stats = {}, level = 1) {
   const timeBonus = Math.max(0, Math.round((90 - time) * 8))
   const placeBonus = place ? [0, 300, 200, 100, 50][place] ?? 30 : 0
-  return 100 + timeBonus + placeBonus
+  const bonus = (stats.stars || 0) * 15 + (stats.perfect || 0) * 5 + (stats.bestCombo || 0) * 3
+  return Math.round((100 + timeBonus + placeBonus + bonus) * (1 + (level - 1) * 0.25))
 }
 
 export function starsFor(time) {

@@ -20,9 +20,9 @@
     <!-- 처음 화면 -->
     <section id="title" class="screen">
       <div class="logo">
-        <img class="logo-mon" src="maps/saebom/monster.png" alt="" />
+        <img class="logo-mon" src="maps/saebom/monster-0.png" alt="" />
         <h1>슬라임 게임</h1>
-        <p class="sub">슬라임 괴물을 피해 문까지 가요!</p>
+        <p class="sub">파닥파닥 날아서 슬라임 괴물을 피해 문까지!</p>
       </div>
       <label class="field">
         <span>내 이름</span>
@@ -32,6 +32,7 @@
       <div id="chars" class="chars"></div>
       <div class="label">맵 고르기</div>
       <div id="maps" class="maps"></div>
+      <div id="levels" class="levels"></div>
       <div class="btns">
         <button id="solo" class="big pink">혼자 하기</button>
         <button id="race" class="big mint">친구랑 경주</button>
@@ -70,9 +71,14 @@
     <section id="rank" class="screen hidden">
       <h2>🏆 랭킹</h2>
       <div class="tabs" id="rankTabs">
-        <button data-tab="saebom" class="on">새봄이 맵</button>
-        <button data-tab="saebyeol">새별이 맵</button>
+        <button data-tab="saebom" class="on">봄이 맵</button>
+        <button data-tab="saebyeol">별이 맵</button>
         <button data-tab="points">누적 점수</button>
+      </div>
+      <div class="tabs small" id="rankLevels">
+        <button data-level="1" class="on">1단계</button>
+        <button data-level="2">2단계</button>
+        <button data-level="3">3단계</button>
       </div>
       <ol id="rankList" class="rank-list"></ol>
       <p id="rankNote" class="note"></p>
@@ -83,13 +89,16 @@
     <section id="how" class="screen hidden">
       <h2>❓ 하는 법</h2>
       <ul class="how">
-        <li>☁️ <b>구름(슬라임)</b>을 톡 누르면 그쪽으로 뛰어요.</li>
-        <li>⭕ 점선 동그라미 안까지만 뛸 수 있어요.</li>
-        <li>💦 구름 밖으로 뛰면 떨어져요. 원래 구름으로 돌아가요.</li>
-        <li>👾 <b>슬라임 괴물</b>에 닿으면 냠! 처음부터 다시 해요.</li>
+        <li>🪽 가고 싶은 곳을 <b>톡</b> 누르면 날개를 파닥! 하고 날아요.</li>
+        <li>👆 날면서 <b>또 누르면</b> 더 높이, 더 멀리! 한 번에 3번까지 (머리 위 깃털)</li>
+        <li>☁️ 누르기를 멈추면 내려앉아요. 구름 위에 내려야 해요!</li>
+        <li>👾 <b>슬라임 괴물</b>에 닿으면 냠! 처음부터. 높이 날면 괴물 위로 지나갈 수 있어요.</li>
         <li>❗ 괴물 머리에 느낌표가 뜨면 멀리 뛰어와요. 조심!</li>
-        <li>🪜 <b>지름길</b> 표시에 내리면 사다리 → 미끄럼틀로 슝!</li>
-        <li>🚪 <b>도착 문</b>까지 가면 성공! 빠를수록 점수가 커요.</li>
+        <li>⭐ 하늘의 <b>별</b>을 모으면 점수가 올라가요.</li>
+        <li>❓ <b>아이템 상자</b>를 먹고 오른쪽 아래 버튼을 눌러요: 🛡️방패 🪶무한 날개 ❄️얼음 🧲자석 ⚡번개 🍯끈끈이(경주)</li>
+        <li>🛝 <b>지름길</b>: 사다리 미끄럼틀, 🌀 순간이동 포털, 🍄 점프 버섯</li>
+        <li>✨ 구름 한가운데 내리면 PERFECT! 계속 성공하면 콤보!</li>
+        <li>🚪 <b>도착 문</b>까지 가면 성공! 2·3단계는 괴물이 더 많고 부서지는 구름이 있어요.</li>
       </ul>
       <button id="howBack" class="back">← 돌아가기</button>
     </section>
@@ -97,7 +106,10 @@
     <!-- 게임 중 -->
     <div id="hud" class="hidden">
       <button id="quit" class="hud-btn">✕</button>
+      <div class="stars-hud">⭐ <b id="starCount">0</b></div>
       <div id="timer" class="timer">0.0초</div>
+      <div id="effects" class="effects"></div>
+      <button id="itemBtn" class="item-btn" disabled></button>
       <button class="hud-btn sound">🔊</button>
       <div id="standings" class="standings"></div>
     </div>
@@ -111,10 +123,12 @@
         <div id="resStars" class="stars"></div>
         <div id="resTime" class="res-time"></div>
         <div id="resPoints" class="res-points"></div>
+        <div id="resStats" class="res-stats"></div>
         <div id="resMsg" class="note"></div>
         <ol id="resRace" class="rank-list hidden"></ol>
         <div class="btns">
           <button id="again" class="big pink">다시 하기</button>
+          <button id="nextLevel" class="big mint">다음 단계 ▶</button>
         </div>
         <div class="btns small">
           <button id="resRank">🏆 랭킹</button>

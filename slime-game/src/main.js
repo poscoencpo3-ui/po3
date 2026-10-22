@@ -1,11 +1,11 @@
 import './style.css'
 import { CHARS, charIcon } from './chars.js'
-import { MAPS, loadMap } from './map.js'
-import { Game } from './game.js'
+import { MAPS, LEVELS, loadMap } from './map.js'
+import { Game, ITEMS } from './game.js'
 import { unlockAudio, startMusic, setSound, isSoundOn, sfx } from './audio.js'
 import { canRace, online, localTest, joinRoom, newCode, hostOf } from './net.js'
 import { local, session } from './store.js'
-import { saveRun, topTimes, topPoints, myBest, calcPoints, starsFor } from './rank.js'
+import { saveRun, topTimes, topPoints, myBest, calcPoints, starsFor, rankKey } from './rank.js'
 
 const $ = (s) => document.querySelector(s)
 const cv = $('#cv')
@@ -22,11 +22,13 @@ const profile = {
   id: session.get('slime.id') || uid(), // 탭마다 다른 id (같은 폰 두 탭 테스트 가능)
   name: saved.name || '',
   char: saved.char || CHARS[0].id,
-  map: saved.map || MAPS[0].id,
+  map: MAPS.some((m) => m.id === saved.map) ? saved.map : MAPS[0].id,
+  level: LEVELS.some((l) => l.n === saved.level) ? saved.level : 1,
 }
 session.set('slime.id', profile.id)
 const saveProfile = () =>
-  local.set('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map }))
+  local.set('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map, level: profile.level }))
+const levelOf = (n) => LEVELS.find((l) => l.n === n) || LEVELS[0]
 
 // ---------- 화면 전환 ----------
 const screens = ['#title', '#lobby', '#rank', '#how', '#result']
@@ -88,7 +90,7 @@ function buildChars() {
     el.onclick = () => {
       profile.char = c.id
       saveProfile()
-      sfx.jump()
+      sfx.flap()
       buildChars()
     }
     box.appendChild(el)
@@ -109,6 +111,19 @@ function buildMaps() {
     }
     box.appendChild(el)
   }
+  const lv = $('#levels')
+  lv.innerHTML = ''
+  for (const l of LEVELS) {
+    const b = document.createElement('button')
+    b.className = 'level' + (l.n === profile.level ? ' on' : '')
+    b.innerHTML = `${l.name}<small>괴물 ${l.monsters}마리</small><small>${l.crumble ? '💥 부서지는 구름' : '☁️ 쉬움'}</small>`
+    b.onclick = () => {
+      profile.level = l.n
+      saveProfile()
+      buildMaps()
+    }
+    lv.appendChild(b)
+  }
 }
 buildChars()
 buildMaps()
@@ -128,17 +143,15 @@ $('#race').onclick = () => {
   if (needName()) return
   openLobby()
 }
-$('#rankBtn').onclick = () => openRank(profile.map, '#title')
+$('#rankBtn').onclick = () => openRank(profile.map, profile.level, '#title')
 $('#howBtn').onclick = () => show('#how')
 $('#howBack').onclick = () => show('#title')
-
-// 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__slime = { get game() { return game } }
 
 // ---------- 게임 ----------
 let game = null
 let mode = null
 let hudRaf = 0
+let current = null // { mapId, level }
 
 function hudLoop() {
   if (!game) return
@@ -147,23 +160,43 @@ function hudLoop() {
   hudRaf = requestAnimationFrame(hudLoop)
 }
 
-async function launch({ mapId, seed, others = [], delay = 3.6 }) {
+function renderHud(h) {
+  $('#starCount').textContent = h.stars
+  const btn = $('#itemBtn')
+  btn.classList.toggle('rolling', h.rolling)
+  btn.classList.toggle('ready', !!h.item)
+  btn.textContent = h.rolling ? '❓' : h.item ? ITEMS[h.item].emoji : ''
+  btn.disabled = !h.item
+  $('#effects').textContent = h.fx.map((k) => ITEMS[k].emoji).join(' ')
+}
+
+$('#itemBtn').addEventListener('pointerdown', (e) => {
+  e.preventDefault()
+  game?.useItem()
+})
+
+async function launch({ mapId, level, seed, others = [], delay = 3.6 }) {
   const map = await loadMap(mapId)
   endGame()
+  current = { mapId, level }
   screens.forEach((s) => $(s).classList.add('hidden'))
   $('#hud').classList.remove('hidden')
   game = new Game(cv, {
     map,
+    level: levelOf(level),
+    race: mode === 'race',
     me: { id: profile.id, name: profile.name, char: profile.char },
     seed,
     others,
-    onWin: (t) => finished(t),
+    onWin: (t, stats) => finished(t, stats),
     onSend: (type, d) => room?.send(type, d),
     onToast: (s) => toast(s),
+    onHud: renderHud,
   })
   game.begin(performance.now() / 1000 + delay)
+  game.hud()
   hudLoop()
-  setTimeout(() => game && game.t < 2 && toast('구름을 톡! 누르면 뛰어요 ☁️', 2600), (delay - 0.5) * 1000)
+  setTimeout(() => game && game.t < 2 && toast('톡 누르면 파닥! 여러 번 누르면 더 멀리 날아요 🪽', 2800), (delay - 0.5) * 1000)
 }
 
 function endGame() {
@@ -180,20 +213,17 @@ function endGame() {
 function startSolo() {
   mode = 'solo'
   $('#standings').innerHTML = ''
-  launch({ mapId: profile.map, seed: (Math.random() * 1e9) | 0 }).catch((e) => toast(e.message))
+  launch({ mapId: profile.map, level: profile.level, seed: (Math.random() * 1e9) | 0 }).catch((e) => toast(e.message))
 }
 
 $('#quit').onclick = () => {
   endGame()
   if (mode === 'race') backToRoom()
   else show('#title')
-
-// 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__slime = { get game() { return game } }
 }
 
-async function finished(t) {
-  const mapId = game.map.id
+async function finished(t, stats) {
+  const key = rankKey(current.mapId, current.level)
   $('#timer').textContent = t.toFixed(2) + '초'
   let place = 0
   if (mode === 'race') {
@@ -201,20 +231,13 @@ async function finished(t) {
     place = 1 + [...race.finishes.entries()].filter(([id, tt]) => id !== profile.id && tt < t).length
     renderStandings()
   }
-  const points = calcPoints(t, place)
-  const prevBest = await myBest(mapId, profile.name)
-  await saveRun({
-    map: mapId,
-    name: profile.name,
-    avatar: profile.char,
-    time_ms: Math.round(t * 1000),
-    points,
-    mode,
-  })
-  setTimeout(() => showResult(t, points, place, prevBest), 1300)
+  const points = calcPoints(t, place, stats, current.level)
+  const prevBest = await myBest(key, profile.name)
+  await saveRun({ map: key, name: profile.name, avatar: profile.char, time_ms: Math.round(t * 1000), points, mode })
+  setTimeout(() => showResult(t, points, place, prevBest, stats), 1300)
 }
 
-function showResult(t, points, place, prevBest) {
+function showResult(t, points, place, prevBest, stats) {
   if (!game) return
   const stars = starsFor(t)
   $('#resTitle').textContent = place === 1 ? '1등! 🥇' : place ? `${place}등! 🎉` : '성공! 🎉'
@@ -224,10 +247,12 @@ function showResult(t, points, place, prevBest) {
   $('#resStars').innerHTML = [1, 2, 3].map((i) => `<span class="${i <= stars ? '' : 'off'}">⭐</span>`).join('')
   $('#resTime').textContent = t.toFixed(2) + '초'
   $('#resPoints').textContent = `+${points}점`
+  $('#resStats').innerHTML = `<span>⭐ 별 ${stats.stars}개</span><span>✨ PERFECT ${stats.perfect}</span><span>🔥 최고 콤보 ${stats.bestCombo}</span>`
   const ms = Math.round(t * 1000)
   $('#resMsg').textContent = !prevBest ? '첫 기록이에요!' : ms < prevBest ? `새 기록! 🎊 (전: ${(prevBest / 1000).toFixed(2)}초)` : `내 최고 기록: ${(prevBest / 1000).toFixed(2)}초`
   $('#resRace').classList.toggle('hidden', mode !== 'race')
   $('#again').textContent = mode === 'race' ? '방으로 돌아가기' : '다시 하기'
+  $('#nextLevel').classList.toggle('hidden', mode === 'race' || current.level >= LEVELS.length)
   if (mode === 'race') renderResultRace()
   show('#result')
 }
@@ -238,19 +263,22 @@ $('#again').onclick = () => {
     backToRoom()
   } else startSolo()
 }
+$('#nextLevel').onclick = () => {
+  profile.level = Math.min(LEVELS.length, current.level + 1)
+  saveProfile()
+  buildMaps()
+  startSolo()
+}
 $('#resRank').onclick = () => {
-  const m = game?.map.id || profile.map
+  const c = current
   endGame()
   if (mode === 'race') leaveRoom()
-  openRank(m, '#title')
+  openRank(c.mapId, c.level, '#title')
 }
 $('#resHome').onclick = () => {
   endGame()
   if (mode === 'race') leaveRoom()
   show('#title')
-
-// 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__slime = { get game() { return game } }
 }
 
 // ---------- 친구랑 경주 ----------
@@ -279,16 +307,13 @@ $('#joinRoom').onclick = () => {
 $('#lobbyBack').onclick = () => {
   leaveRoom()
   show('#title')
-
-// 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__slime = { get game() { return game } }
 }
 
 function enterRoom(code) {
   leaveRoom()
   race.code = code
   race.peers = []
-  room = joinRoom(code, { id: profile.id, name: profile.name, char: profile.char, map: profile.map, racing: false }, {
+  room = joinRoom(code, { id: profile.id, name: profile.name, char: profile.char, map: profile.map, level: profile.level, racing: false }, {
     onPeers: (list) => {
       race.peers = list
       renderPeers()
@@ -313,11 +338,11 @@ function leaveRoom() {
 }
 
 function backToRoom() {
-  if (!room) return show('#title')
-
-// 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__slime = { get game() { return game } }
-  room.update({ racing: false })
+  if (!room) {
+    show('#title')
+    return
+  }
+  room.update({ racing: false, map: profile.map, level: profile.level })
   openLobby()
   renderPeers()
 }
@@ -347,26 +372,27 @@ function renderPeers() {
   const h = isHost()
   $('#startRace').classList.toggle('hidden', !h)
   $('#waitHost').classList.toggle('hidden', h)
-  const mapName = MAPS.find((m) => m.id === (h ? profile.map : host?.map))?.name || ''
-  $('#lobbyMap').textContent = mapName ? `맵: ${mapName}` + (h ? ' (처음 화면에서 바꿀 수 있어요)' : '') : ''
+  const src = h ? profile : host
+  const mapName = MAPS.find((m) => m.id === src?.map)?.name || ''
+  $('#lobbyMap').textContent = mapName ? `맵: ${mapName} ${levelOf(src.level).name}` + (h ? ' (처음 화면에서 바꿀 수 있어요)' : '') : ''
 }
 
 $('#startRace').onclick = () => {
   if (!room || !isHost()) return
   const players = race.peers.map(({ id, name, char }) => ({ id, name, char }))
-  const msg = { map: profile.map, seed: (Math.random() * 1e9) | 0, players }
+  const msg = { map: profile.map, level: profile.level, seed: (Math.random() * 1e9) | 0, players }
   room.send('start', msg)
   beginRace(msg)
 }
 
-function beginRace({ map, seed, players }) {
+function beginRace({ map, level, seed, players }) {
   mode = 'race'
   race.players = players
   race.finishes = new Map()
   race.running = true
   room.update({ racing: true })
   const others = players.filter((p) => p.id !== profile.id)
-  launch({ mapId: map, seed, others }).then(renderStandings).catch((e) => toast(e.message))
+  launch({ mapId: map, level: level || 1, seed, others }).then(renderStandings).catch((e) => toast(e.message))
 }
 
 function onRoomMsg(from, type, d) {
@@ -406,7 +432,7 @@ function renderResultRace() {
     if (r.p.id === profile.id) li.className = 'me'
     li.innerHTML = `<span class="n">${r.t != null ? ['🥇', '🥈', '🥉'][r.place - 1] || r.place : '…'}</span>`
     li.appendChild(charIcon(r.p.char, 40))
-    li.insertAdjacentHTML('beforeend', `<span class="who">${esc(r.p.name)}</span><span class="v">${r.t != null ? r.t.toFixed(2) + '초' : '달리는 중'}</span>`)
+    li.insertAdjacentHTML('beforeend', `<span class="who">${esc(r.p.name)}</span><span class="v">${r.t != null ? r.t.toFixed(2) + '초' : '날아가는 중'}</span>`)
     ol.appendChild(li)
   }
 }
@@ -418,10 +444,12 @@ function esc(s) {
 // ---------- 랭킹 ----------
 let rankBack = '#title'
 let rankTab = 'saebom'
+let rankLevel = 1
 
-function openRank(tab, back) {
+function openRank(tab, level, back) {
   rankBack = back
   rankTab = tab
+  rankLevel = level || 1
   show('#rank')
   renderRank()
 }
@@ -432,16 +460,24 @@ document.querySelectorAll('#rankTabs button').forEach((b) =>
     renderRank()
   })
 )
+document.querySelectorAll('#rankLevels button').forEach((b) =>
+  b.addEventListener('click', () => {
+    rankLevel = Number(b.dataset.level)
+    renderRank()
+  })
+)
 $('#rankBack').onclick = () => show(rankBack)
 
 async function renderRank() {
   document.querySelectorAll('#rankTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === rankTab))
+  document.querySelectorAll('#rankLevels button').forEach((b) => b.classList.toggle('on', Number(b.dataset.level) === rankLevel))
+  $('#rankLevels').classList.toggle('hidden', rankTab === 'points')
   const ol = $('#rankList')
   ol.innerHTML = '<li><span class="who">불러오는 중…</span></li>'
   $('#rankNote').textContent = online ? '모두의 랭킹이에요' : '이 기기에서 한 기록이에요'
-  const tab = rankTab
-  const rows = tab === 'points' ? await topPoints() : await topTimes(tab)
-  if (tab !== rankTab) return
+  const key = rankTab === 'points' ? 'points' : rankKey(rankTab, rankLevel)
+  const rows = key === 'points' ? await topPoints() : await topTimes(key)
+  if (key !== (rankTab === 'points' ? 'points' : rankKey(rankTab, rankLevel))) return
   ol.innerHTML = ''
   if (!rows.length) ol.innerHTML = '<li><span class="who">아직 기록이 없어요. 첫 번째가 되어 보세요!</span></li>'
   rows.forEach((r, i) => {
@@ -449,7 +485,7 @@ async function renderRank() {
     if (r.name === profile.name) li.className = 'me'
     li.innerHTML = `<span class="n">${['🥇', '🥈', '🥉'][i] || i + 1}</span>`
     li.appendChild(charIcon(r.avatar || 'bunny', 40))
-    const v = tab === 'points' ? `${r.total}점 <small>(${r.plays}판)</small>` : (r.time_ms / 1000).toFixed(2) + '초'
+    const v = key === 'points' ? `${r.total}점 <small>(${r.plays}판)</small>` : (r.time_ms / 1000).toFixed(2) + '초'
     li.insertAdjacentHTML('beforeend', `<span class="who">${esc(r.name)}</span><span class="v">${v}</span>`)
     ol.appendChild(li)
   })

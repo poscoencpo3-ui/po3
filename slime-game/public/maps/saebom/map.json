@@ -1,125 +1,134 @@
 {
  "id": "saebom",
- "title": "새봄이의 슬라임 숲",
+ "title": "새봄이의 봄 하늘",
  "width": 1080,
  "height": 1610,
- "bg": "bg.jpg",
+ "theme": "spring",
  "clouds": [
   {
    "id": 0,
    "img": "c0.png",
-   "x": 94,
-   "y": 386,
-   "w": 100,
-   "h": 89,
+   "x": 95,
+   "y": 388,
+   "w": 98,
+   "h": 87,
    "cx": 141,
    "cy": 432,
    "role": "start",
    "face": false,
+   "kid": true,
    "drift": null
   },
   {
    "id": 1,
    "img": "c1.png",
-   "x": 131,
-   "y": 533,
-   "w": 98,
-   "h": 101,
+   "x": 132,
+   "y": 534,
+   "w": 96,
+   "h": 99,
    "cx": 176,
    "cy": 577,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 2,
    "img": "c2.png",
-   "x": 376,
-   "y": 604,
-   "w": 86,
-   "h": 70,
+   "x": 377,
+   "y": 606,
+   "w": 84,
+   "h": 68,
    "cx": 415,
    "cy": 637,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 3,
    "img": "c3.png",
    "x": 284,
-   "y": 636,
-   "w": 100,
-   "h": 78,
+   "y": 637,
+   "w": 99,
+   "h": 77,
    "cx": 332,
    "cy": 680,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 4,
    "img": "c4.png",
    "x": 386,
-   "y": 795,
+   "y": 797,
    "w": 122,
-   "h": 112,
+   "h": 110,
    "cx": 445,
    "cy": 846,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 5,
    "img": "c5.png",
    "x": 94,
-   "y": 863,
+   "y": 864,
    "w": 108,
-   "h": 114,
+   "h": 112,
    "cx": 143,
    "cy": 918,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 6,
    "img": "c6.png",
-   "x": 649,
-   "y": 893,
-   "w": 72,
-   "h": 63,
+   "x": 650,
+   "y": 895,
+   "w": 69,
+   "h": 61,
    "cx": 681,
    "cy": 920,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 7,
    "img": "c7.png",
-   "x": 932,
+   "x": 933,
    "y": 887,
-   "w": 119,
+   "w": 117,
    "h": 100,
    "cx": 984,
    "cy": 934,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 8,
    "img": "c8.png",
-   "x": 539,
-   "y": 983,
-   "w": 69,
-   "h": 65,
+   "x": 541,
+   "y": 984,
+   "w": 65,
+   "h": 61,
    "cx": 573,
    "cy": 1015,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": {
     "ax": 0,
     "ay": 40,
@@ -129,40 +138,43 @@
   {
    "id": 9,
    "img": "c9.png",
-   "x": 789,
-   "y": 1031,
-   "w": 98,
-   "h": 82,
+   "x": 791,
+   "y": 1032,
+   "w": 96,
+   "h": 81,
    "cx": 836,
    "cy": 1067,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 10,
    "img": "c10.png",
-   "x": 312,
+   "x": 313,
    "y": 1041,
-   "w": 136,
-   "h": 133,
+   "w": 135,
+   "h": 132,
    "cx": 376,
    "cy": 1104,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 11,
    "img": "c11.png",
    "x": 659,
-   "y": 1141,
-   "w": 108,
-   "h": 100,
+   "y": 1143,
+   "w": 107,
+   "h": 98,
    "cx": 709,
    "cy": 1184,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": {
     "ax": 70,
     "ay": 0,
@@ -172,53 +184,57 @@
   {
    "id": 12,
    "img": "c12.png",
-   "x": 112,
-   "y": 1172,
-   "w": 90,
-   "h": 75,
+   "x": 113,
+   "y": 1173,
+   "w": 88,
+   "h": 73,
    "cx": 154,
    "cy": 1207,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 13,
    "img": "c13.png",
-   "x": 858,
+   "x": 859,
    "y": 1239,
-   "w": 98,
+   "w": 96,
    "h": 96,
    "cx": 901,
    "cy": 1283,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 14,
    "img": "c14.png",
    "x": 504,
-   "y": 1272,
+   "y": 1273,
    "w": 128,
-   "h": 124,
+   "h": 122,
    "cx": 559,
    "cy": 1326,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 15,
    "img": "c15.png",
-   "x": 227,
-   "y": 1352,
-   "w": 148,
-   "h": 140,
+   "x": 228,
+   "y": 1353,
+   "w": 147,
+   "h": 138,
    "cx": 295,
    "cy": 1411,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": {
     "ax": 40,
     "ay": 20,
@@ -228,105 +244,231 @@
   {
    "id": 16,
    "img": "c16.png",
-   "x": 804,
-   "y": 1418,
-   "w": 103,
-   "h": 99,
+   "x": 805,
+   "y": 1419,
+   "w": 102,
+   "h": 97,
    "cx": 850,
    "cy": 1463,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 17,
    "img": "c17.png",
-   "x": 532,
+   "x": 534,
    "y": 1531,
-   "w": 92,
-   "h": 79,
+   "w": 89,
+   "h": 81,
    "cx": 578,
    "cy": 1573,
    "role": "goal",
    "face": false,
+   "kid": true,
    "drift": null
   },
   {
    "id": 18,
    "img": "c18.png",
-   "x": 48,
+   "x": 49,
    "y": 1546,
-   "w": 91,
-   "h": 64,
+   "w": 89,
+   "h": 68,
    "cx": 92,
    "cy": 1576,
    "role": null,
    "face": true,
+   "kid": true,
+   "drift": null
+  },
+  {
+   "id": 19,
+   "img": "c19.png",
+   "x": 282,
+   "y": 429,
+   "w": 95,
+   "h": 74,
+   "cx": 330,
+   "cy": 470,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 20,
+   "img": "c20.png",
+   "x": 533,
+   "y": 274,
+   "w": 54,
+   "h": 51,
+   "cx": 560,
+   "cy": 300,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": {
+    "ax": 60,
+    "ay": 0,
+    "period": 6
+   }
+  },
+  {
+   "id": 21,
+   "img": "c21.png",
+   "x": 818,
+   "y": 231,
+   "w": 98,
+   "h": 102,
+   "cx": 870,
+   "cy": 280,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 22,
+   "img": "c22.png",
+   "x": 957,
+   "y": 533,
+   "w": 73,
+   "h": 60,
+   "cx": 990,
+   "cy": 560,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 23,
+   "img": "c23.png",
+   "x": 735,
+   "y": 1503,
+   "w": 123,
+   "h": 120,
+   "cx": 800,
+   "cy": 1560,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 24,
+   "img": "c24.png",
+   "x": 263,
+   "y": 1533,
+   "w": 60,
+   "h": 54,
+   "cx": 290,
+   "cy": 1555,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 25,
+   "img": "c25.png",
+   "x": 72,
+   "y": 732,
+   "w": 73,
+   "h": 61,
+   "cx": 110,
+   "cy": 760,
+   "role": null,
+   "face": true,
+   "kid": false,
    "drift": null
   }
  ],
  "monster": {
-  "img": "monster.png",
-  "x": 481,
-  "y": 245,
-  "w": 324,
-  "h": 381,
+  "w": 336,
+  "h": 393,
   "eyes": [
    {
-    "x": 165,
-    "y": 173,
+    "x": 163,
+    "y": 171,
     "r": 34
    },
    {
-    "x": 240,
-    "y": 187,
+    "x": 238,
+    "y": 185,
     "r": 27
    }
   ],
-  "scale": 0.55,
   "home": [
    650,
    440
   ]
  },
- "ladder": {
-  "entry": [
-   540,
-   822
-  ],
-  "climb": [
-   [
+ "shortcuts": [
+  {
+   "type": "ladder",
+   "entry": [
     540,
     822
    ],
-   [
-    872,
-    566
+   "climb": [
+    [
+     540,
+     822
+    ],
+    [
+     872,
+     566
+    ]
+   ],
+   "slide": [
+    [
+     880,
+     600
+    ],
+    [
+     915,
+     700
+    ],
+    [
+     950,
+     800
+    ],
+    [
+     965,
+     865
+    ]
+   ],
+   "land": [
+    855,
+    1462
    ]
-  ],
-  "slide": [
-   [
-    880,
-    600
+  },
+  {
+   "type": "portal",
+   "a": [
+    870,
+    280
    ],
-   [
-    915,
-    700
-   ],
-   [
-    950,
-    800
-   ],
-   [
-    965,
-    865
+   "b": [
+    800,
+    1560
    ]
-  ],
-  "land": [
-   855,
-   1462
-  ]
- },
+  },
+  {
+   "type": "spring",
+   "at": [
+    154,
+    1207
+   ],
+   "land": [
+    290,
+    1555
+   ]
+  }
+ ],
  "door": [
   578,
   1548

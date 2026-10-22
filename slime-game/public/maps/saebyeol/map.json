@@ -1,47 +1,50 @@
 {
  "id": "saebyeol",
- "title": "새별이의 구름 하늘",
+ "title": "새별이의 별빛 하늘",
  "width": 1080,
  "height": 1606,
- "bg": "bg.jpg",
+ "theme": "night",
  "clouds": [
   {
    "id": 0,
    "img": "c0.png",
-   "x": 463,
-   "y": 117,
-   "w": 178,
-   "h": 270,
+   "x": 453,
+   "y": 108,
+   "w": 198,
+   "h": 288,
    "cx": 531,
    "cy": 256,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 1,
    "img": "c1.png",
-   "x": 775,
-   "y": 173,
-   "w": 177,
-   "h": 180,
+   "x": 768,
+   "y": 166,
+   "w": 192,
+   "h": 196,
    "cx": 852,
    "cy": 263,
    "role": "start",
    "face": false,
+   "kid": true,
    "drift": null
   },
   {
    "id": 2,
    "img": "c2.png",
-   "x": 159,
-   "y": 460,
-   "w": 178,
-   "h": 201,
+   "x": 151,
+   "y": 451,
+   "w": 194,
+   "h": 220,
    "cx": 241,
    "cy": 568,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": {
     "ax": 50,
     "ay": 0,
@@ -51,53 +54,57 @@
   {
    "id": 3,
    "img": "c3.png",
-   "x": 616,
-   "y": 473,
-   "w": 464,
-   "h": 409,
+   "x": 606,
+   "y": 464,
+   "w": 486,
+   "h": 428,
    "cx": 854,
    "cy": 672,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 4,
    "img": "c4.png",
-   "x": 281,
-   "y": 716,
-   "w": 390,
-   "h": 345,
+   "x": 271,
+   "y": 706,
+   "w": 410,
+   "h": 365,
    "cx": 482,
    "cy": 882,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 5,
    "img": "c5.png",
-   "x": 68,
-   "y": 859,
-   "w": 179,
-   "h": 137,
+   "x": 59,
+   "y": 850,
+   "w": 198,
+   "h": 156,
    "cx": 162,
    "cy": 930,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 6,
    "img": "c6.png",
-   "x": 784,
-   "y": 984,
-   "w": 157,
-   "h": 322,
+   "x": 777,
+   "y": 977,
+   "w": 172,
+   "h": 338,
    "cx": 861,
    "cy": 1148,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": {
     "ax": 0,
     "ay": 60,
@@ -107,94 +114,191 @@
   {
    "id": 7,
    "img": "c7.png",
-   "x": 433,
-   "y": 1171,
-   "w": 151,
-   "h": 289,
+   "x": 423,
+   "y": 1167,
+   "w": 171,
+   "h": 302,
    "cx": 499,
    "cy": 1325,
    "role": null,
    "face": true,
+   "kid": true,
    "drift": null
   },
   {
    "id": 8,
    "img": "c8.png",
-   "x": 205,
-   "y": 1518,
-   "w": 191,
-   "h": 88,
+   "x": 194,
+   "y": 1507,
+   "w": 212,
+   "h": 116,
    "cx": 300,
    "cy": 1565,
    "role": "goal",
    "face": false,
+   "kid": true,
+   "drift": null
+  },
+  {
+   "id": 9,
+   "img": "c9.png",
+   "x": 131,
+   "y": 182,
+   "w": 115,
+   "h": 94,
+   "cx": 190,
+   "cy": 230,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 10,
+   "img": "c10.png",
+   "x": 616,
+   "y": 946,
+   "w": 156,
+   "h": 125,
+   "cx": 690,
+   "cy": 1010,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": {
+    "ax": 40,
+    "ay": 0,
+    "period": 5
+   }
+  },
+  {
+   "id": 11,
+   "img": "c11.png",
+   "x": 649,
+   "y": 1395,
+   "w": 107,
+   "h": 88,
+   "cx": 700,
+   "cy": 1440,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 12,
+   "img": "c12.png",
+   "x": 913,
+   "y": 1388,
+   "w": 115,
+   "h": 160,
+   "cx": 960,
+   "cy": 1470,
+   "role": null,
+   "face": true,
+   "kid": false,
+   "drift": null
+  },
+  {
+   "id": 13,
+   "img": "c13.png",
+   "x": 237,
+   "y": 1140,
+   "w": 183,
+   "h": 165,
+   "cx": 330,
+   "cy": 1220,
+   "role": null,
+   "face": true,
+   "kid": false,
    "drift": null
   }
  ],
  "monster": {
-  "img": "monster.png",
-  "x": 0,
-  "y": 0,
-  "w": 324,
-  "h": 381,
+  "w": 336,
+  "h": 393,
   "eyes": [
    {
-    "x": 165,
-    "y": 173,
+    "x": 163,
+    "y": 171,
     "r": 34
    },
    {
-    "x": 240,
-    "y": 187,
+    "x": 238,
+    "y": 185,
     "r": 27
    }
   ],
-  "scale": 0.5,
   "home": [
    700,
    560
   ]
  },
- "ladder": {
-  "entry": [
-   78,
-   1112
-  ],
-  "climb": [
-   [
+ "shortcuts": [
+  {
+   "type": "ladder",
+   "entry": [
     78,
     1112
    ],
-   [
-    325,
-    1318
-   ]
-  ],
-  "slide": [
-   [
-    338,
-    1340
+   "climb": [
+    [
+     78,
+     1112
+    ],
+    [
+     325,
+     1318
+    ]
    ],
-   [
-    330,
-    1430
+   "slide": [
+    [
+     338,
+     1340
+    ],
+    [
+     330,
+     1430
+    ],
+    [
+     312,
+     1520
+    ],
+    [
+     300,
+     1560
+    ]
    ],
-   [
-    312,
-    1520
-   ],
-   [
+   "land": [
     300,
     1560
    ]
-  ],
-  "land": [
-   300,
-   1560
-  ]
- },
+  },
+  {
+   "type": "portal",
+   "a": [
+    531,
+    230
+   ],
+   "b": [
+    700,
+    1440
+   ]
+  },
+  {
+   "type": "spring",
+   "at": [
+    241,
+    568
+   ],
+   "land": [
+    500,
+    1325
+   ]
+  }
+ ],
  "door": [
-  155,
-  1548
+  300,
+  1540
  ]
 }

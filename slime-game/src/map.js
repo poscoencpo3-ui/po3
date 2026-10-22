@@ -1,7 +1,13 @@
 // 맵(아이 그림) 불러오기 + "여기 밟을 수 있나?" 판정
 export const MAPS = [
-  { id: 'saebom', name: '새봄이 맵', desc: '슬라임 숲 · 미끄럼틀 지름길' },
-  { id: 'saebyeol', name: '새별이 맵', desc: '구름 하늘 · 사다리 지름길' },
+  { id: 'saebom', name: '봄이 맵', desc: '벚꽃 봄 하늘 · 새봄이 그림' },
+  { id: 'saebyeol', name: '별이 맵', desc: '반짝 밤하늘 · 새별이 그림' },
+]
+
+export const LEVELS = [
+  { n: 1, name: '1단계', monsters: 2, speed: 1, crumble: 0 },
+  { n: 2, name: '2단계', monsters: 3, speed: 1.1, crumble: 3 },
+  { n: 3, name: '3단계', monsters: 4, speed: 1.25, crumble: 5 },
 ]
 
 const loadImg = (src) =>
@@ -22,13 +28,11 @@ export function loadMap(id) {
 async function build(id) {
   const base = `maps/${id}/`
   const meta = await (await fetch(base + 'map.json')).json()
-  const [bg, monster, ...clouds] = await Promise.all([
-    loadImg(base + meta.bg),
-    loadImg(base + meta.monster.img),
-    ...meta.clouds.map((c) => loadImg(base + c.img)),
+  const [monsters, clouds] = await Promise.all([
+    Promise.all([0, 1, 2, 3, 4].map((i) => loadImg(`${base}monster-${i}.png`))),
+    Promise.all(meta.clouds.map((c) => loadImg(base + c.img))),
   ])
-  meta.bgImg = bg
-  meta.monster.image = monster
+  meta.monster.images = monsters
   meta.clouds.forEach((c, i) => {
     c.image = clouds[i]
     // 밟기 판정용 투명도 지도
@@ -47,7 +51,7 @@ async function build(id) {
     const sg = sh.getContext('2d')
     sg.drawImage(c.image, 0, 0)
     sg.globalCompositeOperation = 'source-in'
-    sg.fillStyle = 'rgba(70,60,140,0.22)'
+    sg.fillStyle = meta.theme === 'night' ? 'rgba(10,5,40,0.35)' : 'rgba(70,60,140,0.2)'
     sg.fillRect(0, 0, c.w, c.h)
     c.shadow = sh
     c.phase = (c.id * 1.7) % (Math.PI * 2)
@@ -73,13 +77,14 @@ function solidAt(c, lx, ly) {
   const x = Math.round(lx)
   const y = Math.round(ly)
   if (x < 0 || y < 0 || x >= c.w || y >= c.h) return false
-  return c.alpha[y * c.w + x] > 90
+  return c.alpha[y * c.w + x] > 150
 }
 
 // (x, y)를 밟을 수 있는 구름. 아이들용으로 가장자리는 조금 넉넉하게.
-export function cloudAt(map, x, y, t, slack = 9) {
+export function cloudAt(map, x, y, t, slack = 9, gone = null) {
   let best = null
   for (const c of map.clouds) {
+    if (gone && gone(c)) continue
     const [dx, dy] = cloudOffset(c, t)
     const lx = x - c.x - dx
     const ly = y - c.y - dy

@@ -121,6 +121,36 @@ export const sfx = {
   beep: (hi) => tone({ freq: hi ? 1046 : 523, type: 'square', dur: hi ? 0.4 : 0.16, vol: 0.18 }),
   chime: () => [84, 88].forEach((n, i) => tone({ freq: midi(n), type: 'sine', start: i * 0.09, dur: 0.3, vol: 0.2 })),
   splash: () => noise({ dur: 0.3, vol: 0.25, freq: 900, q: 0.7 }),
+  flap: (i = 0) => {
+    noise({ dur: 0.09, vol: 0.18, freq: 1400 + i * 200, q: 0.8 })
+    tone({ freq: 520 + i * 90, to: 780 + i * 90, type: 'triangle', dur: 0.1, vol: 0.12 })
+  },
+  tired: () => tone({ freq: 300, to: 200, type: 'triangle', dur: 0.15, vol: 0.12 }),
+  star: (i = 0) => tone({ freq: midi(84 + (i % 5) * 2), type: 'sine', dur: 0.18, vol: 0.2 }),
+  perfect: () => [79, 84, 88].forEach((n, i) => tone({ freq: midi(n), type: 'square', start: i * 0.06, dur: 0.1, vol: 0.12 })),
+  box: () => {
+    for (let i = 0; i < 8; i++) tone({ freq: midi(72 + ((i * 5) % 12)), type: 'square', start: i * 0.08, dur: 0.06, vol: 0.1 })
+  },
+  item: () => [76, 83, 88].forEach((n, i) => tone({ freq: midi(n), type: 'triangle', start: i * 0.07, dur: 0.14, vol: 0.2 })),
+  shield: () => tone({ freq: 400, to: 1200, type: 'sine', dur: 0.4, vol: 0.2, vibrato: 40 }),
+  freeze: () => {
+    ;[96, 91, 88, 84].forEach((n, i) => tone({ freq: midi(n), type: 'sine', start: i * 0.05, dur: 0.3, vol: 0.12 }))
+    noise({ dur: 0.4, vol: 0.12, freq: 6000, type: 'highpass' })
+  },
+  bonk: () => {
+    tone({ freq: 700, to: 300, type: 'square', dur: 0.12, vol: 0.18 })
+    tone({ freq: 900, to: 1500, type: 'sine', start: 0.1, dur: 0.2, vol: 0.15 })
+  },
+  sticky: () => tone({ freq: 220, to: 90, type: 'sawtooth', dur: 0.35, vol: 0.12, vibrato: 30 }),
+  portal: () => {
+    tone({ freq: 300, to: 1600, type: 'sine', dur: 0.5, vol: 0.2, vibrato: 50 })
+    tone({ freq: 1600, to: 400, type: 'sine', start: 0.45, dur: 0.4, vol: 0.15, vibrato: 50 })
+  },
+  spring: () => {
+    tone({ freq: 150, to: 900, type: 'square', dur: 0.25, vol: 0.15, vibrato: 60 })
+    tone({ freq: 220, to: 120, type: 'sine', dur: 0.3, vol: 0.3 })
+  },
+  crack: () => noise({ dur: 0.18, vol: 0.3, freq: 2500, q: 3 }),
 }
 
 // ---------- 배경 음악: 귀여운 8마디 반복 ----------

@@ -4,7 +4,7 @@ import { rng, dist, lerp, easeInOut } from './rng.js'
 
 const REST_FIRST = 1.5 // 출발 후 처음엔 쉬고 있음
 
-export function planMonster(map, seed) {
+export function planMonster(map, seed, { home = map.monster.home, speed = 1, firstRest = REST_FIRST } = {}) {
   const r = rng(seed)
   const start = map.start
   const goal = map.goal
@@ -28,10 +28,10 @@ export function planMonster(map, seed) {
   }
 
   const segs = []
-  let [x, y] = map.monster.home
+  let [x, y] = home
   let t = 0
-  segs.push({ type: 'rest', t0: 0, t1: REST_FIRST, x0: x, y0: y, x1: x, y1: y })
-  t = REST_FIRST
+  segs.push({ type: 'rest', t0: 0, t1: firstRest, x0: x, y0: y, x1: x, y1: y })
+  t = firstRest
   let hop = 0
   while (t < 900) {
     hop++
@@ -42,27 +42,27 @@ export function planMonster(map, seed) {
     })
     const pool = cands.length ? cands : spots
     const [nx, ny] = choose(pool)
-    const crouch = big ? 0.7 : 0.25
-    const air = big ? 1.25 : 0.55 + r() * 0.3
+    const crouch = big ? 0.7 : 0.25 / speed
+    const air = (big ? 1.25 : 0.55 + r() * 0.3) / speed
     segs.push({ type: 'crouch', big, t0: t, t1: t + crouch, x0: x, y0: y, x1: x, y1: y })
     t += crouch
     segs.push({ type: 'air', big, t0: t, t1: t + air, x0: x, y0: y, x1: nx, y1: ny, h: big ? 260 : 90 + r() * 50 })
     t += air
-    const rest = big ? 1.3 + r() * 0.6 : 0.7 + r() * 1.1
+    const rest = (big ? 1.3 + r() * 0.6 : 0.7 + r() * 1.1) / speed
     segs.push({ type: 'rest', land: true, big, t0: t, t1: t + rest, x0: nx, y0: ny, x1: nx, y1: ny })
     t += rest
     x = nx
     y = ny
   }
+  segs.idx = 0
   return segs
 }
 
-let lastIdx = 0
 export function monsterAt(segs, t) {
   if (t < 0) t = 0
-  let i = lastIdx < segs.length && segs[lastIdx].t0 <= t ? lastIdx : 0
+  let i = segs.idx < segs.length && segs[segs.idx].t0 <= t ? segs.idx : 0
   while (i < segs.length - 1 && segs[i].t1 <= t) i++
-  lastIdx = i
+  segs.idx = i
   const s = segs[i]
   const p = Math.min(1, (t - s.t0) / (s.t1 - s.t0))
   if (s.type === 'air') {
