@@ -1,7 +1,8 @@
 """LibreOffice(헤드리스)에서 BarChart.bas 를 실행해 결과를 확인하는 테스트 도구.
 
-사용: python3 lo_run.py <출력폴더> [--base=YYYY-MM-DD] [단위 ...]
+사용: python3 lo_run.py <출력폴더> [--base=YYYY-MM-DD] [--script=파일.vba] [단위 ...]
   - --base=2026-11-05 : 메인 시트 기준일 지정
+  - --script=파일.vba  : 바차트 생성 뒤 실행할 VBA 문장 (WriteLog "..." 로 결과 기록)
   - 단위별로 BuildChart 를 실행하고 <출력폴더>/result.xlsx, result.pdf, log.txt 를 만든다.
   - LibreOffice 의 VBA 호환 모드로 실행하므로 Excel 과 화면이 100% 같지는 않다.
 """
@@ -29,8 +30,13 @@ def main():
     out = os.path.abspath(sys.argv[1])
     args = sys.argv[2:]
     base = ""
-    if args and args[0].startswith("--base="):
-        base = args.pop(0).split("=", 1)[1]
+    extra = ""
+    while args and args[0].startswith("--"):
+        opt, _, val = args.pop(0).partition("=")
+        if opt == "--base":
+            base = val
+        elif opt == "--script":
+            extra = open(val, encoding="utf-8").read()
     units = args or ["일"]
     os.makedirs(out, exist_ok=True)
     log = os.path.join(out, "log.txt")
@@ -78,6 +84,7 @@ Sub RunTest()
     gLog = ""
 {base_stmt}
 {calls}
+{extra}
     WriteLog "DONE"
     WriteLog gLog
     Exit Sub

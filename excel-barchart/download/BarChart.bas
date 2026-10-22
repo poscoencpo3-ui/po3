@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.1 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.2 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일 등 설정 + 버튼
@@ -13,12 +13,17 @@ Attribute VB_Name = "BarChart"
 '    BuildChart      : 작업입력 내용으로 바차트 시트 생성
 '    CollapseDetails : 세부작업 행 숨기기 (작업항목 줄에 바만 남김)
 '    ExpandDetails   : 세부작업 행 펼치기
+'    OnSheetChange / OnSheetActivate : ThisWorkbook 이벤트에서 호출
+'                      (바차트 왼쪽 칸 수정 → 작업입력 반영 후 다시 그림)
 '===================================================================
 Option Explicit
 
 ' 테스트 등 메시지 상자를 띄우지 않을 때 True (메시지는 gLog 에 쌓임)
 Public gQuiet As Boolean
 Public gLog As String
+
+' 매크로가 시트를 고치는 중이면 True (변경 이벤트 무시)
+Private gBusy As Boolean
 
 '--- 시트 이름 ---
 Private Const SH_MAIN As String = "메인"
@@ -62,6 +67,10 @@ Private Const HOL_FIRST_ROW As Long = 3
 '--- 바차트 시트 배치 ---
 Private Const CH_TITLE As Long = 1
 Private Const CH_INFO As Long = 2
+Private Const META_ROW As Long = 3    ' 숨김 행: 시트 정보 (태그/단위/버전/행정보 열)
+Private Const META_TAG As String = "BCMETA"
+Private Const VER_ROW As Long = 1     ' 메인 시트의 숨김 칸(Z1) : 입력 변경 횟수
+Private Const VER_COL As Long = 26
 Private Const CH_HDR1 As Long = 4     ' 년/월
 Private Const CH_HDR2 As Long = 5     ' 일 / 주 시작일 / 상중하순 / 월
 Private Const CH_HDR3 As Long = 6     ' 요일 / n주 / 날짜범위
@@ -103,6 +112,7 @@ Private mLow() As String
 Private mStart() As Date
 Private mEnd() As Date
 Private mHas() As Boolean
+Private mRow() As Long                ' 작업입력 시트의 행 번호
 
 '--- 날짜 칸 : 단위와 관계없이 1일 = 1열, 머리글만 주/10일/월로 묶음 ---
 Private mUnit As String
@@ -135,23 +145,38 @@ Private mCircleN As Long
 '  1. 바차트 생성
 '===================================================================
 Public Sub BuildChart()
-    Dim wsMain As Worksheet, wsIn As Worksheet, ws As Worksheet
-    Dim chartS As Date, chartE As Date, baseD As Date, d As Date
-    Dim hasBase As Boolean, autoS As Boolean, autoE As Boolean
-    Dim minD As Date, maxD As Date, anyDate As Boolean
-    Dim nWarn As Long, i As Long, lastRow As Long, lastCol As Long
-    Dim title As String, colW As Double
-
     If Not SheetExists(SH_MAIN) Or Not SheetExists(SH_INPUT) Then
         Notify "메인/작업입력 시트가 없습니다." & vbCrLf & _
                "먼저 매크로 [SetupWorkbook] 을 실행해 주세요."
         Exit Sub
     End If
+    RenderChart NormalizeUnit(CfgText(CFG_UNIT)), True
+End Sub
+
+' unit 단위의 바차트 시트를 그림. 시트가 이미 있으면 그 자리에서 다시 그림
+' (화면 위치, 선택 셀, 세부작업 접힘 상태 유지)
+Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean) As Boolean
+    Dim wsMain As Worksheet, wsIn As Worksheet, ws As Worksheet
+    Dim chartS As Date, chartE As Date, baseD As Date
+    Dim hasBase As Boolean, autoS As Boolean, autoE As Boolean
+    Dim minD As Date, maxD As Date, anyDate As Boolean
+    Dim nWarn As Long, i As Long, lastRow As Long, lastCol As Long
+    Dim title As String, colW As Double, nm As String
+    Dim isNew As Boolean, wasActive As Boolean, collapsed As Boolean
+    Dim scrRow As Long, scrCol As Long, selAddr As String
+    Dim evOld As Boolean
+
+    If Not SheetExists(SH_MAIN) Or Not SheetExists(SH_INPUT) Then Exit Function
     Set wsMain = ThisWorkbook.Worksheets(SH_MAIN)
     Set wsIn = ThisWorkbook.Worksheets(SH_INPUT)
 
+    evOld = Application.EnableEvents
+    gBusy = True
+    Application.EnableEvents = False
+    On Error GoTo EH
+
     '--- 설정 읽기 ---
-    mUnit = NormalizeUnit(CfgText(CFG_UNIT))
+    mUnit = unit
     title = CfgText(CFG_TITLE)
     autoS = Not ToDate(wsMain.Cells(CFG_START, CFG_COL).Value, chartS)
     autoE = Not ToDate(wsMain.Cells(CFG_END, CFG_COL).Value, chartE)
@@ -160,8 +185,8 @@ Public Sub BuildChart()
 
     LoadHolidays
     If Not LoadTasks(wsIn, nWarn) Then
-        Notify "작업입력 시트에 입력된 작업이 없습니다."
-        Exit Sub
+        If interactive Then Notify "작업입력 시트에 입력된 작업이 없습니다."
+        GoTo Done
     End If
 
     '--- 차트 기간 결정 ---
@@ -188,19 +213,38 @@ Public Sub BuildChart()
     End If
     If chartE < chartS Then
         Notify "차트 종료일이 시작일보다 빠릅니다. 메인 시트 설정을 확인해 주세요."
-        Exit Sub
+        GoTo Done
     End If
     If Not BuildPeriods(chartS, chartE) Then
         Notify "표시 기간이 너무 깁니다(" & MAX_DAYS & "일 초과)." & vbCrLf & _
                "메인 시트의 차트 시작일/종료일을 확인해 주세요."
-        Exit Sub
+        GoTo Done
     End If
 
-    On Error GoTo EH
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
 
-    Set ws = RecreateSheet(SH_CHART_PREFIX & mUnit)
+    '--- 시트 준비 (있으면 비우고, 없으면 새로) ---
+    nm = SH_CHART_PREFIX & mUnit
+    If SheetExists(nm) Then
+        Set ws = ThisWorkbook.Worksheets(nm)
+        wasActive = (ActiveSheet.Name = ws.Name)
+        If wasActive Then
+            On Error Resume Next
+            scrRow = ActiveWindow.ScrollRow
+            scrCol = ActiveWindow.ScrollColumn
+            selAddr = ActiveCell.Address
+            On Error GoTo EH
+        End If
+        collapsed = IsCollapsed(ws)
+        ClearChartSheet ws
+    Else
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        ws.Name = nm
+        isNew = True
+        collapsed = (CfgText(CFG_DETAIL) = "접힘")
+    End If
+
     mSegN = 0: mBlkN = 0: mCircleN = 0
     lastCol = COL_CHART0 + mDays - 1
 
@@ -219,8 +263,9 @@ Public Sub BuildChart()
     '--- 제목 / 머리글 / 본문 행 배치 ---
     WriteTitle ws, title, hasBase, baseD
     WriteHeader ws, lastCol
-    lastRow = LayoutBody(ws)
+    lastRow = LayoutBody(ws, lastCol + 2)
     If lastRow < CH_BODY Then lastRow = CH_BODY
+    WriteMeta ws, lastCol + 2
 
     '--- 서식 → 바 → 기준선 순서 (바가 점선 위에 덮이도록) ---
     FormatGrid ws, lastRow, lastCol
@@ -233,30 +278,72 @@ Public Sub BuildChart()
         ws.Range(ws.Columns(COL_S), ws.Columns(COL_D)).Hidden = True
     End If
 
-    FinishSheet ws
-    If CfgText(CFG_DETAIL) = "접힘" Then
+    If isNew Then
+        FinishSheet ws
+        ws.Range("A1").Select
+    ElseIf wasActive Then
         On Error Resume Next
-        ws.Outline.ShowLevels RowLevels:=1
+        ws.Range(selAddr).Select
+        ActiveWindow.ScrollRow = scrRow
+        ActiveWindow.ScrollColumn = scrCol
         On Error GoTo EH
     End If
+    If collapsed Then ShowLevel ws, 1
 
-    Application.Calculation = xlCalculationAutomatic
-    Application.ScreenUpdating = True
-    ws.Activate
-    ws.Range("A1").Select
+    If interactive Then ws.Activate
+    RenderChart = True
 
-    If nWarn > 0 Then
+    If nWarn > 0 And interactive Then
         Notify "바차트를 생성했습니다." & vbCrLf & vbCrLf & _
                "※ 종료일이 시작일보다 빠른 작업 " & nWarn & "건은 제외했습니다." & vbCrLf & _
                "   (작업입력 시트에 빨간 배경으로 표시)"
     End If
-    Exit Sub
+
+Done:
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+    Application.EnableEvents = evOld
+    gBusy = False
+    Exit Function
 
 EH:
     Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
+    Application.EnableEvents = evOld
+    gBusy = False
     Notify "바차트 생성 중 오류가 발생했습니다." & vbCrLf & Err.Number & " : " & Err.Description
+End Function
+
+' 기존 바차트 시트 비우기 (시트는 그대로 두어 위치/틀 고정/인쇄 설정 유지)
+Private Sub ClearChartSheet(ByVal ws As Worksheet)
+    Dim i As Long
+    On Error Resume Next
+    ws.Cells.ClearOutline
+    On Error GoTo 0
+    ws.Rows.Hidden = False
+    ws.Columns.Hidden = False
+    For i = ws.Shapes.Count To 1 Step -1
+        ws.Shapes(i).Delete
+    Next i
+    ws.Cells.UnMerge
+    ws.Cells.Clear
+    ws.Rows.RowHeight = 15
+    ws.Columns.ColumnWidth = 8.38
 End Sub
+
+' 세부작업 행이 접혀 있는지 (첫 세부작업 행이 숨겨져 있으면 접힘)
+Private Function IsCollapsed(ByVal ws As Worksheet) As Boolean
+    Dim mc As Long, r As Long, lastRow As Long
+    mc = MetaCol(ws)
+    If mc = 0 Then Exit Function
+    lastRow = ws.Cells(ws.Rows.Count, mc).End(xlUp).Row
+    For r = CH_BODY To lastRow
+        If Left$(CStr(ws.Cells(r, mc).Value), 2) = "D|" Then
+            IsCollapsed = ws.Rows(r).Hidden
+            Exit Function
+        End If
+    Next r
+End Function
 
 
 '===================================================================
@@ -325,7 +412,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
     cnt = lastRow - IN_FIRST_ROW + 1
     ReDim mCat(1 To cnt): ReDim mItem(1 To cnt): ReDim mDet(1 To cnt)
     ReDim mLow(1 To cnt): ReDim mStart(1 To cnt): ReDim mEnd(1 To cnt)
-    ReDim mHas(1 To cnt)
+    ReDim mHas(1 To cnt): ReDim mRow(1 To cnt)
 
     For r = IN_FIRST_ROW To lastRow
         vCat = Trim$(CellText(wsIn.Cells(r, IN_CAT)))
@@ -387,6 +474,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
             End If
             mLow(mN) = vLow
             mHas(mN) = ok
+            mRow(mN) = r
             If ok Then mStart(mN) = dS: mEnd(mN) = dE
         End If
     Next r
@@ -656,7 +744,7 @@ End Sub
 '   작업항목 : 2행   "- 작업항목"  → 세부작업 바를 모두 이 줄에 표시(요약)
 '   세부작업 : 2행   "· 세부작업"  → 작업항목 아래에 그룹(접기/펼치기)
 '===================================================================
-Private Function LayoutBody(ByVal ws As Worksheet) As Long
+Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
     Dim cats() As String, nCat As Long, items() As String, nItem As Long
     Dim ci As Long, ii As Long, k As Long, r As Long, rItem As Long, rDetail As Long
     Dim cMin As Date, cMax As Date, cHas As Boolean
@@ -679,6 +767,7 @@ Private Function LayoutBody(ByVal ws As Worksheet) As Long
         ws.Cells(r, COL_LABEL).Font.Size = 10
         If cHas Then WriteDates ws, r, cMin, cMax
         ws.Rows(r).RowHeight = ROW_CAT_H
+        ws.Cells(r, mc).Value = "K|" & RowsOf(cats(ci), "", False) & "|" & cats(ci)
         r = r + 1
 
         ' --- 작업항목 ---
@@ -692,6 +781,7 @@ Private Function LayoutBody(ByVal ws As Worksheet) As Long
             rItem = r
             iHas = RangeOf(cats(ci), items(ii), True, iMin, iMax)
             WriteBlock ws, rItem, " - " & items(ii), iHas, iMin, iMax, False
+            ws.Cells(rItem, mc).Value = "I|" & RowsOf(cats(ci), items(ii), True) & "|" & items(ii)
             r = r + 2
             rDetail = r
 
@@ -701,6 +791,7 @@ Private Function LayoutBody(ByVal ws As Worksheet) As Long
                         lbl = "      · " & mDet(k)
                         If mLow(k) <> "" Then lbl = lbl & " " & mLow(k)
                         WriteBlock ws, r, lbl, mHas(k), mStart(k), mEnd(k), True
+                        ws.Cells(r, mc).Value = "D|" & mRow(k)
                         If mHas(k) Then
                             AddSegment r, mStart(k), mEnd(k), mDet(k), mLow(k)      ' 세부작업 행
                             AddSegment rItem, mStart(k), mEnd(k), mDet(k), mLow(k)  ' 작업항목 요약 행
@@ -767,6 +858,18 @@ Private Function RangeOf(ByVal cat As String, ByVal item As String, ByVal byItem
     RangeOf = found
 End Function
 
+' 대분류/작업항목에 속한 작업입력 행 번호 목록 "5,6,7"
+Private Function RowsOf(ByVal cat As String, ByVal item As String, ByVal byItem As Boolean) As String
+    Dim k As Long, s As String
+    For k = 1 To mN
+        If mCat(k) = cat And (Not byItem Or mItem(k) = item) Then
+            If s <> "" Then s = s & ","
+            s = s & mRow(k)
+        End If
+    Next k
+    RowsOf = s
+End Function
+
 Private Sub AddUnique(ByRef arr() As String, ByRef n As Long, ByVal v As String)
     Dim i As Long
     For i = 1 To n
@@ -775,6 +878,21 @@ Private Sub AddUnique(ByRef arr() As String, ByRef n As Long, ByVal v As String)
     n = n + 1
     arr(n) = v
 End Sub
+
+' 행 정보(숨김 열)와 시트 정보(숨김 3행) 기록 → 바차트에서 직접 수정할 때 사용
+Private Sub WriteMeta(ByVal ws As Worksheet, ByVal mc As Long)
+    ws.Cells(META_ROW, 1).Value = META_TAG
+    ws.Cells(META_ROW, 2).Value = mUnit
+    ws.Cells(META_ROW, 3).Value = GetVersion()
+    ws.Cells(META_ROW, 4).Value = mc
+    ws.Rows(META_ROW).Hidden = True
+    ws.Columns(mc).Hidden = True
+End Sub
+
+' 바차트 시트의 행 정보 열 번호 (이 프로그램이 만든 시트가 아니면 0)
+Private Function MetaCol(ByVal ws As Worksheet) As Long
+    If CStr(ws.Cells(META_ROW, 1).Value) = META_TAG Then MetaCol = Val(CStr(ws.Cells(META_ROW, 4).Value))
+End Function
 
 Private Sub AddSegment(ByVal r As Long, ByVal dS As Date, ByVal dE As Date, _
                        ByVal txtTop As String, ByVal txtBot As String)
@@ -1027,6 +1145,242 @@ End Sub
 
 
 '===================================================================
+'  4. 자동 반영 : ThisWorkbook 의 이벤트에서 호출
+'   - 바차트 시트 왼쪽 칸(구분/시작일/종료일/기간)을 고치면
+'     작업입력 시트에 반영하고 바로 다시 그림
+'   - 작업입력/공휴일/메인 설정을 고치면, 바차트 시트를 열 때 자동으로 다시 그림
+'===================================================================
+Public Sub OnSheetChange(ByVal Sh As Object, ByVal Target As Range)
+    If gBusy Then Exit Sub
+    On Error GoTo EH
+    If Sh.Name = SH_INPUT Or Sh.Name = SH_HOL Then
+        BumpVersion
+    ElseIf Sh.Name = SH_MAIN Then
+        If Not Intersect(Target, Sh.Range(Sh.Cells(CFG_TITLE, CFG_COL), Sh.Cells(CFG_COLWIDTH, CFG_COL))) Is Nothing Then
+            BumpVersion
+        End If
+    ElseIf IsChartSheet(Sh.Name) Then
+        HandleChartEdit Sh, Target
+    End If
+    Exit Sub
+EH:
+    gBusy = False
+    Application.EnableEvents = True
+    Notify "자동 반영 중 오류가 발생했습니다." & vbCrLf & Err.Number & " : " & Err.Description
+End Sub
+
+Public Sub OnSheetActivate(ByVal Sh As Object)
+    If gBusy Then Exit Sub
+    On Error GoTo EH
+    If Not IsChartSheet(Sh.Name) Then Exit Sub
+    If MetaCol(Sh) = 0 Then Exit Sub
+    If Val(CStr(Sh.Cells(META_ROW, 3).Value)) <> GetVersion() Then
+        RenderChart NormalizeUnit(CStr(Sh.Cells(META_ROW, 2).Value)), False
+    End If
+    Exit Sub
+EH:
+    gBusy = False
+    Application.EnableEvents = True
+    Notify "자동 반영 중 오류가 발생했습니다." & vbCrLf & Err.Number & " : " & Err.Description
+End Sub
+
+' 바차트 시트에서 고친 내용을 작업입력에 반영한 뒤 다시 그림
+' (반영할 수 없는 수정은 다시 그리면서 원래 값으로 되돌아감)
+Private Sub HandleChartEdit(ByVal ws As Worksheet, ByVal Target As Range)
+    Dim mc As Long, lastRow As Long, rng As Range, cell As Range
+    Dim meta As String, msg As String, unit As String
+
+    mc = MetaCol(ws)
+    If mc = 0 Then Exit Sub
+    lastRow = ws.Cells(ws.Rows.Count, mc).End(xlUp).Row
+    If lastRow < CH_BODY Then Exit Sub
+    Set rng = Intersect(Target, ws.Range(ws.Cells(CH_BODY, COL_LABEL), ws.Cells(lastRow + 1, COL_D)))
+    If rng Is Nothing Then Exit Sub          ' 바(날짜 칸) 영역 수정은 그대로 둠
+
+    unit = NormalizeUnit(CStr(ws.Cells(META_ROW, 2).Value))
+    gBusy = True
+    Application.EnableEvents = False
+    For Each cell In rng.Cells
+        meta = CStr(ws.Cells(cell.Row, mc).Value)
+        If meta <> "" Then ApplyChartEdit cell.Column, cell.Value, meta, msg
+    Next cell
+    Application.EnableEvents = True
+    gBusy = False
+
+    BumpVersion                               ' 다른 단위 바차트는 열 때 다시 그림
+    RenderChart unit, False
+    If msg <> "" Then Notify msg
+End Sub
+
+' meta : "K|행,행|대분류" / "I|행,행|작업항목" / "D|행"
+Private Function ApplyChartEdit(ByVal c As Long, ByVal v As Variant, ByVal meta As String, _
+                                ByRef msg As String) As Boolean
+    Dim wsIn As Worksheet, parts As Variant, rowList As Variant
+    Dim i As Long, n As Long, inRow As Long, tgt As Long, col As Long
+    Dim txt As String, oldName As String
+
+    Set wsIn = ThisWorkbook.Worksheets(SH_INPUT)
+    parts = Split(meta, "|", 3)
+    If parts(0) = "D" Then
+        inRow = CLng(parts(1))
+        If c = COL_LABEL Then
+            ApplyChartEdit = SetDetailName(wsIn, inRow, CleanLabel(VarText(v)))
+        Else
+            ApplyChartEdit = SetTaskDate(wsIn, inRow, c, v, msg)
+        End If
+        Exit Function
+    End If
+
+    If UBound(parts) < 2 Then Exit Function
+    rowList = Split(parts(1), ",")
+    oldName = parts(2)
+    If c = COL_LABEL Then
+        ' 대분류/작업항목 이름 바꾸기 : 그 이름이 적힌 작업입력 칸을 모두 변경
+        txt = CleanLabel(VarText(v))
+        If txt = "" Or txt = oldName Then Exit Function
+        If parts(0) = "K" Then col = IN_CAT Else col = IN_ITEM
+        For i = LBound(rowList) To UBound(rowList)
+            inRow = CLng(rowList(i))
+            If Trim$(CellText(wsIn.Cells(inRow, col))) = oldName Then
+                wsIn.Cells(inRow, col).Value = txt
+                ApplyChartEdit = True
+            End If
+        Next i
+        If Not ApplyChartEdit And parts(0) = "I" Then
+            wsIn.Cells(CLng(rowList(0)), IN_ITEM).Value = txt
+            ApplyChartEdit = True
+        End If
+    Else
+        ' 날짜 : 작업항목에 날짜가 있는 작업이 하나뿐일 때만 그 작업을 변경
+        For i = LBound(rowList) To UBound(rowList)
+            inRow = CLng(rowList(i))
+            If HasAnyDate(wsIn, inRow) Then
+                n = n + 1
+                tgt = inRow
+            End If
+        Next i
+        If parts(0) = "I" And n = 1 Then
+            ApplyChartEdit = SetTaskDate(wsIn, tgt, c, v, msg)
+        ElseIf Not IsEmpty(v) Then
+            msg = "작업항목·대분류 줄의 날짜는 세부작업들을 합친 값이라 직접 바꿀 수 없습니다." & vbCrLf & _
+                  "세부작업 행이나 작업입력 시트에서 수정하세요."
+        End If
+    End If
+End Function
+
+' 날짜 수정 규칙
+'   시작일 변경 → 기간 유지, 종료일이 함께 이동
+'   종료일 변경 → 기간 다시 계산
+'   기간 변경   → 종료일 다시 계산
+Private Function SetTaskDate(ByVal wsIn As Worksheet, ByVal inRow As Long, ByVal c As Long, _
+                             ByVal v As Variant, ByRef msg As String) As Boolean
+    Dim dS As Date, dE As Date, newD As Date, nDur As Long
+    Dim hasS As Boolean, hasE As Boolean
+
+    If IsEmpty(v) Then Exit Function            ' 지우기(Delete)는 원래대로
+    hasS = ToDate(wsIn.Cells(inRow, IN_S).Value, dS)
+    hasE = ToDate(wsIn.Cells(inRow, IN_E).Value, dE)
+    nDur = 1
+    If hasS And hasE Then nDur = CLng(dE - dS) + 1
+
+    Select Case c
+        Case COL_S
+            If Not ToDate(v, newD) Then
+                msg = "시작일은 날짜로 입력하세요. (예: 2026-11-09)"
+                Exit Function
+            End If
+            dS = newD
+            dE = dS + nDur - 1
+        Case COL_E
+            If Not ToDate(v, newD) Then
+                msg = "종료일은 날짜로 입력하세요. (예: 2026-11-09)"
+                Exit Function
+            End If
+            If Not hasS Then dS = newD
+            If newD < dS Then
+                msg = "종료일이 시작일(" & Format(dS, "yyyy-mm-dd") & ")보다 빠릅니다."
+                Exit Function
+            End If
+            dE = newD
+        Case COL_D
+            If Not ToDuration(v, nDur) Then
+                msg = "기간은 1 이상의 숫자(일)로 입력하세요."
+                Exit Function
+            End If
+            If Not hasS Then
+                If Not hasE Then
+                    msg = "시작일을 먼저 입력하세요."
+                    Exit Function
+                End If
+                dS = dE
+            End If
+            dE = dS + nDur - 1
+        Case Else
+            Exit Function
+    End Select
+
+    wsIn.Cells(inRow, IN_S).Value = dS
+    wsIn.Cells(inRow, IN_E).Value = dE
+    wsIn.Cells(inRow, IN_DUR).Value = CLng(dE - dS) + 1
+    SetTaskDate = True
+End Function
+
+' 세부작업 이름 변경 (왼쪽 표시는 "세부작업 하단표기" 를 붙여 보여 줌)
+Private Function SetDetailName(ByVal wsIn As Worksheet, ByVal inRow As Long, ByVal txt As String) As Boolean
+    Dim det As String, low As String
+    If txt = "" Then Exit Function
+    det = Trim$(CellText(wsIn.Cells(inRow, IN_DET)))
+    low = Trim$(CellText(wsIn.Cells(inRow, IN_LOW)))
+    If low <> "" Then
+        If txt = det & " " & low Then Exit Function
+        If Len(txt) > Len(low) + 1 And Right$(txt, Len(low) + 1) = " " & low Then
+            txt = Trim$(Left$(txt, Len(txt) - Len(low) - 1))
+        Else
+            wsIn.Cells(inRow, IN_LOW).ClearContents
+        End If
+    ElseIf txt = det Then
+        Exit Function
+    End If
+    wsIn.Cells(inRow, IN_DET).Value = txt
+    SetDetailName = True
+End Function
+
+Private Function HasAnyDate(ByVal wsIn As Worksheet, ByVal inRow As Long) As Boolean
+    Dim d As Date
+    HasAnyDate = ToDate(wsIn.Cells(inRow, IN_S).Value, d) Or ToDate(wsIn.Cells(inRow, IN_E).Value, d)
+End Function
+
+' 왼쪽 표시용 기호(○ - ·) 떼기
+Private Function CleanLabel(ByVal s As String) As String
+    s = Trim$(s)
+    Do While Len(s) > 0
+        Select Case Left$(s, 1)
+            Case "○", "-", "·", "ㆍ"
+                s = Trim$(Mid$(s, 2))
+            Case Else
+                Exit Do
+        End Select
+    Loop
+    CleanLabel = s
+End Function
+
+' 입력이 바뀐 횟수 : 바차트 시트에 기록된 값과 다르면 다시 그려야 함
+Private Function GetVersion() As Long
+    If Not SheetExists(SH_MAIN) Then Exit Function
+    GetVersion = Val(CellText(ThisWorkbook.Worksheets(SH_MAIN).Cells(VER_ROW, VER_COL)))
+End Function
+
+Private Sub BumpVersion()
+    Dim evOld As Boolean
+    If Not SheetExists(SH_MAIN) Then Exit Sub
+    evOld = Application.EnableEvents
+    Application.EnableEvents = False
+    ThisWorkbook.Worksheets(SH_MAIN).Cells(VER_ROW, VER_COL).Value = GetVersion() + 1
+    Application.EnableEvents = evOld
+End Sub
+
+
+'===================================================================
 '  3. 최초 설정 : 메인 / 작업입력 / 공휴일 시트 만들기
 '===================================================================
 ' 파일을 열 때(ThisWorkbook.Workbook_Open) 메인 시트가 없으면 자동 실행
@@ -1043,6 +1397,9 @@ Public Sub SetupWorkbook()
                   "기존 내용은 지워집니다. 계속할까요?", vbYesNo + vbExclamation) <> vbYes Then Exit Sub
     End If
 
+    On Error GoTo EH
+    gBusy = True
+    Application.EnableEvents = False
     Application.ScreenUpdating = False
     BuildHolidaySheet RecreateSheet(SH_HOL)
     BuildInputSheet RecreateSheet(SH_INPUT)
@@ -1066,12 +1423,23 @@ Public Sub SetupWorkbook()
     Next i
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    gBusy = False
+    BumpVersion
     ThisWorkbook.Worksheets(SH_MAIN).Activate
 
     Notify "초기 설정이 끝났습니다." & vbCrLf & vbCrLf & _
            "1) [작업입력] 시트에 작업을 입력하고" & vbCrLf & _
            "2) [메인] 시트에서 표시 단위를 고른 뒤 [바차트 생성] 버튼을 누르세요." & vbCrLf & vbCrLf & _
            "※ 파일은 'Excel 매크로 사용 통합 문서(*.xlsm)'로 저장해야 합니다."
+    Exit Sub
+
+EH:
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    gBusy = False
+    Notify "초기 설정 중 오류가 발생했습니다." & vbCrLf & Err.Number & " : " & Err.Description
 End Sub
 
 Private Sub BuildMainSheet(ByVal ws As Worksheet)
@@ -1085,6 +1453,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     ws.Columns("D").ColumnWidth = 52
     ws.Columns("E").ColumnWidth = 3
     ws.Columns("F").ColumnWidth = 22
+    ws.Columns(VER_COL).Hidden = True
 
     SetText ws.Range("B2"), "BAR CHART 공정표 자동 작성"
     ws.Range("B2").Font.Size = 18
@@ -1132,7 +1501,8 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
         "2. 위 설정에서 표시 단위(일/주/10일/월)를 고르고 [바차트 생성]을 누릅니다.", _
         "3. 바차트 시트 왼쪽의 [-]/[+] 또는 [세부작업 접기/펼치기] 버튼으로 세부작업 행을 숨기면", _
         "   작업항목 줄에 세부작업 바만 가로로 남습니다.", _
-        "4. 바차트 시트는 생성할 때마다 새로 그려집니다 (직접 수정한 내용은 덮어써짐).", _
+        "4. 바차트 시트 왼쪽의 구분·시작일·종료일·기간을 고치면 작업입력에 반영되고 바로 다시 그려집니다.", _
+        "   (작업입력을 고친 경우에는 바차트 시트를 열 때 자동으로 다시 그려짐 / 바 영역에 직접 그린 것은 지워짐)", _
         "5. 공휴일은 [공휴일] 시트에서 추가/삭제하세요 (빨간 날짜로 표시).")
     For i = LBound(notes) To UBound(notes)
         SetText ws.Cells(r + 1 + i, 2), notes(i)
@@ -1328,6 +1698,11 @@ Private Function CellText(ByVal cell As Range) As String
     Else
         CellText = CStr(v)
     End If
+End Function
+
+Private Function VarText(ByVal v As Variant) As String
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    VarText = CStr(v)
 End Function
 
 ' 셀 값을 날짜로 변환 (날짜 / 날짜 일련번호 / "2026-10-28" / "2026.10.28")

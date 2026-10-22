@@ -4,6 +4,7 @@
 
   download/바차트_자동작성.xlsm : 매크로 포함 엑셀 파일 (열고 '콘텐츠 사용' → 자동 초기 설정)
   download/BarChart.bas      : 직접 가져오기용 모듈 (한국어 Windows 용 CP949 인코딩)
+  download/ThisWorkbook_코드.txt : 직접 가져오기 때 ThisWorkbook 에 붙여 넣을 이벤트 코드
 """
 import io
 import os
@@ -21,6 +22,7 @@ SRC = os.path.join(ROOT, "src", "BarChart.bas")
 DIST = os.path.join(ROOT, "download")
 XLSM = os.path.join(DIST, "바차트_자동작성.xlsm")
 BAS = os.path.join(DIST, "BarChart.bas")
+TWB = os.path.join(DIST, "ThisWorkbook_코드.txt")
 
 THISWORKBOOK = """Option Explicit
 
@@ -28,6 +30,16 @@ Private Sub Workbook_Open()
     ' 처음 열었을 때(메인 시트가 없을 때) 초기 설정 자동 실행
     On Error Resume Next
     BarChart.AutoSetupIfNeeded
+End Sub
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
+    ' 바차트 시트 왼쪽 칸 수정 → 작업입력 반영 후 다시 그림 / 작업입력 수정 → 변경 표시
+    BarChart.OnSheetChange Sh, Target
+End Sub
+
+Private Sub Workbook_SheetActivate(ByVal Sh As Object)
+    ' 작업입력이 바뀐 뒤 바차트 시트를 열면 자동으로 다시 그림
+    BarChart.OnSheetActivate Sh
 End Sub
 """
 
@@ -106,8 +118,11 @@ def main():
     build_xlsm(vba_bin)
     with open(BAS, "wb") as f:
         f.write(full.replace("\r\n", "\n").replace("\n", "\r\n").encode("cp949"))
+    with open(TWB, "wb") as f:
+        f.write(THISWORKBOOK.replace("\n", "\r\n").encode("cp949"))
     print("생성:", XLSM)
     print("생성:", BAS)
+    print("생성:", TWB)
 
 
 if __name__ == "__main__":
