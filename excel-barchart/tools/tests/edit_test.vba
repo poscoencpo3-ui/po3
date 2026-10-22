@@ -91,3 +91,40 @@
     OnSheetChange wc, wc.Cells(lr, 2)
     lastIn = wi.Cells(wi.Rows.Count, 3).End(xlUp).Row
     WriteLog "16 입력: " & wi.Cells(lastIn, 3).Value & " " & Format(wi.Cells(lastIn, 5).Value, "mm-dd") & " / 새 안내행 " & (wc.Cells(wc.Rows.Count, wc.Cells(3, 4).Value).End(xlUp).Row > lr)
+    ' 17) 날짜 없이 추가한 작업에 바차트에서 날짜 입력
+    mcol = wc.Cells(3, 4).Value
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    wc.Cells(lr, 1).Value = "- 신규항목"
+    wc.Cells(lr + 1, 1).Value = "세부A"
+    wc.Cells(lr + 2, 1).Value = "세부B"
+    OnSheetChange wc, wc.Range(wc.Cells(lr, 1), wc.Cells(lr + 2, 4))
+    Dim rA As Long, rB As Long, rI As Long, q As Long
+    For q = 7 To 300
+        If Trim(wc.Cells(q, 1).Value) = "· 세부A" Then rA = q
+        If Trim(wc.Cells(q, 1).Value) = "· 세부B" Then rB = q
+        If Trim(wc.Cells(q, 1).Value) = "- 신규항목" Then rI = q
+    Next q
+    ' 17a) 기간 먼저 → 기간만 저장되고 표시
+    wc.Cells(rA, 4).Value = 4
+    OnSheetChange wc, wc.Cells(rA, 4)
+    WriteLog "17a 세부A 기간: " & wc.Cells(rA, 4).Value & " 시작[" & wc.Cells(rA, 2).Value & "]"
+    ' 17b) 이어서 시작일 → 종료일 = 시작+기간-1
+    wc.Cells(rA, 2).Value = CDate("2026-11-25")
+    OnSheetChange wc, wc.Cells(rA, 2)
+    WriteLog "17b 세부A: " & Format(wc.Cells(rA, 2).Value, "mm-dd") & "~" & Format(wc.Cells(rA, 3).Value, "mm-dd") & " " & wc.Cells(rA, 4).Value
+    ' 17c) 세부B 종료일만 → 1일 작업
+    wc.Cells(rB, 3).Value = CDate("2026-11-30")
+    OnSheetChange wc, wc.Cells(rB, 3)
+    WriteLog "17c 세부B: " & Format(wc.Cells(rB, 2).Value, "mm-dd") & "~" & Format(wc.Cells(rB, 3).Value, "mm-dd") & " " & wc.Cells(rB, 4).Value
+    ' 17d) 날짜 없는 작업항목 줄에 시작일 → 작업항목 자체 행에 입력
+    mcol = wc.Cells(3, 4).Value
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    wc.Cells(lr, 1).Value = "- 항목2"
+    wc.Cells(lr + 1, 1).Value = "X작업"
+    OnSheetChange wc, wc.Range(wc.Cells(lr, 1), wc.Cells(lr + 1, 4))
+    For q = 7 To 300
+        If Trim(wc.Cells(q, 1).Value) = "- 항목2" Then rI = q
+    Next q
+    wc.Cells(rI, 2).Value = CDate("2026-11-20")
+    OnSheetChange wc, wc.Cells(rI, 2)
+    WriteLog "17d 항목2: " & Format(wc.Cells(rI, 2).Value, "mm-dd") & " " & wc.Cells(rI, 4).Value & "일 / 원 " & wc.Shapes.Count
