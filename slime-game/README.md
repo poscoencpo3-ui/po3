@@ -69,7 +69,8 @@ npm run dev
 2. `supabase/slime.sql` 내용을 전부 붙여넣고 **Run** (한 번만)
 3. **Project Settings → API**에서 Project URL과 anon(publishable) 키를 확인합니다.
 
-경주는 Supabase **Realtime**(기본으로 켜져 있음)으로 주고받아서 따로 켤 것은 없습니다.
+경주는 Supabase **Realtime**으로 주고받습니다. 기본으로 켜져 있어서 보통은 따로 켤 것이 없습니다.
+다만 **Project Settings → Realtime**에서 "Allow public access"가 꺼져 있거나 "Private channels only"가 켜져 있으면 경주 방에 들어가지 못하니, 공개 채널을 허용해 주세요.
 
 ### 2. Cloudflare Pages 배포
 
