@@ -100,8 +100,8 @@ Private mCat() As String
 Private mItem() As String
 Private mDet() As String
 Private mLow() As String
-Private mS() As Date
-Private mE() As Date
+Private mStart() As Date
+Private mEnd() As Date
 Private mHas() As Boolean
 
 '--- 날짜 칸 : 단위와 관계없이 1일 = 1열, 머리글만 주/10일/월로 묶음 ---
@@ -168,10 +168,10 @@ Public Sub BuildChart()
     For i = 1 To mN
         If mHas(i) Then
             If Not anyDate Then
-                minD = mS(i): maxD = mE(i): anyDate = True
+                minD = mStart(i): maxD = mEnd(i): anyDate = True
             Else
-                If mS(i) < minD Then minD = mS(i)
-                If mE(i) > maxD Then maxD = mE(i)
+                If mStart(i) < minD Then minD = mStart(i)
+                If mEnd(i) > maxD Then maxD = mEnd(i)
             End If
         End If
     Next i
@@ -324,7 +324,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
 
     cnt = lastRow - IN_FIRST_ROW + 1
     ReDim mCat(1 To cnt): ReDim mItem(1 To cnt): ReDim mDet(1 To cnt)
-    ReDim mLow(1 To cnt): ReDim mS(1 To cnt): ReDim mE(1 To cnt)
+    ReDim mLow(1 To cnt): ReDim mStart(1 To cnt): ReDim mEnd(1 To cnt)
     ReDim mHas(1 To cnt)
 
     For r = IN_FIRST_ROW To lastRow
@@ -387,7 +387,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
             End If
             mLow(mN) = vLow
             mHas(mN) = ok
-            If ok Then mS(mN) = dS: mE(mN) = dE
+            If ok Then mStart(mN) = dS: mEnd(mN) = dE
         End If
     Next r
     LoadTasks = (mN > 0)
@@ -700,15 +700,15 @@ Private Function LayoutBody(ByVal ws As Worksheet) As Long
                     If mDet(k) <> "" Then
                         lbl = "      · " & mDet(k)
                         If mLow(k) <> "" Then lbl = lbl & " " & mLow(k)
-                        WriteBlock ws, r, lbl, mHas(k), mS(k), mE(k), True
+                        WriteBlock ws, r, lbl, mHas(k), mStart(k), mEnd(k), True
                         If mHas(k) Then
-                            AddSegment r, mS(k), mE(k), mDet(k), mLow(k)      ' 세부작업 행
-                            AddSegment rItem, mS(k), mE(k), mDet(k), mLow(k)  ' 작업항목 요약 행
+                            AddSegment r, mStart(k), mEnd(k), mDet(k), mLow(k)      ' 세부작업 행
+                            AddSegment rItem, mStart(k), mEnd(k), mDet(k), mLow(k)  ' 작업항목 요약 행
                         End If
                         r = r + 2
                     ElseIf mHas(k) Then
                         ' 세부작업명 없이 날짜만 있으면 작업항목 줄에 직접 표시
-                        AddSegment rItem, mS(k), mE(k), "", mLow(k)
+                        AddSegment rItem, mStart(k), mEnd(k), "", mLow(k)
                     End If
                 End If
             Next k
@@ -757,10 +757,10 @@ Private Function RangeOf(ByVal cat As String, ByVal item As String, ByVal byItem
     For k = 1 To mN
         If mHas(k) And mCat(k) = cat And (Not byItem Or mItem(k) = item) Then
             If Not found Then
-                dMin = mS(k): dMax = mE(k): found = True
+                dMin = mStart(k): dMax = mEnd(k): found = True
             Else
-                If mS(k) < dMin Then dMin = mS(k)
-                If mE(k) > dMax Then dMax = mE(k)
+                If mStart(k) < dMin Then dMin = mStart(k)
+                If mEnd(k) > dMax Then dMax = mEnd(k)
             End If
         End If
     Next k

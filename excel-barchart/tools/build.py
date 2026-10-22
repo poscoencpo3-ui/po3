@@ -7,6 +7,7 @@
 """
 import io
 import os
+import re
 import sys
 
 import xlsxwriter
@@ -36,6 +37,34 @@ def module_source():
     lines = text.splitlines()
     assert lines[0].startswith("Attribute VB_Name")
     return "\r\n".join(lines[1:]) + "\r\n", text
+
+
+# VBA 는 대소문자를 구분하지 않으므로 mE 같은 이름도 Me 예약어로 인식되어 컴파일 오류가 난다.
+# (LibreOffice 는 허용하므로 테스트에서 걸러지지 않음 → 빌드 때 검사)
+VBA_RESERVED = set("""and as boolean byref byte byval call case close const currency date debug declare
+dim do double each else elseif end enum eqv erase error event exit false for friend function get global
+gosub goto if imp implements in input integer is let like lock long loop lset me mod new next not nothing
+null on open option optional or paramarray preserve print private public put raiseevent redim rem resume
+return rset seek select set single static step stop string sub then to true type typeof until variant
+wend while with withevents write xor line name width""".split())
+
+
+def check_identifiers(text):
+    code = "\n".join(l.split("'")[0] for l in text.splitlines())
+    names = set()
+    for m in re.finditer(r"\b(?:Dim|Const|Private|Public|ReDim(?:\s+Preserve)?)\s+(?!Sub\b|Function\b)(.*)", code):
+        for part in m.group(1).split(","):
+            mm = re.match(r"\s*(?:Const\s+)?(\w+)", part)
+            if mm:
+                names.add(mm.group(1))
+    for m in re.finditer(r"(?:Sub|Function)\s+\w+\s*\(([^)]*)\)", code):
+        for p in m.group(1).split(","):
+            mm = re.search(r"(?:ByVal\s+|ByRef\s+|Optional\s+)?(\w+)\s*(?:\(\))?\s+As\b", p)
+            if mm:
+                names.add(mm.group(1))
+    bad = sorted(n for n in names if n.lower() in VBA_RESERVED)
+    if bad:
+        sys.exit("VBA 예약어와 겹치는 이름: " + ", ".join(bad))
 
 
 def build_xlsm(vba_bin):
@@ -71,6 +100,7 @@ def build_xlsm(vba_bin):
 def main():
     os.makedirs(DIST, exist_ok=True)
     src, full = module_source()
+    check_identifiers(full)
     vba_bin = build_vba_project([("BarChart", src)],
                                 [("ThisWorkbook", "workbook", THISWORKBOOK), ("Sheet1", "sheet", "")])
     build_xlsm(vba_bin)
