@@ -69,7 +69,7 @@ function ReplyQuote({ msg, onJump }) {
       ) : (
         <>
           <strong>{snap.sender_name}</strong>
-          <span>{snap.kind === 'image' ? '사진' : snap.kind === 'file' ? `파일: ${snap.body}` : snap.kind === 'report' ? '📝 작업일보' : snap.body}</span>
+          <span>{snap.kind === 'image' ? '사진' : snap.kind === 'file' ? `파일: ${snap.body}` : snap.kind === 'report' ? '📝 작업일보' : snap.kind === 'bot' ? `📌 ${snap.body}` : snap.body}</span>
         </>
       )}
     </button>
@@ -86,6 +86,22 @@ function FileCard({ msg, onDownload }) {
         <span className="muted small">{formatBytes(msg.file_size)} · 눌러서 저장</span>
       </span>
     </button>
+  )
+}
+
+function BotCard({ data }) {
+  const d = data || {}
+  return (
+    <div className="bot-card">
+      {d.title && <div className="bot-title">{d.title}</div>}
+      {d.text && <div className="bot-text">{d.text}</div>}
+      {d.author && <div className="muted small">작성: {d.author}</div>}
+      {d.url && (
+        <a className="btn small bot-link" href={d.url} target="_blank" rel="noopener noreferrer">
+          {d.source || '사이트'} 열기 →
+        </a>
+      )}
+    </div>
   )
 }
 
@@ -165,6 +181,8 @@ export default function MessageItem({
     content = <FileCard msg={msg} onDownload={onDownload} />
   } else if (msg.kind === 'report') {
     content = <ReportCard data={msg.data} />
+  } else if (msg.kind === 'bot') {
+    content = <BotCard data={msg.data} />
   } else {
     content = <RichText text={msg.body} mentionNames={mentionNames} />
   }
@@ -173,6 +191,7 @@ export default function MessageItem({
     'bubble',
     bigEmoji ? 'emoji-only' : msg.kind === 'image' && !deleted && !msg.reply_snapshot ? 'image' : 'text',
     msg.kind === 'file' || msg.kind === 'report' ? 'card' : '',
+    msg.kind === 'bot' && !deleted ? 'bot' : '',
     deleted ? 'deleted' : '',
     msg.is_urgent && !deleted ? 'urgent' : '',
     isNotice ? 'notice' : '',
@@ -181,7 +200,7 @@ export default function MessageItem({
     .filter(Boolean)
     .join(' ')
 
-  const bubbleStyle = !mine && colors && !bigEmoji && !msg.is_urgent && !deleted ? { background: colors[0] } : undefined
+  const bubbleStyle = !mine && colors && !bigEmoji && !msg.is_urgent && !deleted && msg.kind !== 'bot' ? { background: colors[0] } : undefined
 
   const bubble = (
     <div className={classes} style={bubbleStyle} {...(deleted ? {} : menuHandlers)}>
@@ -204,13 +223,16 @@ export default function MessageItem({
 
   return (
     <div className={rowClass} data-id={msg.id}>
-      <div className="avatar-slot">{showSender && <Avatar name={name} seed={msg.user_id} color={colors?.[1]} />}</div>
+      <div className="avatar-slot">
+        {showSender && (msg.kind === 'bot' ? <div className="bot-avatar">📌</div> : <Avatar name={name} seed={msg.user_id} color={colors?.[1]} />)}
+      </div>
       <div className="msg-body">
         {showSender && (
           <div className="sender">
             {name}
             {company && <span className="company"> · {company}</span>}
             {member?.is_admin && <span className="admin-tag">관리자</span>}
+            {msg.kind === 'bot' && <span className="bot-tag">연동</span>}
           </div>
         )}
         <div className="msg-line">

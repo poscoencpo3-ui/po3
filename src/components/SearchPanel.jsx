@@ -32,7 +32,7 @@ export default function SearchPanel({ roomId, onJump, onClose }) {
       .from('messages')
       .select('id, kind, body, sender_name, sender_company, created_at')
       .eq('room_id', roomId)
-      .in('kind', ['text', 'file', 'report'])
+      .in('kind', ['text', 'file', 'report', 'bot'])
       .is('deleted_at', null)
       .ilike('body', `%${escaped}%`)
       .order('id', { ascending: false })
@@ -68,7 +68,7 @@ export default function SearchPanel({ roomId, onJump, onClose }) {
                     <span className="muted"> · {formatListTime(m.created_at)}</span>
                   </div>
                   <div className="search-snippet">
-                    {m.kind === 'text' ? <Highlight text={m.body} query={query.trim()} /> : previewText(m.kind, m.body)}
+                    {m.kind === 'text' || m.kind === 'bot' ? <Highlight text={m.body} query={query.trim()} /> : previewText(m.kind, m.body)}
                   </div>
                 </button>
               </li>
