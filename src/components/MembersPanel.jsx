@@ -1,7 +1,7 @@
 import { formatCode } from '../lib/format'
 import Avatar from './Avatar'
 
-export default function MembersPanel({ room, members, me, onCopyInvite, onClose }) {
+export default function MembersPanel({ room, members, me, colorOf, onCopyInvite, onClose }) {
   const sorted = [...members].sort(
     (a, b) => (b.user_id === me) - (a.user_id === me) || b.is_admin - a.is_admin || a.display_name.localeCompare(b.display_name, 'ko')
   )
@@ -24,7 +24,7 @@ export default function MembersPanel({ room, members, me, onCopyInvite, onClose 
         <ul className="member-list">
           {sorted.map((m) => (
             <li key={m.user_id}>
-              <Avatar name={m.display_name} seed={m.user_id} size={36} />
+              <Avatar name={m.display_name} seed={m.user_id} size={36} color={colorOf?.(m.user_id)[1]} />
               <div>
                 <div>
                   {m.display_name}

@@ -1,6 +1,6 @@
 import { avatarColor } from '../lib/format'
 
-export default function Avatar({ name = '', seed, size = 38, square = false }) {
+export default function Avatar({ name = '', seed, size = 38, square = false, color }) {
   return (
     <div
       className="avatar"
@@ -8,7 +8,7 @@ export default function Avatar({ name = '', seed, size = 38, square = false }) {
         width: size,
         height: size,
         fontSize: size * 0.42,
-        background: avatarColor(seed || name),
+        background: color || avatarColor(seed || name),
         borderRadius: square ? size * 0.36 : '50%',
       }}
     >

@@ -29,6 +29,9 @@ export function startRealtime() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (p) =>
       emit({ type: 'room', row: p.new })
     )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, (p) =>
+      emit({ type: 'schedule', event: p.eventType, row: p.eventType === 'DELETE' ? p.old : p.new })
+    )
     .subscribe((status, err) => {
       if (import.meta.env.DEV) console.debug('[realtime]', status, err?.message || '')
       emit({ type: 'status', status })
@@ -36,11 +39,17 @@ export function startRealtime() {
       if (status === 'SUBSCRIBED') emit({ type: 'resync' })
     })
 
+  // 실시간 연결이 조용히 이벤트를 놓쳐도 빠진 메시지를 채우도록 주기적으로 확인
   const resync = () => emit({ type: 'resync' })
+  const onVisible = () => !document.hidden && resync()
+  const timer = setInterval(onVisible, 60 * 1000)
   window.addEventListener('online', resync)
+  document.addEventListener('visibilitychange', onVisible)
 
   return () => {
+    clearInterval(timer)
     window.removeEventListener('online', resync)
+    document.removeEventListener('visibilitychange', onVisible)
     supabase.removeChannel(channel)
   }
 }
