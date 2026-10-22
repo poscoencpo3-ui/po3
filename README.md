@@ -85,3 +85,9 @@ npm run dev
 ```
 
 로컬 Supabase(Docker 필요)로 테스트하려면 `npx supabase start`를 실행하세요. `supabase/migrations`가 자동으로 적용됩니다.
+
+---
+
+## 엑셀 바차트 공정표 자동 작성
+
+같은 저장소의 [`excel-barchart/`](excel-barchart/) 폴더에 엑셀 VBA 바차트(공정표) 자동 작성 도구가 있습니다. 사용법은 해당 폴더의 README를 보세요.
