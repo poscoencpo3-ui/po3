@@ -6,7 +6,9 @@ import { sfx } from './audio.js'
 import { Scenery, star } from './background.js'
 import { rng, lerp, clamp, dist, easeOut } from './rng.js'
 
-const PR = 26 // 캐릭터 몸 크기
+const PR = 34 // 캐릭터 몸 크기
+const HIT = 18 // 괴물에 닿는 거리 (그림보다 조금 작게, 아이들에게 너그럽게)
+const ZOOM = 1.75 // 가까이 보기 배율
 const FLAP_V = 330 // 날개짓 한 번에 위로 솟는 힘
 const GRAV = 780
 const SPEED = 290 // 나는 속도
@@ -83,7 +85,8 @@ function ridePos(sc, info, e) {
 }
 
 export class Game {
-  constructor(canvas, { map, level, me, seed, others = [], race = false, onWin, onSend, onToast, onHud }) {
+  constructor(canvas, { map, level, me, seed, others = [], race = false, zoom = true, onWin, onSend, onToast, onHud }) {
+    this.zoomNear = zoom
     this.cv = canvas
     this.g = canvas.getContext('2d')
     this.map = map
@@ -94,6 +97,7 @@ export class Game {
     this.onToast = onToast || (() => {})
     this.onHud = onHud || (() => {})
     this.scenery = new Scenery(map)
+    this.mini = this.makeMini()
     this.rides = map.shortcuts.map(rideInfo)
     this.parts = []
     this.pops = []
@@ -103,10 +107,11 @@ export class Game {
     this.lastCount = 4
     this.cloudJig = new Map()
     this.setupWorld(seed)
-    this.me = this.makePlayer(me, 0)
+    // 경주 순서(slot)대로 출발 자리를 정해서 모든 폰에서 같은 자리에 섬
+    this.me = this.makePlayer(me, me.slot ?? 0)
     this.me.local = true
     this.players = new Map([[me.id, this.me]])
-    others.forEach((o, i) => this.players.set(o.id, this.makePlayer(o, i + 1)))
+    others.forEach((o, i) => this.players.set(o.id, this.makePlayer(o, o.slot ?? i + 1)))
     this.lastBeat = 0
     this.stats = { stars: 0, perfect: 0, combo: 0, bestCombo: 0 }
     this.running = true
@@ -184,12 +189,14 @@ export class Game {
 
   makePlayer(info, slot) {
     const s = this.map.start
-    const ox = s.cx - s.x + ((slot % 3) - 1) * 22
-    const oy = s.cy - s.y + (slot >= 3 ? 14 : 0) + ((slot % 2) * 8 - 4)
+    const [sx, sy] = [[-30, 4], [30, 4], [0, -22], [0, 24], [-26, -18], [26, -18]][slot % 6]
+    const ox = s.cx - s.x + sx
+    const oy = s.cy - s.y + sy
     return {
       id: info.id,
       name: info.name,
       char: info.char,
+      hat: info.hat || null,
       state: 'stand',
       cloud: s,
       ox,
@@ -235,8 +242,37 @@ export class Game {
     this.dpr = dpr
     const top = 58
     const bottom = 10
-    const s = Math.min(w / this.map.width, (h - top - bottom) / this.map.height)
-    this.view = { s, x: (w - this.map.width * s) / 2, y: top + (h - top - bottom - this.map.height * s) / 2, w, h }
+    const s0 = Math.min(w / this.map.width, (h - top - bottom) / this.map.height)
+    this.base = { s0, top, availH: h - top - bottom, w, h }
+    if (!this.cam) this.cam = { z: 1, x: this.map.width / 2, y: this.map.height / 2 }
+    this.updateCamera(0, 1)
+  }
+
+  setZoom(near) {
+    this.zoomNear = near
+  }
+
+  // 카메라: 처음엔 맵 전체, 출발하면 내 캐릭터를 따라 가까이
+  updateCamera(t, dt) {
+    const b = this.base
+    const map = this.map
+    const cam = this.cam
+    const near = this.zoomNear && t > -1.4
+    const zt = near ? ZOOM : 1
+    const k = Math.min(1, dt * 3)
+    cam.z += (zt - cam.z) * k
+    const s = b.s0 * cam.z
+    const vw = b.w / s
+    const vh = b.availH / s
+    const me = this.me
+    const tx = near && me ? me.x : map.width / 2
+    const ty = near && me ? me.y - me.z * 0.5 - 40 : map.height / 2
+    const kk = Math.min(1, dt * 5)
+    cam.x += (tx - cam.x) * kk
+    cam.y += (ty - cam.y) * kk
+    const cx = vw >= map.width ? map.width / 2 : clamp(cam.x, vw / 2, map.width - vw / 2)
+    const cy = vh >= map.height ? map.height / 2 : clamp(cam.y, vh / 2, map.height - vh / 2)
+    this.view = { s, x: b.w / 2 - cx * s, y: b.top + b.availH / 2 - cy * s, w: b.w, h: b.h, vw, vh, cx, cy }
   }
 
   toWorld(px, py) {
@@ -512,7 +548,7 @@ export class Game {
       const vulnerable = p.state === 'stand' || p.state === 'fly' || (p.state === 'ride' && p.rphase !== 'in' && p.rphase !== 'out')
       const body = 140 * mo.scale
       if (!vulnerable || p.z > m.z + body || m.z > p.z + 40) continue
-      if (dist(p.x, p.y, m.x, m.y + 10) > mo.R + PR * 0.7) continue
+      if (dist(p.x, p.y, m.x, m.y + 10) > mo.R + HIT) continue
       if (this.has(p, 'shield', t)) {
         p.fx.shield = 0
         p.invuln = t + 1.2
@@ -654,6 +690,11 @@ export class Game {
     }
     const p = this.players.get(id)
     if (!p || p.local) return
+    if (type === 'emo') {
+      p.emo = { e: d.e, t }
+      sfx.chime()
+      return
+    }
     if (type === 'fl') {
       Object.assign(p, { x: d.x, y: d.y, z: d.z, vx: d.vx, vy: d.vy, vz: d.vz, tx: d.tx, ty: d.ty, spd: d.sp })
       p.state = 'fly'
@@ -690,6 +731,62 @@ export class Game {
       this.confetti(this.map.door[0], this.map.door[1])
       sfx.chime()
     }
+  }
+
+  emote(id, e) {
+    const p = this.players.get(id)
+    if (!p) return
+    p.emo = { e, t: this.t }
+    if (p.local) this.onSend('emo', { e })
+    sfx.chime()
+  }
+
+  // 미니맵: 맵 전체를 작게 + 나·친구·괴물·문 위치
+  makeMini() {
+    const map = this.map
+    const w = 84
+    const h = Math.round((w * map.height) / map.width)
+    const cv = document.createElement('canvas')
+    cv.width = w * 2
+    cv.height = h * 2
+    const g = cv.getContext('2d')
+    g.scale((w * 2) / map.width, (h * 2) / map.height)
+    g.drawImage(this.scenery.canvas, 0, 0, map.width, map.height)
+    for (const c of map.clouds) g.drawImage(c.image, c.x, c.y)
+    return { cv, w, h }
+  }
+
+  drawMini(g, v, t, now) {
+    if (this.view.vw >= this.map.width - 1 && this.view.vh >= this.map.height - 1) return
+    const { cv, w, h } = this.mini
+    const x = v.w - w - 10
+    const y = 64 + (this.race ? 30 : 0)
+    const sx = w / this.map.width
+    const sy = h / this.map.height
+    g.save()
+    g.globalAlpha = 0.92
+    this.round(g, x - 3, y - 3, w + 6, h + 6, 10)
+    g.fillStyle = '#fff'
+    g.fill()
+    g.drawImage(cv, x, y, w, h)
+    g.globalAlpha = 1
+    // 보이는 곳
+    g.strokeStyle = 'rgba(255,92,154,0.9)'
+    g.lineWidth = 1.5
+    g.strokeRect(x + (v.cx - v.vw / 2) * sx, y + (v.cy - v.vh / 2) * sy, v.vw * sx, v.vh * sy)
+    const dot = (px, py, r, c) => {
+      g.fillStyle = c
+      g.beginPath()
+      g.arc(x + px * sx, y + py * sy, r, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.fillStyle = '#ffd84a'
+    star(g, x + this.map.door[0] * sx, y + this.map.door[1] * sy, 6)
+    for (const mo of this.mons) if (mo.now) dot(mo.now.x, mo.now.y, 3, '#ff4d6d')
+    for (const p of this.players.values()) if (!p.local) dot(p.x, p.y, 3, '#5a7bff')
+    const blink = Math.floor(now * 4) % 2 ? 4 : 3
+    dot(this.me.x, this.me.y, blink, '#ff5c9a')
+    g.restore()
   }
 
   // ---------------- 효과 ----------------
@@ -770,6 +867,7 @@ export class Game {
     this.marks = this.marks.filter((m) => t - m.t < 0.5)
     this.pops = this.pops.filter((m) => t - m.t < 1.1)
     this.shake = Math.max(0, this.shake - dt)
+    this.updateCamera(t, dt)
     this.draw(t, now, dt)
   }
 
@@ -867,13 +965,35 @@ export class Game {
     for (const p of this.players.values()) {
       if ((p.state === 'eaten' && t - p.t0 > 0.5) || p.state === 'fall') continue
       const x = v.x + p.x * v.s
-      const y = v.y + (p.y - p.z - PR * 2.7) * v.s - 8
+      const y = v.y + (p.y - p.z - PR * (p.hat ? 3.2 : 2.7)) * v.s - 8
       const w = g.measureText(p.name).width + 12
       g.fillStyle = p.local ? 'rgba(255,105,160,0.92)' : 'rgba(90,90,140,0.8)'
       this.round(g, x - w / 2, y - 14, w, 18, 9)
       g.fill()
       g.fillStyle = '#fff'
       g.fillText(p.name, x, y)
+      if (p.emo && t - p.emo.t < 2.2) {
+        const k = Math.min(1, (t - p.emo.t) * 6)
+        g.save()
+        g.translate(x, y - 34)
+        g.scale(k, k)
+        g.fillStyle = '#fff'
+        g.strokeStyle = 'rgba(90,60,110,0.3)'
+        g.lineWidth = 2
+        g.beginPath()
+        g.ellipse(0, 0, 24, 20, 0, 0, Math.PI * 2)
+        g.moveTo(-6, 17)
+        g.lineTo(0, 28)
+        g.lineTo(6, 17)
+        g.fill()
+        g.stroke()
+        g.font = '24px sans-serif'
+        g.textBaseline = 'middle'
+        g.fillText(p.emo.e, 0, 2)
+        g.restore()
+        g.textBaseline = 'alphabetic'
+        g.font = '700 12px Jua, sans-serif'
+      }
       if (p.local && (p.state === 'fly' || p.state === 'stand') && !p.done) {
         // 남은 날개짓
         const free = this.has(p, 'wings', t)
@@ -906,6 +1026,7 @@ export class Game {
       g.fillStyle = 'rgba(160,220,255,0.12)'
       g.fillRect(0, 0, v.w, v.h)
     }
+    this.drawMini(g, v, t, now)
     if (t < 0 && t > -3.5) this.bigText(g, String(Math.ceil(-t)), v)
     else if (t >= 0 && t < 0.8) this.bigText(g, '출발!', v)
   }
@@ -1357,7 +1478,7 @@ export class Game {
         g.stroke()
       }
     }
-    drawChar(g, p.char, x, y, r, { sx, sy, rot, mood, blink, look: p.look || 0, wing })
+    drawChar(g, p.char, x, y, r, { sx, sy, rot, mood, blink, look: p.look || 0, wing, hat: p.hat })
     if (this.has(p, 'stuck', t)) {
       g.fillStyle = 'rgba(201,138,43,0.75)'
       for (const [dx, dy, rr] of [

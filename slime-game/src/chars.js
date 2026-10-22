@@ -192,17 +192,153 @@ export function drawChar(ctx, id, x, y, r, o = {}) {
       }
     }
   }
+  if (o.hat) drawHat(ctx, o.hat, r, line)
+  ctx.restore()
+}
+
+// 꾸미기 가게 물건 (별로 사요)
+export const HATS = [
+  { id: 'ribbon', name: '리본', price: 3 },
+  { id: 'flower', name: '꽃핀', price: 6 },
+  { id: 'party', name: '고깔모자', price: 8 },
+  { id: 'cap', name: '야구모자', price: 10 },
+  { id: 'glasses', name: '선글라스', price: 15 },
+  { id: 'crown', name: '왕관', price: 20 },
+  { id: 'wizard', name: '마법사 모자', price: 30 },
+  { id: 'halo', name: '천사 링', price: 40 },
+]
+
+function drawHat(ctx, hat, r, line) {
+  const top = -r * 0.92
+  ctx.save()
+  ctx.lineWidth = r * 0.08
+  ctx.strokeStyle = line
+  if (hat === 'ribbon') {
+    ctx.translate(r * 0.45, top + r * 0.12)
+    ctx.rotate(0.3)
+    ctx.fillStyle = '#ff5c9a'
+    for (const s of [-1, 1]) {
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(s * r * 0.42, -r * 0.24)
+      ctx.lineTo(s * r * 0.42, r * 0.24)
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+    }
+    ellipse(ctx, 0, 0, r * 0.12, r * 0.12, '#ff8fbd', line)
+  } else if (hat === 'flower') {
+    ctx.translate(-r * 0.5, top + r * 0.18)
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2
+      ellipse(ctx, Math.cos(a) * r * 0.2, Math.sin(a) * r * 0.2, r * 0.15, r * 0.15, '#ffd1e3', line)
+    }
+    ellipse(ctx, 0, 0, r * 0.12, r * 0.12, '#ffd84a', line)
+  } else if (hat === 'cap') {
+    ctx.fillStyle = '#ff5a5a'
+    ctx.beginPath()
+    ctx.arc(0, top + r * 0.3, r * 0.68, Math.PI, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.ellipse(r * 0.55, top + r * 0.3, r * 0.5, r * 0.13, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+    ellipse(ctx, 0, top - r * 0.38, r * 0.09, r * 0.09, '#fff', line)
+  } else if (hat === 'crown') {
+    ctx.fillStyle = '#ffd84a'
+    ctx.beginPath()
+    ctx.moveTo(-r * 0.5, top + r * 0.15)
+    ctx.lineTo(-r * 0.55, top - r * 0.45)
+    ctx.lineTo(-r * 0.25, top - r * 0.15)
+    ctx.lineTo(0, top - r * 0.6)
+    ctx.lineTo(r * 0.25, top - r * 0.15)
+    ctx.lineTo(r * 0.55, top - r * 0.45)
+    ctx.lineTo(r * 0.5, top + r * 0.15)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ellipse(ctx, 0, top - r * 0.05, r * 0.09, r * 0.09, '#ff5c9a')
+    ellipse(ctx, -r * 0.3, top, r * 0.06, r * 0.06, '#5ad1ff')
+    ellipse(ctx, r * 0.3, top, r * 0.06, r * 0.06, '#5ad1ff')
+  } else if (hat === 'wizard') {
+    ctx.fillStyle = '#7a5cff'
+    ctx.beginPath()
+    ctx.moveTo(-r * 0.6, top + r * 0.2)
+    ctx.quadraticCurveTo(-r * 0.1, top - r * 0.6, r * 0.25, top - r * 1.1)
+    ctx.quadraticCurveTo(r * 0.2, top - r * 0.4, r * 0.6, top + r * 0.2)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.ellipse(0, top + r * 0.2, r * 0.75, r * 0.15, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#ffe27a'
+    for (const [x, y, k] of [
+      [-r * 0.15, top - r * 0.15, 0.12],
+      [r * 0.12, top - r * 0.5, 0.09],
+    ]) {
+      ctx.beginPath()
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 - Math.PI / 2
+        const rr = (i % 2 ? 0.45 : 1) * r * k
+        ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr)
+      }
+      ctx.fill()
+    }
+  } else if (hat === 'party') {
+    ctx.translate(-r * 0.15, top + r * 0.1)
+    ctx.rotate(-0.25)
+    ctx.beginPath()
+    ctx.moveTo(-r * 0.32, 0)
+    ctx.lineTo(0, -r * 0.85)
+    ctx.lineTo(r * 0.32, 0)
+    ctx.closePath()
+    ctx.fillStyle = '#5ad1ff'
+    ctx.fill()
+    ctx.save()
+    ctx.clip()
+    ctx.fillStyle = '#ffe27a'
+    for (let i = 0; i < 4; i++) ctx.fillRect(-r, -r * (0.15 + i * 0.22), r * 2, r * 0.09)
+    ctx.restore()
+    ctx.stroke()
+    ellipse(ctx, 0, -r * 0.88, r * 0.1, r * 0.1, '#ff5c9a', line)
+  } else if (hat === 'glasses') {
+    const ey = -r * 0.12
+    ctx.fillStyle = 'rgba(40,30,60,0.9)'
+    for (const s of [-1, 1]) {
+      ctx.beginPath()
+      ctx.ellipse(s * r * 0.36, ey, r * 0.24, r * 0.19, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+      ellipse(ctx, s * r * 0.36 - r * 0.08, ey - r * 0.06, r * 0.06, r * 0.04, 'rgba(255,255,255,0.8)')
+    }
+    ctx.beginPath()
+    ctx.moveTo(-r * 0.12, ey - r * 0.04)
+    ctx.quadraticCurveTo(0, ey - r * 0.12, r * 0.12, ey - r * 0.04)
+    ctx.stroke()
+  } else if (hat === 'halo') {
+    ctx.strokeStyle = '#ffd84a'
+    ctx.lineWidth = r * 0.14
+    ctx.shadowColor = 'rgba(255,230,120,0.9)'
+    ctx.shadowBlur = r * 0.4
+    ctx.beginPath()
+    ctx.ellipse(0, top - r * 0.45, r * 0.5, r * 0.15, 0, 0, Math.PI * 2)
+    ctx.stroke()
+  }
   ctx.restore()
 }
 
 // 고르기 화면용 작은 그림
-export function charIcon(id, size = 72) {
+export function charIcon(id, size = 72, hat = null) {
   const cv = document.createElement('canvas')
   const dpr = Math.min(window.devicePixelRatio || 1, 3)
   cv.width = cv.height = size * dpr
   cv.style.width = cv.style.height = size + 'px'
   const g = cv.getContext('2d')
   g.scale(dpr, dpr)
-  drawChar(g, id, size / 2, size * 0.92, size * 0.3)
+  drawChar(g, id, size / 2, size * 0.92, size * (hat ? 0.27 : 0.3), { hat })
   return cv
 }

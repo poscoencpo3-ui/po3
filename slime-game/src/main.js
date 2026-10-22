@@ -1,5 +1,5 @@
 import './style.css'
-import { CHARS, charIcon } from './chars.js'
+import { CHARS, HATS, charIcon } from './chars.js'
 import { MAPS, LEVELS, loadMap } from './map.js'
 import { Game, ITEMS } from './game.js'
 import { unlockAudio, startMusic, setSound, isSoundOn, sfx } from './audio.js'
@@ -24,14 +24,24 @@ const profile = {
   char: saved.char || CHARS[0].id,
   map: MAPS.some((m) => m.id === saved.map) ? saved.map : MAPS[0].id,
   level: LEVELS.some((l) => l.n === saved.level) ? saved.level : 1,
+  hat: HATS.some((h) => h.id === saved.hat) ? saved.hat : null,
+  zoom: saved.zoom !== false,
 }
+// 꾸미기 가게: 게임에서 모은 별 (이 기기에 저장)
+let bank = { stars: 0, owned: [] }
+try {
+  bank = { ...bank, ...(JSON.parse(local.get('slime.bank') || '{}') || {}) }
+} catch {
+  // 처음
+}
+const saveBank = () => local.set('slime.bank', JSON.stringify(bank))
 session.set('slime.id', profile.id)
 const saveProfile = () =>
-  local.set('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map, level: profile.level }))
+  local.set('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map, level: profile.level, hat: profile.hat, zoom: profile.zoom }))
 const levelOf = (n) => LEVELS.find((l) => l.n === n) || LEVELS[0]
 
 // ---------- 화면 전환 ----------
-const screens = ['#title', '#lobby', '#rank', '#how', '#result']
+const screens = ['#title', '#lobby', '#rank', '#how', '#result', '#shop']
 function show(id) {
   screens.forEach((s) => $(s).classList.toggle('hidden', s !== id))
 }
@@ -83,7 +93,7 @@ function buildChars() {
   for (const c of CHARS) {
     const el = document.createElement('div')
     el.className = 'char' + (c.id === profile.char ? ' on' : '')
-    el.appendChild(charIcon(c.id, 64))
+    el.appendChild(charIcon(c.id, 64, c.id === profile.char ? profile.hat : null))
     const t = document.createElement('span')
     t.textContent = c.name
     el.appendChild(t)
@@ -145,6 +155,51 @@ $('#race').onclick = () => {
 }
 $('#rankBtn').onclick = () => openRank(profile.map, profile.level, '#title')
 $('#howBtn').onclick = () => show('#how')
+$('#shopBtn').onclick = () => openShop()
+$('#shopBack').onclick = () => {
+  buildChars()
+  show('#title')
+}
+
+// ---------- 꾸미기 가게 ----------
+function openShop() {
+  show('#shop')
+  renderShop()
+}
+
+function renderShop() {
+  $('#bankStars').textContent = bank.stars
+  const pv = $('#shopPreview')
+  pv.innerHTML = ''
+  pv.appendChild(charIcon(profile.char, 130, profile.hat))
+  const box = $('#shopItems')
+  box.innerHTML = ''
+  const items = [{ id: null, name: '안 쓰기', price: 0 }, ...HATS]
+  for (const h of items) {
+    const owned = !h.id || bank.owned.includes(h.id)
+    const el = document.createElement('button')
+    el.className = 'shop-item' + (profile.hat === h.id ? ' on' : '') + (owned ? ' owned' : '')
+    el.appendChild(charIcon(profile.char, 62, h.id))
+    el.insertAdjacentHTML('beforeend', `<b>${h.name}</b><small>${profile.hat === h.id ? '쓰는 중' : owned ? '쓰기' : `⭐ ${h.price}`}</small>`)
+    el.onclick = () => {
+      if (!owned) {
+        if (bank.stars < h.price) {
+          toast(`별이 ${h.price - bank.stars}개 더 필요해요 ⭐`)
+          return
+        }
+        bank.stars -= h.price
+        bank.owned.push(h.id)
+        saveBank()
+        sfx.item()
+        toast(`${h.name}을(를) 샀어요! 🎉`)
+      } else sfx.flap()
+      profile.hat = h.id
+      saveProfile()
+      renderShop()
+    }
+    box.appendChild(el)
+  }
+}
 $('#howBack').onclick = () => show('#title')
 
 // ---------- 게임 ----------
@@ -175,6 +230,20 @@ $('#itemBtn').addEventListener('pointerdown', (e) => {
   game?.useItem()
 })
 
+$('#zoomBtn').addEventListener('pointerdown', (e) => {
+  e.preventDefault()
+  profile.zoom = !profile.zoom
+  saveProfile()
+  game?.setZoom(profile.zoom)
+  $('#zoomBtn').textContent = profile.zoom ? '🗺️' : '🔍'
+})
+document.querySelectorAll('#emotes button').forEach((b) =>
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault()
+    game?.emote(profile.id, b.textContent)
+  })
+)
+
 async function launch({ mapId, level, seed, others = [], delay = 3.6 }) {
   const map = await loadMap(mapId)
   endGame()
@@ -185,7 +254,8 @@ async function launch({ mapId, level, seed, others = [], delay = 3.6 }) {
     map,
     level: levelOf(level),
     race: mode === 'race',
-    me: { id: profile.id, name: profile.name, char: profile.char },
+    zoom: profile.zoom,
+    me: { id: profile.id, name: profile.name, char: profile.char, hat: profile.hat, slot: Math.max(0, race.players.findIndex((p) => p.id === profile.id)) },
     seed,
     others,
     onWin: (t, stats) => finished(t, stats),
@@ -195,6 +265,8 @@ async function launch({ mapId, level, seed, others = [], delay = 3.6 }) {
   })
   game.begin(performance.now() / 1000 + delay)
   game.hud()
+  $('#zoomBtn').textContent = profile.zoom ? '🗺️' : '🔍'
+  $('#emotes').classList.toggle('hidden', mode !== 'race')
   hudLoop()
   setTimeout(() => game && game.t < 2 && toast('톡 누르면 파닥! 여러 번 누르면 더 멀리 날아요 🪽', 2800), (delay - 0.5) * 1000)
 }
@@ -212,6 +284,7 @@ function endGame() {
 
 function startSolo() {
   mode = 'solo'
+  race.players = []
   $('#standings').innerHTML = ''
   launch({ mapId: profile.map, level: profile.level, seed: (Math.random() * 1e9) | 0 }).catch((e) => toast(e.message))
 }
@@ -232,6 +305,10 @@ async function finished(t, stats) {
     renderStandings()
   }
   const points = calcPoints(t, place, stats, current.level)
+  // 꾸미기 가게용 별: 모은 별 + 도착 보너스
+  stats.earned = stats.stars + 2 + current.level + (place === 1 ? 3 : 0)
+  bank.stars += stats.earned
+  saveBank()
   const prevBest = await myBest(key, profile.name)
   await saveRun({ map: key, name: profile.name, avatar: profile.char, time_ms: Math.round(t * 1000), points, mode })
   setTimeout(() => showResult(t, points, place, prevBest, stats), 1300)
@@ -243,11 +320,11 @@ function showResult(t, points, place, prevBest, stats) {
   $('#resTitle').textContent = place === 1 ? '1등! 🥇' : place ? `${place}등! 🎉` : '성공! 🎉'
   const rc = $('#resChar')
   rc.innerHTML = ''
-  rc.appendChild(charIcon(profile.char, 96))
+  rc.appendChild(charIcon(profile.char, 96, profile.hat))
   $('#resStars').innerHTML = [1, 2, 3].map((i) => `<span class="${i <= stars ? '' : 'off'}">⭐</span>`).join('')
   $('#resTime').textContent = t.toFixed(2) + '초'
   $('#resPoints').textContent = `+${points}점`
-  $('#resStats').innerHTML = `<span>⭐ 별 ${stats.stars}개</span><span>✨ PERFECT ${stats.perfect}</span><span>🔥 최고 콤보 ${stats.bestCombo}</span>`
+  $('#resStats').innerHTML = `<span>⭐ 별 ${stats.stars}개</span><span>✨ PERFECT ${stats.perfect}</span><span>🔥 최고 콤보 ${stats.bestCombo}</span><span class="bank">🎁 꾸미기 별 +${stats.earned} (모두 ${bank.stars})</span>`
   const ms = Math.round(t * 1000)
   $('#resMsg').textContent = !prevBest ? '첫 기록이에요!' : ms < prevBest ? `새 기록! 🎊 (전: ${(prevBest / 1000).toFixed(2)}초)` : `내 최고 기록: ${(prevBest / 1000).toFixed(2)}초`
   $('#resRace').classList.toggle('hidden', mode !== 'race')
@@ -313,7 +390,7 @@ function enterRoom(code) {
   leaveRoom()
   race.code = code
   race.peers = []
-  room = joinRoom(code, { id: profile.id, name: profile.name, char: profile.char, map: profile.map, level: profile.level, racing: false }, {
+  room = joinRoom(code, { id: profile.id, name: profile.name, char: profile.char, hat: profile.hat, map: profile.map, level: profile.level, racing: false }, {
     onPeers: (list) => {
       race.peers = list
       renderPeers()
@@ -359,7 +436,7 @@ function renderPeers() {
   for (const p of [...race.peers].sort((a, b) => a.joinedAt - b.joinedAt)) {
     const el = document.createElement('div')
     el.className = 'peer'
-    el.appendChild(charIcon(p.char, 60))
+    el.appendChild(charIcon(p.char, 60, p.hat))
     const n = document.createElement('div')
     n.textContent = p.name + (p.id === profile.id ? ' (나)' : '')
     el.appendChild(n)
@@ -379,7 +456,7 @@ function renderPeers() {
 
 $('#startRace').onclick = () => {
   if (!room || !isHost()) return
-  const players = race.peers.map(({ id, name, char }) => ({ id, name, char }))
+  const players = race.peers.map(({ id, name, char, hat }) => ({ id, name, char, hat }))
   const msg = { map: profile.map, level: profile.level, seed: (Math.random() * 1e9) | 0, players }
   room.send('start', msg)
   beginRace(msg)
@@ -391,7 +468,7 @@ function beginRace({ map, level, seed, players }) {
   race.finishes = new Map()
   race.running = true
   room.update({ racing: true })
-  const others = players.filter((p) => p.id !== profile.id)
+  const others = players.map((p, slot) => ({ ...p, slot })).filter((p) => p.id !== profile.id)
   launch({ mapId: map, level: level || 1, seed, others }).then(renderStandings).catch((e) => toast(e.message))
 }
 
@@ -431,7 +508,7 @@ function renderResultRace() {
     const li = document.createElement('li')
     if (r.p.id === profile.id) li.className = 'me'
     li.innerHTML = `<span class="n">${r.t != null ? ['🥇', '🥈', '🥉'][r.place - 1] || r.place : '…'}</span>`
-    li.appendChild(charIcon(r.p.char, 40))
+    li.appendChild(charIcon(r.p.char, 40, r.p.hat))
     li.insertAdjacentHTML('beforeend', `<span class="who">${esc(r.p.name)}</span><span class="v">${r.t != null ? r.t.toFixed(2) + '초' : '날아가는 중'}</span>`)
     ol.appendChild(li)
   }

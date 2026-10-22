@@ -39,6 +39,7 @@
       </div>
       <div class="btns small">
         <button id="rankBtn">🏆 랭킹</button>
+        <button id="shopBtn">🎀 꾸미기</button>
         <button id="howBtn">❓ 하는 법</button>
         <button class="sound">🔊</button>
       </div>
@@ -85,6 +86,15 @@
       <button id="rankBack" class="back">← 돌아가기</button>
     </section>
 
+    <!-- 꾸미기 가게 -->
+    <section id="shop" class="screen hidden">
+      <h2>🎀 꾸미기 가게</h2>
+      <div class="bank">내 별 ⭐ <b id="bankStars">0</b> <small>게임에서 별을 모으고 도착하면 늘어나요</small></div>
+      <div id="shopPreview" class="shop-preview"></div>
+      <div id="shopItems" class="shop-items"></div>
+      <button id="shopBack" class="back">← 돌아가기</button>
+    </section>
+
     <!-- 하는 법 -->
     <section id="how" class="screen hidden">
       <h2>❓ 하는 법</h2>
@@ -98,6 +108,8 @@
         <li>❓ <b>아이템 상자</b>를 먹고 오른쪽 아래 버튼을 눌러요: 🛡️방패 🪶무한 날개 ❄️얼음 🧲자석 ⚡번개 🍯끈끈이(경주)</li>
         <li>🛝 <b>지름길</b>: 사다리 미끄럼틀, 🌀 순간이동 포털, 🍄 점프 버섯</li>
         <li>✨ 구름 한가운데 내리면 PERFECT! 계속 성공하면 콤보!</li>
+        <li>🗺️ 왼쪽 아래 버튼으로 <b>가까이 보기 / 맵 전체 보기</b>를 바꿔요. 오른쪽 위 작은 지도에 친구와 괴물이 보여요.</li>
+        <li>🎀 별을 모으면 <b>꾸미기 가게</b>에서 모자를 사서 쓸 수 있어요.</li>
         <li>🚪 <b>도착 문</b>까지 가면 성공! 2·3단계는 괴물이 더 많고 부서지는 구름이 있어요.</li>
       </ul>
       <button id="howBack" class="back">← 돌아가기</button>
@@ -114,6 +126,10 @@
       <div id="standings" class="standings"></div>
     </div>
     <div id="toast" class="toast hidden"></div>
+    <div id="gameBtns" class="game-btns">
+      <button id="zoomBtn" class="hud-btn">🗺️</button>
+      <div id="emotes" class="emotes hidden"><button>😆</button><button>👍</button><button>😭</button></div>
+    </div>
 
     <!-- 결과 -->
     <section id="result" class="screen overlay hidden">
