@@ -1,4 +1,6 @@
 // 음악·효과음은 모두 Web Audio로 직접 만들어서 파일이 필요 없음
+import { local } from './store.js'
+
 let ctx = null
 let master = null
 let musicGain = null
@@ -9,7 +11,7 @@ let nextNoteTime = 0
 let step = 0
 
 const KEY = 'slime.sound'
-let enabled = localStorage.getItem(KEY) !== 'off'
+let enabled = local.get(KEY) !== 'off'
 
 const midi = (n) => 440 * 2 ** ((n - 69) / 12)
 
@@ -38,7 +40,7 @@ export const isSoundOn = () => enabled
 
 export function setSound(on) {
   enabled = on
-  localStorage.setItem(KEY, on ? 'on' : 'off')
+  local.set(KEY, on ? 'on' : 'off')
   if (master) master.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, 0.05)
 }
 

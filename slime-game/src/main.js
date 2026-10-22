@@ -4,6 +4,7 @@ import { MAPS, loadMap } from './map.js'
 import { Game } from './game.js'
 import { unlockAudio, startMusic, setSound, isSoundOn, sfx } from './audio.js'
 import { canRace, online, localTest, joinRoom, newCode, hostOf } from './net.js'
+import { local, session } from './store.js'
 import { saveRun, topTimes, topPoints, myBest, calcPoints, starsFor } from './rank.js'
 
 const $ = (s) => document.querySelector(s)
@@ -11,16 +12,21 @@ const cv = $('#cv')
 
 // ---------- 내 정보 ----------
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36))
-const saved = JSON.parse(localStorage.getItem('slime.profile') || '{}')
+let saved = {}
+try {
+  saved = JSON.parse(local.get('slime.profile') || '{}') || {}
+} catch {
+  saved = {}
+}
 const profile = {
-  id: sessionStorage.getItem('slime.id') || uid(), // 탭마다 다른 id (같은 폰 두 탭 테스트 가능)
+  id: session.get('slime.id') || uid(), // 탭마다 다른 id (같은 폰 두 탭 테스트 가능)
   name: saved.name || '',
   char: saved.char || CHARS[0].id,
   map: saved.map || MAPS[0].id,
 }
-sessionStorage.setItem('slime.id', profile.id)
+session.set('slime.id', profile.id)
 const saveProfile = () =>
-  localStorage.setItem('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map }))
+  local.set('slime.profile', JSON.stringify({ name: profile.name, char: profile.char, map: profile.map }))
 
 // ---------- 화면 전환 ----------
 const screens = ['#title', '#lobby', '#rank', '#how', '#result']

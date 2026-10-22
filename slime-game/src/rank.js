@@ -1,11 +1,12 @@
 // 랭킹: Supabase가 있으면 모두가 함께 보는 랭킹, 없으면 이 기기에만 저장
 import { online, supabase } from './net.js'
+import { local } from './store.js'
 
 const LOCAL = 'slime.runs'
 
 function localRuns() {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL)) || []
+    return JSON.parse(local.get(LOCAL)) || []
   } catch {
     return []
   }
@@ -25,7 +26,7 @@ export async function saveRun(run) {
   const row = { ...run, created_at: new Date().toISOString() }
   const list = localRuns()
   list.push(row)
-  localStorage.setItem(LOCAL, JSON.stringify(list.slice(-300)))
+  local.set(LOCAL, JSON.stringify(list.slice(-300)))
   if (!online) return
   const { error } = await supabase.from('slime_runs').insert({
     map: run.map,
