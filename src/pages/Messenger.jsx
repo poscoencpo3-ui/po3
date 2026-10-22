@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { onRealtime, startRealtime } from '../lib/realtime'
 import { previewText } from '../lib/format'
 import { setTitleUnread, showNotification } from '../lib/notify'
-import { ensurePush, isPushActive } from '../lib/push'
+import { ensurePush, isPushActive, pushShown } from '../lib/push'
 import RoomList from '../components/RoomList'
 import ChatRoom from '../components/ChatRoom'
 
@@ -52,15 +52,20 @@ export default function Messenger({ session, admin, route }) {
           const row = evt.row
           if (row.kind === 'system' || row.user_id === me) return
           const viewing = row.room_id === activeRef.current && !document.hidden && document.hasFocus()
-          // 푸시가 켜져 있으면 알림은 서비스워커가 띄움 (중복 방지)
-          if (!viewing && !isPushActive()) {
-            const room = roomsRef.current.find((r) => r.room_id === row.room_id)
+          if (viewing) return
+          const room = roomsRef.current.find((r) => r.room_id === row.room_id)
+          const show = () =>
             showNotification(
               (row.is_urgent ? '🚨 [긴급] ' : '') + (room ? room.name : '새 메시지'),
               `${row.sender_name}: ${previewText(row.kind, row.kind === 'file' ? row.file_name : row.body)}`,
-              row.room_id
+              row.room_id,
+              row.id
             )
-          }
+          if (!isPushActive()) return show()
+          // 푸시가 켜져 있으면 서비스워커가 띄우지만, 회사망 등에서 푸시가 막히면 4초 뒤 직접 띄움
+          setTimeout(async () => {
+            if (!(await pushShown(row.id))) show()
+          }, 4000)
         } else if (evt.type === 'member') {
           // 다른 사람의 읽음 표시 변경은 목록과 무관하므로 무시
           if (evt.event !== 'UPDATE' || evt.row.user_id === me) scheduleRefresh()

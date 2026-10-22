@@ -4,6 +4,7 @@
 //
 //  GET              → { publicKey }  브라우저가 알림을 구독할 때 쓰는 공개키
 //  POST {message_id} → 보낸 사람 본인이 호출. 방의 다른 참여자들에게 푸시 발송
+//  POST {test: true} → 알림 테스트. 요청한 사람 본인의 기기로만 발송
 //
 //  서명 키(VAPID)는 처음 호출될 때 자동으로 만들어 app_config 테이블에 저장합니다.
 //  로그인 확인은 함수 안에서 직접 하므로, 대시보드의 "Verify JWT" 옵션은 꺼도 됩니다.
@@ -171,35 +172,59 @@ async function sendForMessage(env: Env, userId: string, messageId: number) {
 
   const vapid = await getVapid(env)
   const mentions: string[] = msg.mentions || []
-  const results = await Promise.allSettled(
-    subs.map(async (sub: { endpoint: string; user_id: string; p256dh: string; auth: string }) => {
+  const results = await Promise.all(
+    subs.map((sub: Subscription) => {
       const mentioned = mentions.includes(sub.user_id)
       const payload = {
         title: msg.is_urgent ? `🚨 [긴급] ${room.name}` : mentioned ? `${room.name} · @회원님` : room.name,
         body: `${msg.sender_name}: ${preview(msg)}`,
         roomId: msg.room_id,
+        messageId: msg.id,
         urgent: msg.is_urgent,
       }
-      const body = await encryptPayload(enc(JSON.stringify(payload)), sub.p256dh, sub.auth)
-      const res = await fetch(sub.endpoint, {
-        method: 'POST',
-        headers: {
-          TTL: '86400',
-          Urgency: msg.is_urgent || mentioned ? 'high' : 'normal',
-          'Content-Encoding': 'aes128gcm',
-          'Content-Type': 'application/octet-stream',
-          Authorization: await vapidHeader(vapid, sub.endpoint, env.subject),
-        },
-        body,
-      })
-      // 브라우저에서 알림을 끄거나 삭제한 구독은 정리
-      if (res.status === 404 || res.status === 410) {
-        await db(env, `push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, { method: 'DELETE' })
-      }
-      if (!res.ok) throw new Error(`push ${res.status}`)
+      return pushTo(env, vapid, sub, payload, msg.is_urgent || mentioned)
     })
   )
-  return { status: 200, body: { sent: results.filter((r) => r.status === 'fulfilled').length, total: subs.length } }
+  return { status: 200, body: { sent: results.filter((r) => r.ok).length, total: subs.length } }
+}
+
+// 알림 테스트: 요청한 사람 본인의 기기로만 발송하고, 기기별 결과를 돌려줌
+async function sendTest(env: Env, userId: string) {
+  const subs = await db(env, `push_subscriptions?user_id=eq.${userId}&select=endpoint,user_id,p256dh,auth`)
+  const vapid = await getVapid(env)
+  const payload = { title: '🔔 알림 테스트', body: '알림이 정상적으로 동작합니다. 이 창은 닫으셔도 됩니다.', test: true }
+  const results = await Promise.all(subs.map((sub: Subscription) => pushTo(env, vapid, sub, payload, true)))
+  return { total: subs.length, sent: results.filter((r) => r.ok).length, results }
+}
+
+type Subscription = { endpoint: string; user_id: string; p256dh: string; auth: string }
+
+async function pushTo(env: Env, vapid: Vapid, sub: Subscription, payload: unknown, high: boolean) {
+  const service = new URL(sub.endpoint).host
+  try {
+    const body = await encryptPayload(enc(JSON.stringify(payload)), sub.p256dh, sub.auth)
+    const res = await fetch(sub.endpoint, {
+      method: 'POST',
+      headers: {
+        TTL: '86400',
+        Urgency: high ? 'high' : 'normal',
+        'Content-Encoding': 'aes128gcm',
+        'Content-Type': 'application/octet-stream',
+        Authorization: await vapidHeader(vapid, sub.endpoint, env.subject),
+      },
+      body,
+    })
+    // 브라우저에서 알림을 끄거나 삭제한 구독은 정리
+    if (res.status === 404 || res.status === 410) {
+      await db(env, `push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`, { method: 'DELETE' })
+    }
+    const detail = res.ok ? '' : (await res.text()).slice(0, 200)
+    if (!res.ok) console.error('push failed', service, res.status, detail)
+    return { ok: res.ok, status: res.status, service, detail }
+  } catch (err) {
+    console.error('push error', service, err)
+    return { ok: false, status: 0, service, detail: String(err).slice(0, 200) }
+  }
 }
 
 export function createHandler(env: Env) {
@@ -211,7 +236,8 @@ export function createHandler(env: Env) {
 
       const userId = await getUserId(env, req.headers.get('Authorization'))
       if (!userId) return json({ error: 'NOT_SIGNED_IN' }, 401)
-      const { message_id } = await req.json()
+      const { message_id, test } = await req.json()
+      if (test) return json(await sendTest(env, userId))
       const result = await sendForMessage(env, userId, Number(message_id))
       return json(result.body, result.status)
     } catch (err) {
