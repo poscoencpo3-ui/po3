@@ -32,3 +32,43 @@
     WriteLog "7 다시그리기 전: " & wc.Cells(10, 1).Value
     OnSheetActivate wc
     WriteLog "7 다시그리기 후: " & wc.Cells(10, 1).Value & " / 원 개수 " & wc.Shapes.Count
+    ' 8) 작업입력에서 종료일을 직접 입력(수식 덮어쓰기) → 기간 재계산, 종료일 수식 복구
+    wi.Cells(9, 6).Value = CDate("2026-11-18")
+    OnSheetChange wi, wi.Cells(9, 6)
+    WriteLog "8 콘크리트: 기간 " & wi.Cells(9, 7).Value & " / 수식 " & wi.Cells(9, 6).HasFormula & " / 종료 " & Format(wi.Cells(9, 6).Value, "yyyy-mm-dd")
+    ' 9) 작업입력 기간 변경 → 종료일 수식이 바로 계산
+    wi.Cells(10, 7).Value = 20
+    OnSheetChange wi, wi.Cells(10, 7)
+    WriteLog "9 HOLDER 종료: " & Format(wi.Cells(10, 6).Value, "yyyy-mm-dd")
+    ' 10) 바차트 종료일 칸이 수식인지
+    OnSheetActivate wc
+    WriteLog "10 바차트 C10 수식: " & wc.Cells(10, 3).HasFormula & " " & Format(wc.Cells(10, 3).Value, "yyyy-mm-dd") & " / 버튼 " & (wc.Shapes.Count > 0)
+    ' 11) 표 아래 빈 행에 새 세부작업 입력 → 바로 위 작업항목(철골 세우기)의 세부작업으로 추가
+    Dim mcol As Long, lr As Long
+    mcol = wc.Cells(3, 4).Value
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    wc.Cells(lr + 1, 1).Value = "철골 도장"
+    wc.Cells(lr + 1, 2).Value = CDate("2026-11-21")
+    wc.Cells(lr + 1, 4).Value = 3
+    OnSheetChange wc, wc.Range(wc.Cells(lr + 1, 1), wc.Cells(lr + 1, 4))
+    WriteLog "11 입력12행: " & wi.Cells(12, 2).Value & "|" & wi.Cells(12, 3).Value & "|" & Format(wi.Cells(12, 5).Value, "mm-dd") & "|" & Format(wi.Cells(12, 6).Value, "mm-dd") & "|" & wi.Cells(12, 7).Value & " / 바차트: " & wc.Cells(lr + 1, 1).Value
+    ' 12) 여러 행 한꺼번에 (대분류 / 작업항목 / 세부작업)
+    mcol = wc.Cells(3, 4).Value              ' 바차트 기간이 바뀌면 행정보 열 위치도 바뀜
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    wc.Cells(lr + 1, 1).Value = "○ 배관설비"
+    wc.Cells(lr + 2, 1).Value = "- 배관 지지대"
+    wc.Cells(lr + 3, 1).Value = "용접"
+    wc.Cells(lr + 3, 2).Value = CDate("2026-11-23")
+    wc.Cells(lr + 3, 3).Value = CDate("2026-11-26")
+    OnSheetChange wc, wc.Range(wc.Cells(lr + 1, 1), wc.Cells(lr + 3, 4))
+    WriteLog "12 입력13~15행: " & wi.Cells(13, 1).Value & "|" & wi.Cells(14, 2).Value & "|" & wi.Cells(15, 3).Value & " " & wi.Cells(15, 7).Value & "일"
+    ' 13) 표 중간에 행을 끼워 넣고 입력 → 진입로 다음 세부작업으로 추가
+    wc.Rows(12).Insert
+    wc.Cells(12, 1).Value = "측구"
+    OnSheetChange wc, wc.Cells(12, 1)
+    WriteLog "13 입력6행: " & wi.Cells(6, 3).Value & " / 7행: " & wi.Cells(7, 3).Value & " / 바차트12: " & wc.Cells(12, 1).Value & " 14: " & wc.Cells(14, 1).Value
+    ' 14) 빈 행만 끼워 넣은 경우 → 다시 그리지 않음 (끼운 행 유지)
+    mcol = wc.Cells(3, 4).Value
+    wc.Rows(20).Insert
+    OnSheetChange wc, wc.Rows(20)
+    WriteLog "14 행정보: [" & wc.Cells(20, mcol).Value & "] 다음행 [" & wc.Cells(21, mcol).Value & "]"
