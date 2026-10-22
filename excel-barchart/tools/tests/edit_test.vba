@@ -51,7 +51,7 @@
     wc.Cells(lr + 1, 2).Value = CDate("2026-11-21")
     wc.Cells(lr + 1, 4).Value = 3
     OnSheetChange wc, wc.Range(wc.Cells(lr + 1, 1), wc.Cells(lr + 1, 4))
-    WriteLog "11 입력12행: " & wi.Cells(12, 2).Value & "|" & wi.Cells(12, 3).Value & "|" & Format(wi.Cells(12, 5).Value, "mm-dd") & "|" & Format(wi.Cells(12, 6).Value, "mm-dd") & "|" & wi.Cells(12, 7).Value & " / 바차트: " & wc.Cells(lr + 1, 1).Value
+    WriteLog "11 입력12행: " & wi.Cells(12, 2).Value & "|" & wi.Cells(12, 3).Value & "|" & Format(wi.Cells(12, 5).Value, "mm-dd") & "|" & Format(wi.Cells(12, 6).Value, "mm-dd") & "|" & wi.Cells(12, 7).Value & " / 바차트: " & wc.Cells(lr, 1).Value   ' 새 블록은 안내 행 자리에 들어감
     ' 12) 여러 행 한꺼번에 (대분류 / 작업항목 / 세부작업)
     mcol = wc.Cells(3, 4).Value              ' 바차트 기간이 바뀌면 행정보 열 위치도 바뀜
     lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
@@ -72,3 +72,22 @@
     wc.Rows(20).Insert
     OnSheetChange wc, wc.Rows(20)
     WriteLog "14 행정보: [" & wc.Cells(20, mcol).Value & "] 다음행 [" & wc.Cells(21, mcol).Value & "]"
+    ' 15) 안내 행(N)에 바로 입력 + 그 아래 행들 ('*' = 대분류)
+    mcol = wc.Cells(3, 4).Value
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    WriteLog "15 안내행: [" & wc.Cells(lr, mcol).Value & "] " & Left(wc.Cells(lr, 1).Value, 8)
+    wc.Cells(lr, 1).Value = "* 전기설비"
+    wc.Cells(lr + 1, 1).Value = "- 케이블"
+    wc.Cells(lr + 2, 1).Value = "포설"
+    wc.Cells(lr + 2, 2).Value = CDate("2026-11-25")
+    wc.Cells(lr + 2, 4).Value = 2
+    OnSheetChange wc, wc.Range(wc.Cells(lr, 1), wc.Cells(lr + 2, 4))
+    Dim lastIn As Long: lastIn = wi.Cells(wi.Rows.Count, 3).End(xlUp).Row
+    WriteLog "15 입력: " & wi.Cells(lastIn - 2, 1).Value & "|" & wi.Cells(lastIn - 1, 2).Value & "|" & wi.Cells(lastIn, 3).Value & " " & Format(wi.Cells(lastIn, 6).Value, "mm-dd")
+    ' 16) 안내 행의 시작일만 입력 → '새 작업'
+    mcol = wc.Cells(3, 4).Value
+    lr = wc.Cells(wc.Rows.Count, mcol).End(xlUp).Row
+    wc.Cells(lr, 2).Value = CDate("2026-11-27")
+    OnSheetChange wc, wc.Cells(lr, 2)
+    lastIn = wi.Cells(wi.Rows.Count, 3).End(xlUp).Row
+    WriteLog "16 입력: " & wi.Cells(lastIn, 3).Value & " " & Format(wi.Cells(lastIn, 5).Value, "mm-dd") & " / 새 안내행 " & (wc.Cells(wc.Rows.Count, wc.Cells(3, 4).Value).End(xlUp).Row > lr)

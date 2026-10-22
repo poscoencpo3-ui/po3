@@ -62,6 +62,7 @@ Private Const IN_DUR As Long = 7      ' G 기간(일)
 Private Const IN_NOTE As Long = 8     ' H 비고
 Private Const IN_FORMULA_ROWS As Long = 500   ' 종료일 수식을 미리 넣어 둘 행 수
 Private Const NEW_ROWS_MAX As Long = 500      ' 바차트 표 아래에 새 작업을 입력할 수 있는 행 수
+Private Const NEW_HINT As String = "↓ 새 작업 입력 :  이름 → 세부작업,  - 이름 → 작업항목,  * 이름 → 대분류   (시작일·기간도 함께 입력)"
 
 ' 종료일 = 시작일 + 기간 - 1 (작업입력 E/F/G, 바차트 B/C/D 모두 "왼쪽=시작, 오른쪽=기간")
 Private Const END_FORMULA As String = "=IF(OR(RC[-1]="""",RC[1]=""""),"""",RC[-1]+RC[1]-1)"
@@ -271,6 +272,13 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     WriteHeader ws, lastCol
     lastRow = LayoutBody(ws, lastCol + 2)
     If lastRow < CH_BODY Then lastRow = CH_BODY
+    ' 표 바로 아래 : 새 작업 입력 안내 행 (이 행이나 그 아래 빈 행에 입력하면 작업 추가)
+    SetText ws.Cells(lastRow + 1, COL_LABEL), NEW_HINT
+    With ws.Cells(lastRow + 1, COL_LABEL).Font
+        .Color = CLR_GRID_DARK
+        .Italic = True
+    End With
+    ws.Cells(lastRow + 1, lastCol + 2).Value = "N"
     WriteMeta ws, lastCol + 2
     AddButton ws, "다시 그리기", "RedrawChart", ws.Range(ws.Cells(CH_TITLE, COL_S), ws.Cells(CH_TITLE, COL_E))
 
@@ -1283,7 +1291,7 @@ Private Sub HandleChartEdit(ByVal ws As Worksheet, ByVal Target As Range)
         meta = CStr(ws.Cells(cell.Row, mc).Value)
         If meta = "L" Then
             needRender = True                 ' 2행 블록의 아랫줄 : 되돌림
-        ElseIf meta <> "" Then
+        ElseIf meta <> "" And meta <> "N" Then
             ApplyChartEdit cell.Column, cell.Value, meta, msg
             needRender = True
         ElseIf cell.Row <> prevR Then
@@ -1324,13 +1332,14 @@ Private Function AddTaskFromChartRow(ByVal ws As Worksheet, ByVal r As Long, ByV
     Dim pos As Long, lastIn As Long, c As Long, dS As Date, dE As Date
 
     raw = Trim$(CellText(ws.Cells(r, COL_LABEL)))
+    If raw = NEW_HINT Then raw = ""                ' 안내 문구는 이름이 아님
     vS = ws.Cells(r, COL_S).Value
     vE = ws.Cells(r, COL_E).Value
     vD = ws.Cells(r, COL_D).Value
     If raw = "" And Not ToDate(vS, dTmp) And Not ToDate(vE, dTmp) And Not ToDuration(vD, nTmp) Then Exit Function
 
     ' 입력한 이름의 앞 기호로 종류 결정
-    If Left$(raw, 1) = "○" Then
+    If InStr("○●◎*", Left$(raw, 1)) > 0 And raw <> "" Then
         kind = "K"
     ElseIf Left$(raw, 1) = "-" Then
         kind = "I"
@@ -1342,7 +1351,7 @@ Private Function AddTaskFromChartRow(ByVal ws As Worksheet, ByVal r As Long, ByV
     If ctxKind = "" Then
         For rr = r - 1 To CH_BODY Step -1
             meta = CStr(ws.Cells(rr, mc).Value)
-            If meta <> "" And meta <> "L" Then
+            If meta <> "" And meta <> "L" And meta <> "N" Then
                 parts = Split(meta, "|", 3)
                 ctxKind = parts(0)
                 rowList = Split(parts(1), ",")
@@ -1575,7 +1584,7 @@ Private Function CleanLabel(ByVal s As String) As String
     s = Trim$(s)
     Do While Len(s) > 0
         Select Case Left$(s, 1)
-            Case "○", "-", "·", "ㆍ"
+            Case "○", "●", "◎", "*", "-", "·", "ㆍ"
                 s = Trim$(Mid$(s, 2))
             Case Else
                 Exit Do
