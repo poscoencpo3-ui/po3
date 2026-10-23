@@ -3,7 +3,7 @@ import { CHARS, charIcon } from './chars.js'
 import { SONGS, LEVEL_INFO, makeChart } from './songs.js'
 import { PianoGame } from './game.js'
 import { Scene, THEMES } from './scene.js'
-import { unlockAudio, startMenuMusic, stopMenuMusic, setSound, isSoundOn, sfx } from './music.js'
+import { unlockAudio, setSound, isSoundOn, sfx } from './music.js'
 import { canRace, online, localTest, joinRoom, newCode, hostOf } from './net.js'
 import { local, session } from './store.js'
 import { saveRun, topScores, topPoints, myBestLocal } from './rank.js'
@@ -43,7 +43,6 @@ const saveProfile = () =>
 const screens = ['#title', '#songs', '#lobby', '#rank', '#how', '#result']
 function show(id) {
   screens.forEach((s) => $(s).classList.toggle('hidden', s !== id))
-  if (id && !game && isSoundOn()) startMenuMusic()
 }
 
 let toastTimer
@@ -58,10 +57,7 @@ function toast(text, ms = 1800) {
   toastTimer = setTimeout(() => el.classList.add('hidden'), ms)
 }
 
-const wake = () => {
-  unlockAudio()
-  if (!game && isSoundOn()) startMenuMusic()
-}
+const wake = () => unlockAudio()
 ;['pointerdown', 'touchend', 'click'].forEach((ev) => window.addEventListener(ev, wake, { passive: true }))
 document.addEventListener('click', (e) => {
   if (e.target.closest('button')) sfx.click()
@@ -195,7 +191,7 @@ function renderSongs() {
     el.querySelector('.pre').onclick = (e) => {
       e.stopPropagation()
       unlockAudio()
-      sfx.preview(chart)
+      sfx.preview(s, chart)
     }
     el.querySelector('.play-btn').onclick = () => {
       profile.song = s.id
@@ -225,7 +221,6 @@ function hudLoop() {
 
 function launch({ songId, theme, rivals, delay = 1.6 }) {
   endGame()
-  stopMenuMusic()
   unlockAudio()
   const song = songById(songId)
   const chart = makeChart(song)
@@ -537,4 +532,4 @@ async function renderRank() {
 show('#title')
 
 // 개발 중 자동 테스트용
-if (import.meta.env.DEV) window.__piano = { get game() { return game } }
+if (import.meta.env.DEV) import('./music.js').then((m) => (window.__piano = { get game() { return game }, capture: m.captureStream }))

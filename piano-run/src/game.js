@@ -1,5 +1,5 @@
 // 피아노 달리기: 내려오는 건반을 박자에 맞춰 톡! 콤보만큼 아래 캐릭터가 빨리 달려요
-import { Backing, piano, sfx, audioTime, outputLatency } from './music.js'
+import { Backing, tapNote, sfx, audioTime, outputLatency } from './music.js'
 import { Scene, star } from './scene.js'
 import { drawChar } from './chars.js'
 import { rng, clamp, lerp } from './rng.js'
@@ -169,12 +169,12 @@ export class PianoGame {
     const d = Math.abs(t - best.t)
     const j = d <= WIN.perfect ? 'perfect' : d <= WIN.good ? 'good' : 'bad'
     best.judged = j
-    best.sound = piano(best.midi, { hold: best.hold, vel: j === 'bad' ? 0.6 : 1 })
+    best.sound = tapNote(this.song, this.chart, best, { vel: j === 'bad' ? 0.55 : j === 'good' ? 0.85 : 1 })
     if (best.hold) {
       best.holding = id
       this.pointers.get(id).note = best
     } else {
-      setTimeout(() => best.sound?.release(), Math.min(best.len, 0.9) * 1000)
+      setTimeout(() => best.sound?.release(), (best.len + 0.25) * 1000)
     }
     this.apply(j, lane, t)
   }

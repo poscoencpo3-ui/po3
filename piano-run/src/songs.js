@@ -216,7 +216,7 @@ export function makeChart(song, rounds = song.rounds || 2) {
     const t = (intro + n.beat) * s.beatSec
     const len = n.dur * s.beatSec
     const hold = len >= 0.75
-    return { i, lane, t, end: hold ? t + len * 0.8 : t, hold, midi: n.midi, len }
+    return { i, lane, t, end: hold ? t + len * 0.8 : t, hold, midi: n.midi, len, beat: n.beat }
   })
   return { ...s, intro, notes, duration: (intro + s.totalBeats) * s.beatSec + 1.5 }
 }
