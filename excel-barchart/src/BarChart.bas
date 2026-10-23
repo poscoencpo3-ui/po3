@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.5 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.6 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -74,9 +74,12 @@ Private Const IN_DUR As Long = 6      ' F 기간(일)
 Private Const IN_E As Long = 7        ' G 종료일 (수식)
 Private Const IN_NOTE As Long = 8     ' H 비고
 Private Const IN_TRADE_EFF As Long = 9 ' I 적용 공종 (숨김, 위 단계에서 물려받은 공종)
-Private Const IN_GANTT0 As Long = 11  ' K~ 작업입력 간트차트 (1일 = 1열)
+Private Const IN_SUMFLAG As Long = 10  ' J 요약 표시 (숨김, "S" = 아래 작업 범위로 날짜 자동 계산된 행)
+Private Const IN_GANTT0 As Long = 12  ' L~ 작업입력 간트차트 (1일 = 1열, K열은 간격)
 Private Const IN_GANTT_DAYS As Long = 400
-Private Const IN_MONTH_ROW As Long = 3 ' 간트 월 표시 행
+Private Const IN_MONTH_ROW As Long = 2 ' 간트 머리글 : 월
+Private Const IN_DAY_ROW As Long = 3   '               일 (날짜 값)
+Private Const IN_WD_ROW As Long = 4    '               요일 (작업입력 표 머리글과 같은 행)
 Private Const LVL_CAT As String = "대분류"
 Private Const LVL_ITEM As String = "작업항목"
 Private Const LVL_DET As String = "세부작업"
@@ -332,7 +335,6 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     End With
     ws.Cells(lastRow + 1, lastCol + 2).Value = "N"
     WriteMeta ws, lastCol + 2
-    AddButton ws, "다시 그리기", "RedrawChart", ws.Range(ws.Cells(CH_TITLE, COL_S), ws.Cells(CH_TITLE, COL_E))
 
     '--- 서식 → 바 → 기준선 순서 (바가 점선 위에 덮이도록) ---
     FormatGrid ws, lastRow, lastCol
@@ -517,8 +519,9 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
                     mItem(mN) = ""
                     mDet(mN) = ""
                     mHas(mN) = False
-                Case 2      ' 작업항목 (날짜가 있으면 작업항목 줄에 직접 바)
+                Case 2      ' 작업항목 (자체 날짜가 있으면 작업항목 줄에 직접 바, 요약 날짜면 바 없음)
                     If vTxt = "" Then vTxt = "(작업항목)"
+                    If IsSummaryRow(wsIn, r) Then mHas(mN) = False: mDurV(mN) = 0
                     curItem = vTxt
                     If vTrade <> "" Then itemTrade = vTrade Else itemTrade = catTrade
                     effTrade = itemTrade
@@ -1330,7 +1333,7 @@ Private Sub AddCircle(ByVal ws As Worksheet, ByVal x As Double, ByVal y As Doubl
     On Error GoTo 0
 End Sub
 
-' D-DAY 행 : 기준일(SD 착수일 등)을 1일차로 하여 날짜마다 일차 표시, 그 전은 D-n
+' D-DAY 행 : 기준일(SD 착수일 등) = D+1, 다음날 D+2 … , 그 전날은 D-1, D-2 …
 Private Sub WriteDDay(ByVal ws As Worksheet, ByVal hasDDay As Boolean, ByVal dDay As Date)
     Dim i As Long, c1 As Long, c2 As Long, n As Long, txt As String
     mHdrFirst = CH_HDR1
@@ -1347,16 +1350,16 @@ Private Sub WriteDDay(ByVal ws As Worksheet, ByVal hasDDay As Boolean, ByVal dDa
         .Font.Bold = True
         .Font.Color = CLR_SUN
     End With
-    SetText ws.Cells(CH_DDAY, COL_LABEL), "D-DAY (" & Month(dDay) & "/" & Day(dDay) & " = 1일차) "
+    SetText ws.Cells(CH_DDAY, COL_LABEL), "D-DAY (" & Month(dDay) & "/" & Day(dDay) & " = D+1) "
     For i = 1 To mPN
         c1 = DateToCol(mPS(i))
         c2 = DateToCol(mPE(i))
         If c2 > c1 Then ws.Range(ws.Cells(CH_DDAY, c1), ws.Cells(CH_DDAY, c2)).Merge
-        If dDay >= mPS(i) And dDay <= mPE(i) And mUnit <> UNIT_DAY Then
-            txt = "D-DAY"
+        If dDay >= mPS(i) And dDay <= mPE(i) Then
+            txt = "D+1"
         Else
             n = CLng(mPS(i) - dDay)
-            If n >= 0 Then txt = CStr(n + 1) Else txt = "D" & n
+            If n >= 0 Then txt = "D+" & (n + 1) Else txt = "D" & n
         End If
         SetText ws.Cells(CH_DDAY, c1), txt
         If dDay >= mPS(i) And dDay <= mPE(i) Then ws.Cells(CH_DDAY, c1).Interior.Color = RGB(255, 255, 0)
@@ -1669,7 +1672,7 @@ Private Sub FixChangedInputRows(ByVal wsIn As Worksheet, ByVal Target As Range)
     gBusy = False
 End Sub
 
-' 바차트 시트의 [다시 그리기] 버튼
+' 바차트 다시 그리기 (주요 이벤트 추가 후 등)
 Public Sub RedrawChart()
     Application.EnableEvents = True
     If MetaCol(ActiveSheet) = 0 Then
@@ -1805,7 +1808,7 @@ Private Function AddTaskFromChartRow(ByVal ws As Worksheet, ByVal r As Long, ByV
     wsIn.Cells(pos, IN_S).NumberFormat = "yyyy-mm-dd"
     wsIn.Cells(pos, IN_E).NumberFormat = "yyyy-mm-dd"
     wsIn.Cells(pos, IN_E).Interior.Color = RGB(242, 242, 242)
-    For c = IN_LVL To IN_TRADE_EFF
+    For c = IN_LVL To IN_SUMFLAG
         wsIn.Cells(pos, c).ClearContents
     Next c
 
@@ -1901,7 +1904,7 @@ Private Function ApplyChartEdit(ByVal c As Long, ByVal v As Variant, ByVal meta 
         '   여러 개                  → 합친 값이라 바꿀 수 없음
         For i = LBound(rowList) To UBound(rowList)
             inRow = CLng(rowList(i))
-            If HasAnyDate(wsIn, inRow) Then
+            If HasAnyDate(wsIn, inRow) And Not IsSummaryRow(wsIn, inRow) Then
                 n = n + 1
                 tgt = inRow
             End If
@@ -2284,22 +2287,35 @@ Private Function LevelOfText(ByVal t As String) As Integer
     End Select
 End Function
 
-' 작업입력 : 단계별 들여쓰기 + 적용 공종(숨김 I열, 비어 있으면 위 단계 공종) 계산
+' 작업입력 : 단계별 들여쓰기 + 적용 공종(숨김 I열, 비어 있으면 위 단계 공종) +
+'            대분류·작업항목 요약 날짜 (아래 작업들의 최초 시작일 ~ 최종 종료일, 숨김 J열 = "S")
 Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFrom As Long = 0, _
                                Optional ByVal indentTo As Long = 0)
-    Dim lastRow As Long, n As Long, v As Variant, outv() As Variant, i As Long, lv As Integer
-    Dim catT As String, itemT As String, t As String, txt As String
+    Dim lastRow As Long, n As Long, v As Variant, fl As Variant, outv() As Variant, i As Long, j As Long
+    Dim lv() As Integer, rs() As Double, re() As Double, sm() As Boolean, smS() As Double, smE() As Double
+    Dim catT As String, itemT As String, t As String, txt As String, d As Date, nd As Long
+    Dim r As Long, a As Double, b As Double
+
     lastRow = LastInputRow(wsIn)
     If lastRow < IN_FIRST_ROW Then Exit Sub
     n = lastRow - IN_FIRST_ROW + 1
-    v = wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_LVL), wsIn.Cells(lastRow, IN_TEXT)).Value
+    v = wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_LVL), wsIn.Cells(lastRow, IN_DUR)).Value
+    fl = wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_SUMFLAG), wsIn.Cells(lastRow + 1, IN_SUMFLAG)).Value
     ReDim outv(1 To n, 1 To 1)
+    ReDim lv(1 To n): ReDim rs(1 To n): ReDim re(1 To n)
+    ReDim sm(1 To n): ReDim smS(1 To n): ReDim smE(1 To n)
+
+    ' 단계, 적용 공종, 각 행 자체 날짜
     For i = 1 To n
-        lv = LevelOfText(VarText(v(i, 1)))
-        t = Trim$(VarText(v(i, 2)))
-        txt = Trim$(VarText(v(i, 3)))
-        If lv = 0 And txt <> "" Then lv = 3
-        Select Case lv
+        lv(i) = LevelOfText(VarText(v(i, IN_LVL)))
+        t = Trim$(VarText(v(i, IN_TRADE)))
+        txt = Trim$(VarText(v(i, IN_TEXT)))
+        If ToDate(v(i, IN_S), d) Then
+            rs(i) = CDbl(d)
+            If ToDuration(v(i, IN_DUR), nd) Then re(i) = rs(i) + nd - 1 Else re(i) = rs(i)
+        End If
+        If lv(i) = 0 And (txt <> "" Or rs(i) > 0) Then lv(i) = 3
+        Select Case lv(i)
             Case 1
                 catT = t
                 itemT = t
@@ -2312,18 +2328,69 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
             Case Else
                 outv(i, 1) = ""
         End Select
-        If lv > 0 Then
-            If indentFrom = 0 Or (IN_FIRST_ROW + i - 1 >= indentFrom And IN_FIRST_ROW + i - 1 <= indentTo) Then
-                wsIn.Cells(IN_FIRST_ROW + i - 1, IN_TEXT).IndentLevel = lv - 1
-            End If
+        If lv(i) > 0 Then
+            r = IN_FIRST_ROW + i - 1
+            If indentFrom = 0 Or (r >= indentFrom And r <= indentTo) Then wsIn.Cells(r, IN_TEXT).IndentLevel = lv(i) - 1
         End If
     Next i
     wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_TRADE_EFF), wsIn.Cells(lastRow, IN_TRADE_EFF)).Value = outv
+
+    ' 작업항목 요약 : 바로 아래 세부작업들의 범위
+    For i = 1 To n
+        If lv(i) = 2 Then
+            For j = i + 1 To n
+                If lv(j) = 1 Or lv(j) = 2 Then Exit For
+                If lv(j) = 3 And rs(j) > 0 Then AddRange sm(i), smS(i), smE(i), rs(j), re(j)
+            Next j
+        End If
+    Next i
+    ' 대분류 요약 : 아래 세부작업 + (요약이 아닌) 작업항목 자체 날짜
+    For i = 1 To n
+        If lv(i) = 1 Then
+            For j = i + 1 To n
+                If lv(j) = 1 Then Exit For
+                If lv(j) = 3 And rs(j) > 0 Then AddRange sm(i), smS(i), smE(i), rs(j), re(j)
+                If lv(j) = 2 And Not sm(j) And rs(j) > 0 And VarText(fl(j, 1)) <> "S" Then AddRange sm(i), smS(i), smE(i), rs(j), re(j)
+            Next j
+        End If
+    Next i
+    ' 쓰기 (바뀐 칸만)
+    For i = 1 To n
+        r = IN_FIRST_ROW + i - 1
+        If sm(i) Then
+            If rs(i) <> smS(i) Then wsIn.Cells(r, IN_S).Value = CDate(smS(i))
+            If VarText(v(i, IN_DUR)) <> CStr(smE(i) - smS(i) + 1) Then wsIn.Cells(r, IN_DUR).Value = smE(i) - smS(i) + 1
+            If Not wsIn.Cells(r, IN_E).HasFormula Then wsIn.Cells(r, IN_E).FormulaR1C1 = IN_END_FORMULA
+            If VarText(fl(i, 1)) <> "S" Then wsIn.Cells(r, IN_SUMFLAG).Value = "S"
+        ElseIf VarText(fl(i, 1)) = "S" Then
+            ' 아래 작업 날짜가 없어짐 → 자동으로 넣었던 날짜 지움
+            wsIn.Cells(r, IN_S).ClearContents
+            wsIn.Cells(r, IN_DUR).ClearContents
+            wsIn.Cells(r, IN_SUMFLAG).ClearContents
+        End If
+    Next i
 End Sub
 
-' 작업입력 간트 날짜 머리글 : 메인의 차트 시작일, 없으면 최초 시작일이 있는 주 월요일부터 IN_GANTT_DAYS 일
+Private Sub AddRange(ByRef has As Boolean, ByRef mn As Double, ByRef mx As Double, ByVal a As Double, ByVal b As Double)
+    If Not has Then
+        has = True: mn = a: mx = b
+    Else
+        If a < mn Then mn = a
+        If b > mx Then mx = b
+    End If
+End Sub
+
+' 요약(자동 날짜) 행인지
+Private Function IsSummaryRow(ByVal wsIn As Worksheet, ByVal r As Long) As Boolean
+    IsSummaryRow = (CellText(wsIn.Cells(r, IN_SUMFLAG)) = "S")
+End Function
+
+' 작업입력 간트 날짜 머리글 (월 / 일 / 요일) : 메인의 차트 시작일, 없으면 최초 시작일이 있는 주 월요일부터 IN_GANTT_DAYS 일
+' 시작일이 바뀌었을 때만 머리글을 다시 만들고, 막대 안 글자는 항상 다시 씀
 Private Sub RefreshInputGantt(ByVal wsIn As Worksheet, ByVal force As Boolean)
-    Dim d0 As Date, mn As Double, i As Long, dts() As Variant, mons() As Variant, d As Date, cur As Variant
+    Dim d0 As Date, mn As Double, i As Long, dts() As Variant, wds() As Variant, d As Date, cur As Variant
+    Dim g1 As Long, g2 As Long, lastFmt As Long, c As Long, band As Long, c1 As Long, newGrp As Boolean
+
     If SheetExists(SH_MAIN) Then
         If Not ToDate(ThisWorkbook.Worksheets(SH_MAIN).Cells(CFG_START, CFG_COL).Value, d0) Then d0 = 0
     End If
@@ -2333,20 +2400,127 @@ Private Sub RefreshInputGantt(ByVal wsIn As Worksheet, ByVal force As Boolean)
         If mn > 0 Then d0 = CDate(mn) Else d0 = Date
         d0 = d0 - (Weekday(d0, vbMonday) - 1)
     End If
-    cur = wsIn.Cells(IN_HDR_ROW, IN_GANTT0).Value
-    If Not force And IsDate(cur) Then
-        If CDate(cur) = d0 Then Exit Sub
+    g1 = IN_GANTT0
+    g2 = IN_GANTT0 + IN_GANTT_DAYS - 1
+    cur = wsIn.Cells(IN_DAY_ROW, g1).Value
+    If force Or Not IsDate(cur) Then
+        GoTo Build
+    ElseIf CDate(cur) <> d0 Then
+        GoTo Build
     End If
+    RefreshGanttLabels wsIn
+    Exit Sub
+
+Build:
+    lastFmt = LastInputRow(wsIn)
+    If lastFmt < IN_FIRST_ROW + IN_FORMULA_ROWS - 1 Then lastFmt = IN_FIRST_ROW + IN_FORMULA_ROWS - 1
     ReDim dts(1 To 1, 1 To IN_GANTT_DAYS)
-    ReDim mons(1 To 1, 1 To IN_GANTT_DAYS)
+    ReDim wds(1 To 1, 1 To IN_GANTT_DAYS)
     For i = 1 To IN_GANTT_DAYS
         d = d0 + i - 1
         dts(1, i) = d
-        If i = 1 Or Day(d) = 1 Then mons(1, i) = Year(d) & "." & Month(d) Else mons(1, i) = Empty
+        wds(1, i) = Mid$("일월화수목금토", Weekday(d, vbSunday), 1)
     Next i
-    wsIn.Range(wsIn.Cells(IN_HDR_ROW, IN_GANTT0), wsIn.Cells(IN_HDR_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).Value = dts
-    wsIn.Range(wsIn.Cells(IN_MONTH_ROW, IN_GANTT0), wsIn.Cells(IN_MONTH_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).NumberFormat = "@"
-    wsIn.Range(wsIn.Cells(IN_MONTH_ROW, IN_GANTT0), wsIn.Cells(IN_MONTH_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).Value = mons
+    With wsIn.Range(wsIn.Cells(IN_MONTH_ROW, g1), wsIn.Cells(IN_WD_ROW, g2))
+        .UnMerge
+        .ClearContents
+        .Interior.Pattern = xlNone
+        .Borders.LineStyle = xlContinuous
+        .Borders.Color = CLR_GRID
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .Font.Size = 8
+    End With
+    wsIn.Range(wsIn.Cells(IN_DAY_ROW, g1), wsIn.Cells(IN_DAY_ROW, g2)).NumberFormat = "d"
+    wsIn.Range(wsIn.Cells(IN_DAY_ROW, g1), wsIn.Cells(IN_DAY_ROW, g2)).Value = dts
+    wsIn.Range(wsIn.Cells(IN_WD_ROW, g1), wsIn.Cells(IN_WD_ROW, g2)).NumberFormat = "@"
+    wsIn.Range(wsIn.Cells(IN_WD_ROW, g1), wsIn.Cells(IN_WD_ROW, g2)).Value = wds
+
+    ' 본문 세로선 : 날짜 점선, 월 경계 실선
+    With wsIn.Range(wsIn.Cells(IN_FIRST_ROW, g1), wsIn.Cells(lastFmt, g2)).Borders(xlInsideVertical)
+        .LineStyle = xlDot
+        .Weight = xlThin
+        .Color = CLR_GRID
+    End With
+
+    ' 월 (같은 달끼리 병합, 색 띠 번갈아)
+    c1 = g1
+    band = 0
+    For c = g1 + 1 To g2 + 1
+        If c > g2 Then
+            newGrp = True
+        Else
+            newGrp = (Day(dts(1, c - g1 + 1)) = 1)
+        End If
+        If newGrp Then
+            With wsIn.Range(wsIn.Cells(IN_MONTH_ROW, c1), wsIn.Cells(IN_MONTH_ROW, c - 1))
+                If c - 1 > c1 Then .Merge
+                .Interior.Color = IIf(band = 0, CLR_BAND1, CLR_BAND2)
+                .Font.Bold = True
+                .Font.Size = 9
+            End With
+            d = dts(1, c1 - g1 + 1)
+            If c - c1 >= 6 Then
+                SetText wsIn.Cells(IN_MONTH_ROW, c1), Year(d) & "년 " & Month(d) & "월"
+            Else
+                SetText wsIn.Cells(IN_MONTH_ROW, c1), Month(d) & "월"
+            End If
+            If c <= g2 Then
+                With wsIn.Range(wsIn.Cells(IN_MONTH_ROW, c), wsIn.Cells(lastFmt, c)).Borders(xlEdgeLeft)
+                    .LineStyle = xlContinuous
+                    .Weight = xlThin
+                    .Color = CLR_GRID_DARK
+                End With
+            End If
+            band = 1 - band
+            c1 = c
+        End If
+    Next c
+    With wsIn.Range(wsIn.Cells(IN_WD_ROW, g1), wsIn.Cells(IN_WD_ROW, g2)).Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = 0
+    End With
+    wsIn.Range(wsIn.Cells(IN_MONTH_ROW, g1), wsIn.Cells(IN_WD_ROW, g2)).BorderAround _
+        LineStyle:=xlContinuous, Weight:=xlMedium, Color:=0
+    RefreshGanttLabels wsIn
+End Sub
+
+' 작업입력 간트 막대 안 글자 : 작업내용을 막대 가운데에 (막대보다 길면 막대 오른쪽에)
+Private Sub RefreshGanttLabels(ByVal wsIn As Worksheet)
+    Dim lastRow As Long, r As Long, d0 As Date, dS As Date, nd As Long, txt As String
+    Dim g1 As Long, g2 As Long, c1 As Long, c2 As Long, cur As Variant, rng As Range
+
+    g1 = IN_GANTT0
+    g2 = IN_GANTT0 + IN_GANTT_DAYS - 1
+    cur = wsIn.Cells(IN_DAY_ROW, g1).Value
+    If Not IsDate(cur) Then Exit Sub
+    d0 = CDate(cur)
+    lastRow = LastInputRow(wsIn)
+    If lastRow < IN_FIRST_ROW Then Exit Sub
+    Set rng = wsIn.Range(wsIn.Cells(IN_FIRST_ROW, g1), wsIn.Cells(lastRow + 20, g2))
+    rng.ClearContents
+    rng.HorizontalAlignment = xlGeneral
+    rng.Font.Size = 8
+    For r = IN_FIRST_ROW To lastRow
+        txt = Trim$(CellText(wsIn.Cells(r, IN_TEXT)))
+        If txt <> "" And ToDate(wsIn.Cells(r, IN_S).Value, dS) Then
+            If Not ToDuration(wsIn.Cells(r, IN_DUR).Value, nd) Then nd = 1
+            c1 = g1 + CLng(dS - d0)
+            c2 = c1 + nd - 1
+            If c2 >= g1 And c1 <= g2 Then
+                If c1 < g1 Then c1 = g1
+                If c2 > g2 Then c2 = g2
+                If TextWidthPt(txt, 8) <= ColsWidth(wsIn, c1, c2) - 2 Then
+                    SetText wsIn.Cells(r, c1), txt
+                    wsIn.Range(wsIn.Cells(r, c1), wsIn.Cells(r, c2)).HorizontalAlignment = xlCenterAcrossSelection
+                ElseIf c2 < g2 Then
+                    SetText wsIn.Cells(r, c2 + 1), txt          ' 막대가 짧으면 오른쪽에
+                    wsIn.Cells(r, c2 + 1).HorizontalAlignment = xlLeft
+                End If
+            End If
+        End If
+    Next r
 End Sub
 
 ' 작업입력 조건부 서식
@@ -2370,7 +2544,7 @@ Private Sub ApplyInputFormats(ByVal wsIn As Worksheet)
     sS = "$" & ColLetter(IN_S) & IN_FIRST_ROW
     sE = "$" & ColLetter(IN_E) & IN_FIRST_ROW
     sT = "$" & ColLetter(IN_TRADE_EFF) & IN_FIRST_ROW
-    hd = ColLetter(g1) & "$" & IN_HDR_ROW
+    hd = ColLetter(g1) & "$" & IN_DAY_ROW
     bar = "ISNUMBER(" & sS & "),ISNUMBER(" & sE & ")," & hd & ">=" & sS & "," & hd & "<=" & sE
     hol = "COUNTIF('" & SH_HOL & "'!$A:$A," & hd & ")>0"
 
@@ -2378,18 +2552,19 @@ Private Sub ApplyInputFormats(ByVal wsIn As Worksheet)
     Set rngG = wsIn.Range(wsIn.Cells(IN_FIRST_ROW, g1), wsIn.Cells(lastFmt, g2))
     wsIn.Cells(IN_FIRST_ROW, g1).Select
     For i = 1 To mTrN
-        AddCF rngG, "=AND(" & bar & "," & sT & "=""" & mTrName(i) & """)", mTrColor(i)
+        AddCF rngG, "=AND(" & bar & "," & sT & "=""" & mTrName(i) & """)", mTrColor(i), _
+              IIf(IsDarkColor(mTrColor(i)), RGB(255, 255, 255), 0), True
     Next i
     AddCF rngG, "=AND(" & bar & ")", CLR_NO_TRADE
     AddCF rngG, "=" & hd & "=TODAY()", RGB(255, 228, 228)
     AddCF rngG, "=OR(WEEKDAY(" & hd & ",2)>5," & hol & ")", CLR_HOLIDAY_BG
 
-    ' 날짜 머리글
-    wsIn.Cells(IN_HDR_ROW, g1).Select
-    With wsIn.Range(wsIn.Cells(IN_HDR_ROW, g1), wsIn.Cells(IN_HDR_ROW, g2))
+    ' 날짜 머리글 (일·요일 2줄)
+    wsIn.Cells(IN_DAY_ROW, g1).Select
+    With wsIn.Range(wsIn.Cells(IN_DAY_ROW, g1), wsIn.Cells(IN_WD_ROW, g2))
         AddCF .Cells, "=" & hd & "=TODAY()", RGB(255, 255, 0), -1, True
-        AddCF .Cells, "=WEEKDAY(" & hd & ")=7", -1, CLR_SAT
-        AddCF .Cells, "=OR(WEEKDAY(" & hd & ")=1," & hol & ")", -1, CLR_SUN
+        AddCF .Cells, "=WEEKDAY(" & hd & ")=7", CLR_HOLIDAY_BG, CLR_SAT
+        AddCF .Cells, "=OR(WEEKDAY(" & hd & ")=1," & hol & ")", CLR_HOLIDAY_BG, CLR_SUN
     End With
 
     ' 공종 칸 (대분류 행 강조보다 먼저)
@@ -2400,6 +2575,10 @@ Private Sub ApplyInputFormats(ByVal wsIn As Worksheet)
                   IIf(IsDarkColor(mTrColor(i)), RGB(255, 255, 255), 0), True
         Next i
     End With
+    ' 요약(자동 계산) 날짜 : 남색 글자
+    wsIn.Cells(IN_FIRST_ROW, IN_S).Select
+    AddCF wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_S), wsIn.Cells(lastFmt, IN_E)), _
+          "=$" & ColLetter(IN_SUMFLAG) & IN_FIRST_ROW & "=""S""", -1, RGB(31, 56, 100), False
     ' 왼쪽 표 : 단계별 강조
     wsIn.Cells(IN_FIRST_ROW, IN_LVL).Select
     With wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_LVL), wsIn.Cells(lastFmt, IN_NOTE))
@@ -2543,7 +2722,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     CfgRow ws, CFG_DATECOLS, "시작·종료·기간 열", "표시", "표시 / 숨김"
     CfgRow ws, CFG_COLWIDTH, "기간 칸 너비", "", "일/주/10일/월 한 칸의 너비. 비워 두면 자동 (일 3.6 / 주 6.3 / 10일 7 / 월 9)"
     CfgRow ws, CFG_LABELSIZE, "바 글자 크기", "9", "바 위/아래 글자 크기. 공간이 좁으면 자동으로 줄어듦 (최소 6)"
-    CfgRow ws, CFG_DDAY, "D-DAY 기준일", "", "SD 착수일 등. 입력하면 날짜 위에 D-DAY 일차(1, 2, 3 …) 줄 표시 (비우면 없음)"
+    CfgRow ws, CFG_DDAY, "D-DAY 기준일", "", "SD 착수일 등. 입력하면 날짜 위에 D+1, D+2 … 줄 표시 (기준일 = D+1, 비우면 없음)"
     CfgRow ws, CFG_BARCOLOR, "바 색상", "검정", "검정 / 공종색 - 공종색이면 바 선과 원을 공종 색으로 표시하고 범례 추가"
     CfgRow ws, CFG_EVENTS, "주요 이벤트", "표시", "표시 / 숨김 - [주요일정] 시트의 일정을 날짜 아래 ▼ 화살표로 표시"
 
@@ -2617,18 +2796,19 @@ Private Sub BuildInputSheet(ByVal ws As Worksheet)
     ws.Range("A1").Font.Size = 14
     ws.Range("A1").Font.Bold = True
     ws.Rows(1).RowHeight = 24
-    SetText ws.Range("A2"), "※ 한 줄에 하나씩 : 구분(대분류/작업항목/세부작업)을 고르고 작업내용·시작일·기간 입력 → 종료일 자동 계산, 오른쪽 간트차트에 공종색으로 표시"
+    SetText ws.Range("A2"), "※ 한 줄에 하나씩 구분·작업내용·시작일·기간 입력 → 종료일 자동.  대분류·작업항목 날짜는 아래 작업 범위로 자동 계산"
     ws.Range("A2").Font.Color = CLR_GRID_DARK
     ws.Range("A2").Font.Size = 9
 
-    hdr = Array("구분", "공종", "작업내용 (선 위)", "하단표기", "시작일", "기간", "종료일", "비고", "적용공종")
-    wid = Array(9, 7, 32, 10, 10.5, 5.5, 10.5, 10, 6)
-    For i = 0 To 8
+    hdr = Array("구분", "공종", "작업내용 (선 위)", "하단표기", "시작일", "기간", "종료일", "비고", "적용공종", "요약")
+    wid = Array(9, 7, 32, 10, 10.5, 5.5, 10.5, 10, 6, 4)
+    For i = 0 To 9
         SetText ws.Cells(IN_HDR_ROW, i + 1), hdr(i)
         ws.Columns(i + 1).ColumnWidth = wid(i)
     Next i
     ws.Columns(IN_TRADE_EFF).Hidden = True
-    ws.Columns(IN_TRADE_EFF + 1).ColumnWidth = 1
+    ws.Columns(IN_SUMFLAG).Hidden = True
+    ws.Columns(IN_GANTT0 - 1).ColumnWidth = 1
     With ws.Range(ws.Cells(IN_HDR_ROW, 1), ws.Cells(IN_HDR_ROW, IN_NOTE))
         .Font.Bold = True
         .Interior.Color = CLR_HDR_LEFT
@@ -2678,13 +2858,10 @@ Private Sub BuildInputSheet(ByVal ws As Worksheet)
         If data(i)(5) <> "" Then ws.Cells(r, IN_DUR).Value = CLng(data(i)(5))
     Next i
 
-    ' 오른쪽 간트차트 머리글 (날짜)
-    ws.Range(ws.Cells(IN_MONTH_ROW, IN_GANTT0), ws.Cells(IN_HDR_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).HorizontalAlignment = xlLeft
-    ws.Range(ws.Cells(IN_HDR_ROW, IN_GANTT0), ws.Cells(IN_HDR_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).HorizontalAlignment = xlCenter
+    ' 오른쪽 간트차트 (머리글은 RefreshInputGantt 에서)
     ws.Range(ws.Columns(IN_GANTT0), ws.Columns(IN_GANTT0 + IN_GANTT_DAYS - 1)).ColumnWidth = 2.6
-    ws.Range(ws.Cells(IN_HDR_ROW, IN_GANTT0), ws.Cells(IN_HDR_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).NumberFormat = "d"
-    ws.Range(ws.Cells(IN_MONTH_ROW, IN_GANTT0), ws.Cells(IN_HDR_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).Font.Size = 8
-    ws.Range(ws.Cells(IN_MONTH_ROW, IN_GANTT0), ws.Cells(IN_MONTH_ROW, IN_GANTT0 + IN_GANTT_DAYS - 1)).Font.Bold = True
+    ws.Rows(IN_MONTH_ROW).RowHeight = 15
+    ws.Rows(IN_DAY_ROW).RowHeight = 13.5
     With ws.Range(ws.Cells(IN_FIRST_ROW, IN_GANTT0), ws.Cells(lastFmt, IN_GANTT0 + IN_GANTT_DAYS - 1)).Borders(xlInsideVertical)
         .LineStyle = xlDot
         .Color = CLR_GRID
@@ -3015,7 +3192,7 @@ Private Sub ClearInputData(ByVal dst As Worksheet)
     Dim lr As Long
     lr = LastInputRow(dst)
     If lr < IN_FIRST_ROW + IN_FORMULA_ROWS - 1 Then lr = IN_FIRST_ROW + IN_FORMULA_ROWS - 1
-    dst.Range(dst.Cells(IN_FIRST_ROW, IN_LVL), dst.Cells(lr, IN_TRADE_EFF)).ClearContents
+    dst.Range(dst.Cells(IN_FIRST_ROW, IN_LVL), dst.Cells(lr, IN_SUMFLAG)).ClearContents
     dst.Range(dst.Cells(IN_FIRST_ROW, IN_LVL), dst.Cells(lr, IN_NOTE)).Interior.Pattern = xlNone
     dst.Range(dst.Cells(IN_FIRST_ROW, IN_TEXT), dst.Cells(lr, IN_TEXT)).IndentLevel = 0
     dst.Range(dst.Cells(IN_FIRST_ROW, IN_E), dst.Cells(lr, IN_E)).Interior.Color = RGB(242, 242, 242)
