@@ -327,13 +327,15 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     If mBarByTrade Then WriteLegend ws
     lastRow = LayoutBody(ws, lastCol + 2)
     If lastRow < CH_BODY Then lastRow = CH_BODY
-    ' 표 바로 아래 : 새 작업 입력 안내 행 (이 행이나 그 아래 빈 행에 입력하면 작업 추가)
-    SetText ws.Cells(lastRow + 1, COL_LABEL), NEW_HINT
-    With ws.Cells(lastRow + 1, COL_LABEL).Font
+    ' 표 바로 아래 : 마감 행(아주 낮은 행, 굵은 아래 테두리) → 세부작업을 접어도 표 아래 굵은 선 유지
+    ws.Rows(lastRow + 1).RowHeight = 2
+    ' 그 아래 : 새 작업 입력 안내 행 (이 행이나 그 아래 빈 행에 입력하면 작업 추가, 인쇄 안 됨)
+    SetText ws.Cells(lastRow + 2, COL_LABEL), NEW_HINT
+    With ws.Cells(lastRow + 2, COL_LABEL).Font
         .Color = CLR_GRID_DARK
         .Italic = True
     End With
-    ws.Cells(lastRow + 1, lastCol + 2).Value = "N"
+    ws.Cells(lastRow + 2, lastCol + 2).Value = "N"
     WriteMeta ws, lastCol + 2
 
     '--- 서식 → 바 → 기준선 순서 (바가 점선 위에 덮이도록) ---
@@ -347,6 +349,9 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     If CfgText(CFG_DATECOLS) = "숨김" Then
         ws.Range(ws.Columns(COL_S), ws.Columns(COL_D)).Hidden = True
     End If
+    On Error Resume Next
+    ws.PageSetup.PrintArea = ws.Range(ws.Cells(CH_TITLE, COL_LABEL), ws.Cells(lastRow + 1, lastCol)).Address
+    On Error GoTo EH
 
     If isNew Or needFinish Then
         FinishSheet ws
@@ -1178,12 +1183,13 @@ Private Sub FormatGrid(ByVal ws As Worksheet, ByVal lastRow As Long, ByVal lastC
             .Color = 0
         End With
     End If
-    With ws.Range(ws.Cells(mHdrFirst, COL_CHART0), ws.Cells(lastRow, COL_CHART0)).Borders(xlEdgeLeft)
+    With ws.Range(ws.Cells(mHdrFirst, COL_CHART0), ws.Cells(lastRow + 1, COL_CHART0)).Borders(xlEdgeLeft)
         .LineStyle = xlContinuous
         .Weight = xlMedium
         .Color = 0
     End With
-    ws.Range(ws.Cells(mHdrFirst, COL_LABEL), ws.Cells(lastRow, lastCol)).BorderAround _
+    ' 바깥 테두리는 마감 행(lastRow + 1)까지 : 아래 굵은 선이 접기/펼치기와 상관없이 보이도록
+    ws.Range(ws.Cells(mHdrFirst, COL_LABEL), ws.Cells(lastRow + 1, lastCol)).BorderAround _
         LineStyle:=xlContinuous, Weight:=xlMedium, Color:=0
 End Sub
 
