@@ -1,0 +1,416 @@
+<title>바차트 공정표 사용설명서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 왼쪽 목차(넓은 화면에서 고정) + 오른쪽 본문. 공정표 머리글처럼 남색 띠와 빨간 D-DAY 강조 */
+:root {
+  --paper: #f4f6f9;
+  --sheet: #ffffff;
+  --ink: #1b2433;
+  --muted: #5b6678;
+  --line: #d5dce6;
+  --navy: #1f3864;
+  --band: #dde7f3;
+  --signal: #d7261e;
+  --cell: #fff8d6;
+  --kbd: #eef1f5;
+  --display: "Black Han Sans", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --body: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Malgun Gothic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12161d; --sheet: #1a2029; --ink: #e5e9f0; --muted: #a2acbb; --line: #333c4a;
+    --navy: #9db8e6; --band: #24324a; --signal: #ff6b5e; --cell: #3a3520; --kbd: #262d38;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12161d; --sheet: #1a2029; --ink: #e5e9f0; --muted: #a2acbb; --line: #333c4a;
+  --navy: #9db8e6; --band: #24324a; --signal: #ff6b5e; --cell: #3a3520; --kbd: #262d38;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.7; }
+
+.masthead { background: #1f3864; color: #fff; }  /* 공사 남색 띠 : 두 테마 공통 */
+.masthead-inner {
+  max-width: 1180px; margin: 0 auto;
+  padding-block: 28px 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; justify-content: space-between;
+}
+.masthead h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0; letter-spacing: 0.5px; text-wrap: balance; }
+.masthead p { margin: 4px 0 0; color: #c9d6ea; font-size: 14px; }
+.ver { font-family: var(--mono); font-size: 13px; color: #fff; border: 1px solid rgba(255,255,255,.45); padding: 2px 10px; border-radius: 3px; }
+
+.ddayband { background: var(--sheet); border-bottom: 1px solid var(--line); }
+.ddayband ol {
+  max-width: 1180px; margin: 0 auto; list-style: none;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-wrap: wrap; gap: 6px 0; font-size: 13px;
+}
+.ddayband li { display: flex; align-items: center; }
+.ddayband li + li::before { content: "→"; color: var(--muted); margin: 0 10px; }
+.ddayband b { font-family: var(--mono); color: var(--signal); font-weight: 500; margin-right: 6px; }
+
+.layout {
+  max-width: 1180px; margin: 0 auto;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start;
+}
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); font-size: 14px; }
+nav.toc h2 { font-size: 12px; letter-spacing: 1.5px; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: t; }
+nav.toc a { display: block; padding: 5px 10px; border-left: 2px solid var(--line); color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { border-left-color: var(--signal); background: var(--sheet); outline: none; }
+nav.toc .n { font-family: var(--mono); color: var(--muted); margin-right: 6px; font-size: 12px; }
+
+main { display: grid; gap: 56px; min-width: 0; }
+section { display: grid; gap: 16px; min-width: 0; scroll-margin-top: 16px; }
+section > h2 {
+  font-size: 24px; margin: 0; line-height: 1.3; text-wrap: balance;
+  display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 2px solid var(--navy);
+}
+section > h2 .n { font-family: var(--mono); font-size: 15px; color: var(--signal); font-weight: 500; }
+h3 { font-size: 17px; margin: 8px 0 0; color: var(--navy); }
+p { margin: 0; max-width: 68ch; }
+.lead { font-size: 16px; color: var(--muted); }
+ul.plain, ol.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; max-width: 70ch; }
+ol.steps li::marker { font-family: var(--mono); color: var(--signal); }
+
+figure { margin: 0; background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+figure .shot { overflow-x: auto; background: #fff; }
+figure img { display: block; max-width: 100%; height: auto; }
+figure.wide img { max-width: none; width: 1100px; }
+@media (max-width: 1100px) { figure.wide img { width: 100%; } }
+figcaption { padding: 8px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+
+.buttons { display: grid; gap: 10px; }
+.btnrow {
+  display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 16px; align-items: center;
+  background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px;
+}
+.btnrow img { display: block; max-width: 100%; height: auto; border-radius: 2px; }
+.btnrow .where { font-size: 12px; color: var(--muted); display: block; }
+.btnrow p { max-width: none; }
+
+.tablewrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { background: var(--band); font-weight: 700; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.k { white-space: nowrap; font-weight: 500; }
+td.v { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+.cellv { background: var(--cell); padding: 0 6px; border-radius: 2px; font-family: var(--mono); font-size: 13px; }
+
+.tip, .warn { border-radius: 4px; padding: 12px 16px; display: grid; gap: 6px; max-width: 78ch; }
+.tip { background: var(--band); }
+.warn { background: var(--sheet); border: 1px solid var(--signal); }
+.tip strong, .warn strong { display: block; font-size: 13px; letter-spacing: .5px; }
+.warn strong { color: var(--signal); }
+
+kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 6px; }
+.excelbar {
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+  background: #fff4ce; color: #3b3000; border: 1px solid #e3c96a; border-radius: 3px; padding: 8px 12px; font-size: 13px;
+}
+.excelbar .x { font-weight: 700; }
+.excelbar span.b { background: #fff; border: 1px solid #8a8a8a; padding: 1px 12px; border-radius: 2px; color: #222; }
+.excelbar.red { background: #fde7e9; border-color: #e8a3a8; color: #5a1016; }
+.tri { color: var(--signal); }
+
+.codes { display: flex; flex-wrap: wrap; gap: 8px; }
+.codes span { font-family: var(--mono); font-size: 13px; background: var(--sheet); border: 1px solid var(--line); border-radius: 3px; padding: 2px 10px; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  nav.toc { position: static; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .btnrow { grid-template-columns: minmax(0, 1fr); }
+  .btnrow img { max-width: 220px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <h1>바차트 공정표 사용설명서</h1>
+      <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
+    </div>
+    <span class="ver">바차트_자동작성.xlsm · v0.6.1</span>
+  </div>
+</header>
+
+<div class="ddayband" aria-label="작업 순서">
+  <ol>
+    <li><b>D-3</b>메인 설정</li>
+    <li><b>D-2</b>작업입력·공종으로 일정 조정</li>
+    <li><b>D-1</b>주요일정 입력</li>
+    <li><b>D+1</b>[바차트 생성] → 출력·보고</li>
+  </ol>
+</div>
+
+<div class="layout">
+  <nav class="toc" aria-label="목차">
+    <h2>목차</h2>
+    <ol>
+      <li><a href="#start"><span class="n">1</span>처음 시작하기</a></li>
+      <li><a href="#main"><span class="n">2</span>메인 설정</a></li>
+      <li><a href="#input"><span class="n">3</span>작업입력</a></li>
+      <li><a href="#trade"><span class="n">4</span>공종</a></li>
+      <li><a href="#event"><span class="n">5</span>주요일정</a></li>
+      <li><a href="#chart"><span class="n">6</span>바차트 활용·출력</a></li>
+      <li><a href="#move"><span class="n">7</span>새 버전으로 옮기기</a></li>
+      <li><a href="#faq"><span class="n">8</span>문제가 생기면</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <!-- 1 -->
+    <section id="start">
+      <h2><span class="n">1</span>처음 시작하기</h2>
+      <p class="lead">파일을 받고 매크로를 켜면 필요한 시트가 자동으로 만들어집니다. 처음 한 번만 하면 됩니다.</p>
+      <ol class="steps">
+        <li><strong>바차트_자동작성.xlsm</strong> 파일을 내려받습니다.</li>
+        <li>인터넷에서 받은 파일은 Windows가 매크로를 막습니다. 파일을 <strong>오른쪽 클릭 → 속성 → 아래쪽 「차단 해제」 체크 → 확인</strong>.</li>
+        <li>파일을 열고 화면 위 노란 줄의 <strong>[콘텐츠 사용]</strong>을 누릅니다.
+          <div class="excelbar" style="margin-top:8px"><span class="x">보안 경고</span> 매크로를 사용할 수 없도록 설정했습니다. <span class="b">콘텐츠 사용</span></div>
+        </li>
+        <li>초기 설정이 자동으로 실행되어 아래 시트들이 생깁니다. 자동으로 안 되면 <strong>시작</strong> 시트의 [초기 설정] 버튼을 누르세요.</li>
+      </ol>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>시트</th><th>하는 일</th></tr></thead>
+          <tbody>
+            <tr><td class="k">메인</td><td>공사명, 표시 단위, D-DAY 같은 설정과 주요 버튼</td></tr>
+            <tr><td class="k">작업입력</td><td>작업을 한 줄씩 입력하고, 오른쪽 공종색 간트를 보며 일정을 조정하는 작업 화면</td></tr>
+            <tr><td class="k">공종</td><td>공종 이름과 색 (토목·기계·전기 …)</td></tr>
+            <tr><td class="k">주요일정</td><td>바차트 날짜 아래 <span class="tri">▼</span>로 표시할 이벤트 (SD 착수, 반입, 시운전 …)</td></tr>
+            <tr><td class="k">공휴일</td><td>빨간 날짜로 표시할 공휴일 (2026~2027년 입력되어 있음)</td></tr>
+            <tr><td class="k">바차트_일 / 주 / 10일 / 월</td><td>[바차트 생성]을 누르면 만들어지는 보고용 공정표. 단위별로 따로 생깁니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tip"><strong>저장할 때</strong><p>반드시 <strong>Excel 매크로 사용 통합 문서(*.xlsm)</strong>로 저장하세요. xlsx로 저장하면 버튼이 동작하지 않습니다.</p></div>
+    </section>
+
+    <!-- 2 -->
+    <section id="main">
+      <h2><span class="n">2</span>메인 설정</h2>
+      <p class="lead">노란 칸만 고치면 됩니다. 목록이 있는 칸은 칸을 누르면 오른쪽에 ▾ 가 나타납니다.</p>
+      <figure>
+        <div class="shot"><img src="{{img:main}}" alt="메인 시트: 설정 항목 표와 오른쪽 버튼들"></div>
+        <figcaption>메인 시트. 왼쪽이 설정, 오른쪽이 버튼입니다. (화면은 예시이며 실제 엑셀과 글꼴이 조금 다를 수 있습니다)</figcaption>
+      </figure>
+
+      <h3>설정 항목</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>항목</th><th>입력 예</th><th>언제 쓰나</th></tr></thead>
+          <tbody>
+            <tr><td class="k">공사명</td><td class="v">포항 3제강 1전로 상저취 공사</td><td>바차트 제목이 「공사명 + 공정표」로 나옵니다.</td></tr>
+            <tr><td class="k">표시 단위</td><td class="v">일 / 주 / 10일 / 월</td><td>일간 작업 계획은 <b>일</b>, 주간 공정회의는 <b>주</b>, 장기 공정은 <b>10일</b>·<b>월</b>. 단위를 바꿔 생성하면 시트가 따로 생겨서 함께 둘 수 있습니다.</td></tr>
+            <tr><td class="k">차트 시작일·종료일</td><td class="v">2026-11-01</td><td>보고 기간만 잘라서 보고 싶을 때. 비우면 작업 일정에 맞춰 자동입니다. 시작일은 작업입력 간트의 시작일로도 쓰입니다.</td></tr>
+            <tr><td class="k">기준일 (빨간 세로선)</td><td class="v">2026-11-05</td><td>「오늘까지 진행」이나 보고 기준일을 빨간 굵은 세로선으로 표시합니다.</td></tr>
+            <tr><td class="k">세부작업 행</td><td class="v">펼침 / 접힘</td><td>접힘이면 바차트를 만들 때 세부작업 행을 숨기고 작업항목 줄에 바만 모아 보여줍니다.</td></tr>
+            <tr><td class="k">시작·종료·기간 열</td><td class="v">표시 / 숨김</td><td>보고서에 날짜 열이 필요 없으면 숨김.</td></tr>
+            <tr><td class="k">기간 칸 너비</td><td class="v">(비움)</td><td>바차트가 너무 길거나 좁을 때만. 일 3.6 / 주 6.3 / 10일 7 / 월 9 가 기본입니다.</td></tr>
+            <tr><td class="k">바 글자 크기</td><td class="v">9</td><td>바 위아래 글자 크기. 자리가 좁으면 6까지 자동으로 줄어듭니다.</td></tr>
+            <tr><td class="k">D-DAY 기준일</td><td class="v">2026-10-28</td><td><b>SD 공사</b>라면 SD 착수일을 넣으세요. 날짜 위에 <span class="cellv">D-2 D-1 D+1 D+2 …</span> 줄이 생깁니다. 기준일이 D+1입니다.</td></tr>
+            <tr><td class="k">바 색상</td><td class="v">검정 / 공종색</td><td>보고서는 보통 검정. 공종색이면 바와 원이 공종 색으로 바뀌고 제목 옆에 범례가 붙습니다.</td></tr>
+            <tr><td class="k">주요 이벤트</td><td class="v">표시 / 숨김</td><td>주요일정의 <span class="tri">▼</span> 표시를 켜고 끕니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>메인 버튼</h3>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_build}}" alt="바차트 생성 버튼"><p><b>작업입력 내용으로 보고용 바차트를 만듭니다.</b> 설정을 바꾼 뒤에도 이 버튼을 누르면 새 설정으로 다시 그려집니다. 작업입력의 간트 색도 함께 정리됩니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_collapse}}" alt="세부작업 접기 버튼"><p>바차트의 세부작업 행을 숨겨 <b>작업항목 줄에 바만 모아</b> 보여줍니다. 요약 보고용.</p></div>
+        <div class="btnrow"><img src="{{img:btn_expand}}" alt="세부작업 펼치기 버튼"><p>숨긴 세부작업 행을 다시 보여줍니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_input}}" alt="작업입력 시트로 버튼"><p>작업입력 시트로 이동합니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_event}}" alt="주요 이벤트 추가 버튼"><p>날짜 → 내용 → 색상을 차례로 물어보고 <b>주요일정에 한 줄 추가</b>합니다. 바차트를 열면 <span class="tri">▼</span>로 나타납니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_trade}}" alt="공종·색상 설정 버튼"><p>공종 시트로 이동합니다. 공종 이름과 색을 바꿀 때.</p></div>
+        <div class="btnrow"><img src="{{img:btn_import}}" alt="이전 파일에서 가져오기 버튼"><p>예전 버전 파일의 작업입력·설정·공종·주요일정·공휴일을 이 파일로 옮겨옵니다. <a href="#move">7장</a> 참고.</p></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="input">
+      <h2><span class="n">3</span>작업입력</h2>
+      <p class="lead">공정을 짜고 조정하는 작업 화면입니다. 왼쪽 표에 입력하면 오른쪽 간트가 바로 색칠되니, 흐름을 보면서 날짜와 기간을 맞추세요.</p>
+      <figure class="wide">
+        <div class="shot"><img src="{{img:input}}" alt="작업입력 시트: 왼쪽 입력 표와 오른쪽 공종색 간트차트"></div>
+        <figcaption>왼쪽 표에 입력하면 오른쪽 간트에 공종색 막대와 작업내용이 표시됩니다. 남색 굵은 막대는 대분류·작업항목의 전체 기간입니다.</figcaption>
+      </figure>
+
+      <h3>위쪽 버튼</h3>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_in_build}}" alt="바차트 생성 버튼"><p>메인의 [바차트 생성]과 같습니다. 조정이 끝나면 여기서 바로 누르세요.</p></div>
+        <div class="btnrow"><img src="{{img:btn_in_refresh}}" alt="색상 다시 적용 버튼"><p>간트 색, 들여쓰기, 날짜 머리글을 다시 맞춥니다. <b>색이 안 보이거나 공종을 바꾼 뒤</b> 누르세요.</p></div>
+        <div class="btnrow"><img src="{{img:btn_in_main}}" alt="메인으로 버튼"><p>메인 시트로 이동합니다.</p></div>
+      </div>
+
+      <h3>입력 방법: 한 줄에 작업 하나</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>구분</th><th>공종</th><th>작업내용 (선 위)</th><th>하단표기</th><th>시작일</th><th>기간</th><th>종료일</th></tr></thead>
+          <tbody>
+            <tr><td><b>대분류</b></td><td>공사</td><td><b>분체설비</b></td><td></td><td class="v">자동</td><td class="v">자동</td><td class="v">자동</td></tr>
+            <tr><td><b>작업항목</b></td><td></td><td>&nbsp;&nbsp;<b>기계정비창고</b></td><td></td><td class="v">자동</td><td class="v">자동</td><td class="v">자동</td></tr>
+            <tr><td>세부작업</td><td>토목</td><td>&nbsp;&nbsp;&nbsp;&nbsp;진입로</td><td></td><td class="v"><span class="cellv">2026-10-28</span></td><td class="v"><span class="cellv">6</span></td><td class="v">2026-11-02</td></tr>
+            <tr><td>세부작업</td><td>기계</td><td>&nbsp;&nbsp;&nbsp;&nbsp;Anchor</td><td>Padding</td><td class="v"><span class="cellv">2026-11-08</span></td><td class="v"><span class="cellv">3</span></td><td class="v">2026-11-10</td></tr>
+            <tr><td><b>작업항목</b></td><td>철골</td><td>&nbsp;&nbsp;<b>철골 세우기</b></td><td></td><td class="v"><span class="cellv">2026-11-16</span></td><td class="v"><span class="cellv">10</span></td><td class="v">2026-11-25</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="plain">
+        <li><b>구분</b>은 목록에서 고릅니다. 세부작업은 <b>바로 위 작업항목</b>에, 작업항목은 <b>바로 위 대분류</b>에 속합니다. 순서가 곧 소속이라 빈칸을 남길 필요가 없습니다.</li>
+        <li><b>공종</b>도 목록에서 고르면 칸이 공종 색으로 바뀝니다. 비워 두면 위 단계 공종을 따라갑니다.</li>
+        <li><b>작업내용</b>은 바차트에서 선 위에, <b>하단표기</b>는 선 아래에 씁니다. 「Anchor / Padding」처럼 두 줄로 나눠 쓸 때 하단표기를 쓰세요.</li>
+        <li>노란 칸처럼 <b>시작일과 기간만</b> 넣으면 종료일(회색 칸)은 <span class="cellv">=시작일+기간-1</span> 수식으로 계산됩니다.</li>
+        <li><b>대분류·작업항목의 날짜는 자동</b>입니다. 아래 작업들의 최초 시작일 ~ 최종 종료일로 채워지고(남색 글자) 간트에 전체 막대가 생깁니다. 아래에 날짜 있는 작업이 없는 작업항목(예: 철골 세우기)은 직접 넣은 날짜를 씁니다.</li>
+      </ul>
+
+      <h3>일정 조정하기</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>이렇게 하고 싶을 때</th><th>이렇게 입력</th></tr></thead>
+          <tbody>
+            <tr><td>작업 기간을 늘리거나 줄이기</td><td><b>기간</b> 숫자를 바꿉니다. 종료일과 막대가 바로 바뀝니다.</td></tr>
+            <tr><td>작업을 통째로 앞뒤로 옮기기</td><td><b>시작일</b>을 바꿉니다. 기간은 그대로입니다.</td></tr>
+            <tr><td>끝나는 날을 정해 두고 맞추기</td><td><b>종료일</b>에 날짜를 직접 입력합니다. 기간이 다시 계산되고 종료일은 수식으로 돌아갑니다.</td></tr>
+            <tr><td>작업 추가</td><td>원하는 위치에 엑셀 <b>행 삽입</b> 후 입력. 맨 아래에 이어서 써도 됩니다.</td></tr>
+            <tr><td>작업 삭제·순서 변경</td><td>엑셀 행 삭제·잘라내기/붙여넣기 그대로. 옮긴 위치의 바로 위 작업항목에 속하게 됩니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>간트 읽는 법</h3>
+      <ul class="plain">
+        <li>막대 색 = 공종 색. 막대 가운데에 작업내용이 쓰이고, 막대가 짧으면 오른쪽에 씁니다.</li>
+        <li>토요일은 파랑, 일요일·공휴일은 빨강이고 그날 칸은 연노랑입니다. 오늘 날짜는 노랑으로 표시됩니다.</li>
+        <li>간트는 400일까지 보입니다. 시작일은 메인의 <b>차트 시작일</b>, 비우면 최초 작업이 있는 주의 월요일입니다.</li>
+      </ul>
+      <div class="warn"><strong>빨간 배경 행</strong><p>종료일이 시작일보다 빠른 행입니다. 바차트에서 빠지니 날짜를 고쳐 주세요.</p></div>
+    </section>
+
+    <!-- 4 -->
+    <section id="trade">
+      <h2><span class="n">4</span>공종</h2>
+      <p class="lead">공종 이름과 색을 정하는 곳입니다. 여기서 정한 색이 작업입력 간트와 공종 칸, 그리고 공종색 바차트에 쓰입니다.</p>
+      <figure>
+        <div class="shot"><img src="{{img:trade}}" alt="공종 시트: 공종 이름, 색, 설명과 색상 적용 버튼"></div>
+        <figcaption>B열 칸의 채우기 색이 그 공종의 색입니다.</figcaption>
+      </figure>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_trade_apply}}" alt="색상 적용 버튼"><p>바꾼 공종 이름과 색을 작업입력 간트에 반영합니다. <b>색을 바꾼 뒤에는 꼭 누르세요.</b> (이름을 고치면 자동으로 반영됩니다)</p></div>
+      </div>
+      <ol class="steps">
+        <li><b>공종 추가</b>: 빈 줄 A열에 이름(예: 도장)을 쓰고 B열 칸을 원하는 색으로 채웁니다.</li>
+        <li><b>색 바꾸기</b>: B열 칸 선택 → 홈 → 채우기 색 → [색상 적용].</li>
+        <li>작업입력 공종 목록에 바로 나타납니다.</li>
+      </ol>
+      <div class="tip"><strong>활용</strong><p>조업 일정(정수, 노수리)을 「조업」 빨강으로 넣어 두면 공사 작업과 겹치는 구간이 한눈에 보입니다. 공종 이름을 바꿀 때는 작업입력에 이미 입력된 공종도 같이 고쳐 주세요.</p></div>
+    </section>
+
+    <!-- 5 -->
+    <section id="event">
+      <h2><span class="n">5</span>주요일정</h2>
+      <p class="lead">SD 착수, 설비 반입, 시운전 같은 주요 이벤트를 바차트 날짜 아래에 <span class="tri">▼</span> 화살표로 표시합니다.</p>
+      <figure>
+        <div class="shot"><img src="{{img:event}}" alt="주요일정 시트: 날짜, 내용, 색상과 이벤트 추가 버튼"></div>
+        <figcaption>날짜·내용·색상 세 칸만 입력합니다.</figcaption>
+      </figure>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_event_add}}" alt="이벤트 추가 버튼"><p>날짜 → 내용 → 색상을 물어보고 한 줄 추가합니다. 메인의 [주요 이벤트 추가]와 같습니다. 시트에 직접 입력해도 됩니다.</p></div>
+      </div>
+      <ul class="plain">
+        <li><b>색상</b>: 빨강 / 파랑 / 초록 / 주황 / 검정 중에서 고릅니다. 예) 착수·완료는 빨강, 반입은 파랑.</li>
+        <li>바차트에서는 <span class="tri">▼</span> + 날짜 + 내용으로 나오고, 글자가 겹치면 아랫단으로 내려갑니다. 두 단이 모두 차면 글자가 작아집니다.</li>
+        <li>잠깐 숨기려면 메인의 <b>주요 이벤트</b>를 「숨김」으로 바꾸세요.</li>
+      </ul>
+    </section>
+
+    <!-- 6 -->
+    <section id="chart">
+      <h2><span class="n">6</span>바차트 활용·출력</h2>
+      <p class="lead">[바차트 생성]을 누르면 손으로 그리던 보고용 공정표가 만들어집니다. 칸 아래선을 굵게 그린 바와 시작·종료 원으로 표시합니다.</p>
+      <figure class="wide">
+        <div class="shot"><img src="{{img:chart}}" alt="보고용 바차트: D-DAY 줄, 날짜 머리글, 주요 EVENT, 작업별 바"></div>
+        <figcaption>위에서부터 D-DAY 줄 · 월/일/요일 · 주요 EVENT · 대분류(○) / 작업항목(-) / 세부작업(·). 작업항목 줄에는 아래 세부작업 바가 모두 모여 보입니다.</figcaption>
+      </figure>
+
+      <h3>세부작업 접기 (요약 보고)</h3>
+      <figure>
+        <div class="shot"><img src="{{img:excel_collapsed}}" alt="엑셀에서 세부작업을 접은 바차트. 왼쪽에 1, 2 단추와 + 단추가 보임"></div>
+        <figcaption>엑셀 왼쪽의 <kbd>1</kbd> 을 누르면 전체 접기, <kbd>2</kbd> 는 전체 펼치기, <kbd>+</kbd> / <kbd>-</kbd> 는 그 작업항목만 펼치기·접기입니다.</figcaption>
+      </figure>
+      <p>메인의 [세부작업 접기]·[세부작업 펼치기] 버튼도 같은 일을 합니다. 접어도 표 맨 아래 굵은 선은 그대로라 바로 출력해도 깔끔합니다.</p>
+
+      <h3>바차트에서 바로 고치기</h3>
+      <p>왼쪽 <b>구분 · 시작일 · 종료일 · 기간</b> 칸을 고치면 작업입력에 반영되고 바로 다시 그려집니다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>고친 칸</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td class="k">세부작업 시작일</td><td>기간은 그대로, 일정이 통째로 이동</td></tr>
+            <tr><td class="k">세부작업 종료일</td><td>기간 다시 계산</td></tr>
+            <tr><td class="k">세부작업 기간</td><td>종료일 다시 계산</td></tr>
+            <tr><td class="k">구분(이름)</td><td>세부작업·작업항목·대분류 이름 변경</td></tr>
+            <tr><td class="k">작업항목·대분류 날짜</td><td>아래 작업들을 합친 값이라 안내 후 원래대로 (세부작업 줄에서 고치세요)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>표 아래 회색 안내 줄 <span class="cellv">↓ 새 작업 입력</span>에 쓰면 <b>새 작업이 추가</b>됩니다. 앞에 붙이는 기호로 단계를 정합니다.</p>
+      <div class="codes"><span>용접 → 세부작업</span><span>- 배관 지지대 → 작업항목</span><span>* 배관설비 → 대분류</span></div>
+
+      <h3>출력하기</h3>
+      <ol class="steps">
+        <li>필요하면 세부작업을 접고, 메인에서 <b>시작·종료·기간 열</b>을 숨깁니다.</li>
+        <li><kbd>Ctrl</kbd> + <kbd>P</kbd>. A3 가로, 한 페이지 너비로 맞춰져 있고 인쇄 영역은 표까지만 잡혀 있습니다(안내 줄은 인쇄 안 됨).</li>
+        <li>여러 장이 되면 머리글(D-DAY ~ 주요 EVENT)과 왼쪽 구분 열이 매 장 반복됩니다.</li>
+      </ol>
+      <div class="warn"><strong>알아 둘 점</strong><p>바차트는 누를 때마다 작업입력 기준으로 다시 그려집니다. 바 영역에 직접 그린 선·글자는 지워지고, 바차트에서 고친 뒤에는 <kbd>Ctrl</kbd>+<kbd>Z</kbd>(실행 취소)가 되지 않습니다. 원본은 항상 작업입력입니다.</p></div>
+    </section>
+
+    <!-- 7 -->
+    <section id="move">
+      <h2><span class="n">7</span>새 버전으로 옮기기</h2>
+      <p class="lead">새 버전 파일을 받으면 쓰던 내용을 버튼 하나로 옮길 수 있습니다.</p>
+      <ol class="steps">
+        <li>쓰던 파일의 <b>이름을 바꿉니다</b> (예: 바차트_이전.xlsm). 이름이 같은 두 파일은 엑셀에서 동시에 열 수 없습니다.</li>
+        <li>새 파일을 열고 [콘텐츠 사용] → 메인의 <b>[이전 파일에서 가져오기]</b> → 쓰던 파일을 선택합니다.</li>
+        <li>작업입력·메인 설정·공종·주요일정·공휴일이 복사됩니다. 예전 3칸 양식(대분류/작업항목/세부작업)도 새 양식으로 자동 변환됩니다.</li>
+        <li><b>[바차트 생성]</b>을 누릅니다. 예전 양식에서 가져왔다면 공종 칸이 비어 있으니 골라 주세요.</li>
+      </ol>
+    </section>
+
+    <!-- 8 -->
+    <section id="faq">
+      <h2><span class="n">8</span>문제가 생기면</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>증상</th><th>해결</th></tr></thead>
+          <tbody>
+            <tr><td>빨간 줄 「이 파일의 원본을 신뢰할 수 없어 매크로를 차단했습니다」</td><td>파일을 닫고 오른쪽 클릭 → 속성 → 「차단 해제」 체크 → 다시 열기.</td></tr>
+            <tr><td>버튼을 눌러도 아무 반응이 없음</td><td>노란 줄의 [콘텐츠 사용]을 누르지 않은 상태입니다. 파일을 다시 열고 누르세요.</td></tr>
+            <tr><td>작업입력 간트에 색이 안 나옴</td><td>작업입력의 [색상 다시 적용]을 누르세요. 공종이 공종 시트 목록에 있는지도 확인하세요.</td></tr>
+            <tr><td>작업입력을 고쳤는데 바차트가 그대로</td><td>바차트 시트를 다시 열면 자동으로 다시 그려집니다. 안 되면 [바차트 생성]을 누르세요.</td></tr>
+            <tr><td>작업이 엉뚱한 작업항목 아래에 나옴</td><td>작업입력에서 그 행의 위치를 확인하세요. 세부작업은 바로 위 작업항목에 속합니다.</td></tr>
+            <tr><td>바차트가 너무 길어 글자가 작게 인쇄됨</td><td>메인의 표시 단위를 주·10일·월로 바꾸거나, 차트 시작일·종료일로 기간을 줄이세요.</td></tr>
+            <tr><td>공휴일이 빨간색으로 안 나옴</td><td>공휴일 시트에 날짜를 추가하세요. 2028년 이후는 직접 넣어야 합니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>

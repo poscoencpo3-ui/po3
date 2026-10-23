@@ -13,6 +13,8 @@
 
 > 미리보기는 LibreOffice로 렌더링한 그림이라 Excel 화면과 조금 다릅니다. Excel에서는 바 위 글자가 바 가운데로 정렬되고 글꼴 크기도 설정대로 표시됩니다.
 
+> **사용설명서**: [`download/바차트_사용설명서.html`](download/) 를 내려받아 브라우저로 여세요. (버튼 그림과 활용 방법 정리)
+
 ## 받는 방법 (둘 중 하나)
 
 ### 방법 A. 매크로 포함 파일 바로 쓰기 (권장)
@@ -143,8 +145,9 @@ excel-barchart/
 │   ├─ build.py            xlsm / bas 생성
 │   ├─ vba_bin.py          vbaProject.bin 생성기 (Excel 없이 VBA 넣기)
 │   ├─ lo_run.py           LibreOffice 로 매크로 실행·PDF 출력 (테스트용)
+│   ├─ build_manual.py     사용설명서 HTML 생성 (docs/manual → download/바차트_사용설명서.html)
 │   └─ tests/              edit_test.vba (바차트 직접 수정), import_test.vba (이전 양식 변환)
-└─ docs/                  미리보기 그림
+└─ docs/                  미리보기 그림, manual/ (설명서 원본과 캡처)
 ```
 
 개발용 명령:
