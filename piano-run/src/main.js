@@ -2,6 +2,7 @@ import './style.css'
 import { CHARS, charIcon } from './chars.js'
 import { SONGS, LEVEL_INFO, makeChart } from './songs.js'
 import { PianoGame } from './game.js'
+import { ARR_INFO } from './band.js'
 import { Scene, THEMES } from './scene.js'
 import { unlockAudio, setSound, isSoundOn, sfx } from './music.js'
 import { canRace, online, localTest, joinRoom, newCode, hostOf } from './net.js'
@@ -185,7 +186,7 @@ function renderSongs() {
     const el = document.createElement('div')
     el.className = 'song'
     el.innerHTML = `<button class="pre" title="미리 듣기">▶</button>
-      <div class="info"><b>${s.title}</b><small>${s.by} · ${fmtLen(chart.duration)} · 건반 ${chart.notes.length}개</small>
+      <div class="info"><b>${s.title}</b><small>${s.by} · ${fmtLen(chart.duration)} · 건반 ${chart.notes.length}개</small><span class="arr">${ARR_INFO[s.arr] || ''}</span>
       ${best ? `<span class="best">내 최고 ${best.toLocaleString()}점</span>` : ''}</div>
       <button class="play-btn pink">${songsMode === 'pick' ? '이 곡!' : '연주'}</button>`
     el.querySelector('.pre').onclick = (e) => {

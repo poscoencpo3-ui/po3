@@ -10,7 +10,7 @@ export const SONGS = [
     level: 1,
     bpm: 104,
     meter: 4,
-    style: 'pop',
+    arr: 'lullaby',
     chords: 'C C F C F C G C C F C G C F C G C C F C F C G C',
     chordBeats: 2,
     melody: `C5:1 C5:1 G5:1 G5:1 | A5:1 A5:1 G5:2 | F5:1 F5:1 E5:1 E5:1 | D5:1 D5:1 C5:2 |
@@ -24,7 +24,7 @@ export const SONGS = [
     level: 1,
     bpm: 112,
     meter: 4,
-    style: 'pop',
+    arr: 'country',
     chords: 'C C G C C C G C',
     chordBeats: 4,
     melody: `E5:1 D5:1 C5:1 D5:1 | E5:1 E5:1 E5:2 | D5:1 D5:1 D5:2 | E5:1 G5:1 G5:2 |
@@ -38,7 +38,7 @@ export const SONGS = [
     rounds: 1,
     bpm: 108,
     meter: 4,
-    style: 'pop',
+    arr: 'spring',
     chords: 'C G C C C G C C G G C C C G C C',
     chordBeats: 4,
     melody: `G5:1 E5:1 E5:2 | F5:1 D5:1 D5:2 | C5:1 D5:1 E5:1 F5:1 | G5:1 G5:1 G5:2 |
@@ -47,13 +47,42 @@ export const SONGS = [
              G5:1 E5:1 E5:2 | F5:1 D5:1 D5:2 | C5:1 E5:1 G5:1 G5:1 | C5:4`,
   },
   {
+    id: 'london',
+    title: '런던 다리',
+    by: '영국 동요',
+    level: 1,
+    bpm: 116,
+    meter: 4,
+    arr: 'spring',
+    chords: 'C C G C C C G C',
+    chordBeats: 4,
+    melody: `G5:1.5 A5:0.5 G5:1 F5:1 | E5:1 F5:1 G5:2 | D5:1 E5:1 F5:2 | E5:1 F5:1 G5:2 |
+             G5:1.5 A5:0.5 G5:1 F5:1 | E5:1 F5:1 G5:2 | D5:2 G5:2 | E5:1 C5:3`,
+  },
+  {
+    id: 'farm',
+    title: '맥도날드 할아버지의 농장',
+    by: '미국 동요',
+    level: 1,
+    bpm: 120,
+    meter: 4,
+    arr: 'farm',
+    chords: 'G C D G G C D G G G G G G C D G',
+    chordBeats: 4,
+    rounds: 1,
+    melody: `G4:1 G4:1 G4:1 D4:1 | E4:1 E4:1 D4:2 | B4:1 B4:1 A4:1 A4:1 | G4:3 D4:1 |
+             G4:1 G4:1 G4:1 D4:1 | E4:1 E4:1 D4:2 | B4:1 B4:1 A4:1 A4:1 | G4:3 D4:0.5 D4:0.5 |
+             G4:1 G4:1 G4:1 D4:0.5 D4:0.5 | G4:1 G4:1 G4:2 | G4:0.5 G4:0.5 G4:1 G4:0.5 G4:0.5 G4:1 | G4:0.5 G4:0.5 G4:0.5 G4:0.5 G4:1 G4:1 |
+             G4:1 G4:1 G4:1 D4:1 | E4:1 E4:1 D4:2 | B4:1 B4:1 A4:1 A4:1 | G4:4`,
+  },
+  {
     id: 'birthday',
     title: '생일 축하합니다',
     by: '힐 자매',
     level: 2,
     bpm: 104,
     meter: 3,
-    style: 'waltz',
+    arr: 'party',
     pickup: 1,
     chords: 'C G G C C F C C',
     chordBeats: 3,
@@ -67,7 +96,7 @@ export const SONGS = [
     level: 2,
     bpm: 120,
     meter: 4,
-    style: 'pop',
+    arr: 'orchestra',
     chords: 'C G C G C G C C G C G G C G C C',
     chordBeats: 4,
     melody: `E5:1 E5:1 F5:1 G5:1 | G5:1 F5:1 E5:1 D5:1 | C5:1 C5:1 D5:1 E5:1 | E5:1.5 D5:0.5 D5:2 |
@@ -82,7 +111,7 @@ export const SONGS = [
     level: 2,
     bpm: 140,
     meter: 4,
-    style: 'pop',
+    arr: 'sleigh',
     chords: 'C C C C F C D G C C C C F C G C',
     chordBeats: 4,
     melody: `E5:1 E5:1 E5:2 | E5:1 E5:1 E5:2 | E5:1 G5:1 C5:1.5 D5:0.5 | E5:4 |
@@ -91,13 +120,47 @@ export const SONGS = [
              F5:1 F5:1 F5:1.5 F5:0.5 | F5:1 E5:1 E5:1 E5:0.5 E5:0.5 | G5:1 G5:1 F5:1 D5:1 | C5:4`,
   },
   {
+    id: 'susanna',
+    title: '오 수재너',
+    by: '포스터',
+    level: 2,
+    bpm: 132,
+    meter: 4,
+    arr: 'country',
+    pickup: 1,
+    chords: 'C C C G C C G C F F C G C C G C',
+    chordBeats: 4,
+    rounds: 1,
+    melody: `C5:0.5 D5:0.5 |
+             E5:1 G5:1 G5:1.5 A5:0.5 | G5:1 E5:1 C5:1.5 D5:0.5 | E5:1 E5:1 D5:1 C5:1 | D5:3 C5:0.5 D5:0.5 |
+             E5:1 G5:1 G5:1.5 A5:0.5 | G5:1 E5:1 C5:1.5 D5:0.5 | E5:1 E5:1 D5:1 D5:1 | C5:4 |
+             F5:2 F5:2 | A5:1 A5:2 A5:1 | G5:1 G5:1 E5:1 C5:1 | D5:3 C5:0.5 D5:0.5 |
+             E5:1 G5:1 G5:1.5 A5:0.5 | G5:1 E5:1 C5:1.5 D5:0.5 | E5:1 E5:1 D5:1 D5:1 | C5:3`,
+  },
+  {
+    id: 'wish',
+    title: '위시 유 어 메리 크리스마스',
+    by: '영국 캐럴',
+    level: 2,
+    bpm: 150,
+    meter: 3,
+    arr: 'party',
+    pickup: 1,
+    rounds: 3,
+    chords: 'G C A D B Em D G',
+    chordBeats: 3,
+    melody: `D5:1 |
+             G5:1 G5:0.5 A5:0.5 G5:0.5 F#5:0.5 | E5:1 C5:1 E5:1 | A5:1 A5:0.5 B5:0.5 A5:0.5 G5:0.5 | F#5:1 D5:1 D5:1 |
+             B5:1 B5:0.5 C6:0.5 B5:0.5 A5:0.5 | G5:1 E5:1 D5:0.5 D5:0.5 | E5:1 A5:1 F#5:1 | G5:2`,
+  },
+  {
     id: 'minuet',
     title: '미뉴에트 G장조',
     by: '바흐 노트북',
     level: 3,
     bpm: 132,
     meter: 3,
-    style: 'waltz',
+    arr: 'baroque',
     chords: 'G G C G C G D D G G C G C G D G',
     chordBeats: 3,
     melody: `D5:1 G4:0.5 A4:0.5 B4:0.5 C5:0.5 | D5:1 G4:1 G4:1 | E5:1 C5:0.5 D5:0.5 E5:0.5 F#5:0.5 | G5:1 G4:1 G4:1 |
@@ -113,7 +176,7 @@ export const SONGS = [
     rounds: 3,
     bpm: 180,
     meter: 3,
-    style: 'arp',
+    arr: 'elise',
     pickup: 1,
     chords: 'Am Am E Am Am Am E Am',
     chordBeats: 3,
@@ -129,14 +192,29 @@ export const SONGS = [
     rounds: 3,
     bpm: 100,
     meter: 2,
-    style: 'march',
+    arr: 'march',
     pickup: 1,
     chords: 'Am E Am Am C Am B Em',
     chordBeats: 2,
     melody: `B4:0.25 A4:0.25 G#4:0.25 A4:0.25 |
              C5:0.5 R:0.5 D5:0.25 C5:0.25 B4:0.25 C5:0.25 | E5:0.5 R:0.5 F5:0.25 E5:0.25 D#5:0.25 E5:0.25 |
              B5:0.25 A5:0.25 G#5:0.25 A5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 | C6:1 A5:0.5 C6:0.5 |
-             B5:0.5 A5:0.5 G5:0.5 A5:0.5 | B5:0.5 A5:0.5 G5:0.5 A5:0.5 | B5:0.5 A5:0.5 G5:0.5 F#5:0.5 | E5:1 R:0.25 B4:0.25 A4:0.25 G#4:0.25 A4:0.25`,
+             B5:0.5 A5:0.5 G5:0.5 A5:0.5 | B5:0.5 A5:0.5 G5:0.5 A5:0.5 | B5:0.5 A5:0.5 G5:0.5 F#5:0.5 | E5:2`,
+  },
+  {
+    id: 'yankee',
+    title: '양키 두들',
+    by: '미국 민요',
+    level: 3,
+    bpm: 120,
+    meter: 2,
+    arr: 'march',
+    chords: 'C G C G C F G C F F C C F F G C',
+    chordBeats: 2,
+    melody: `C5:0.5 C5:0.5 D5:0.5 E5:0.5 | C5:0.5 E5:0.5 D5:0.5 G4:0.5 | C5:0.5 C5:0.5 D5:0.5 E5:0.5 | C5:1 B4:1 |
+             C5:0.5 C5:0.5 D5:0.5 E5:0.5 | F5:0.5 E5:0.5 D5:0.5 C5:0.5 | B4:0.5 G4:0.5 A4:0.5 B4:0.5 | C5:1 C5:1 |
+             A4:0.75 B4:0.25 A4:0.5 G4:0.5 | A4:0.5 B4:0.5 C5:1 | G4:0.75 A4:0.25 G4:0.5 F4:0.5 | E4:1 G4:1 |
+             A4:0.75 B4:0.25 A4:0.5 G4:0.5 | A4:0.5 B4:0.5 C5:0.5 A4:0.5 | G4:0.5 C5:0.5 B4:0.5 D5:0.5 | C5:1 C5:1`,
   },
 ]
 

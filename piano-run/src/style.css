@@ -1047,3 +1047,13 @@ body[data-theme='space'] .hud-song {
 body[data-theme='space'] .bar {
   background: rgba(255, 255, 255, 0.25);
 }
+
+.song .arr {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12px;
+  background: #f1e9ff;
+  color: #7a5cff;
+  border-radius: 8px;
+  padding: 1px 7px;
+}

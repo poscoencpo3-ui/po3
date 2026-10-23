@@ -1,6 +1,7 @@
 // 음악 엔진: 반주는 은은한 피아노 왼손 + 현악기, 멜로디(+화음)는 건반을 맞출 때 연주
 import { chordAt, chordNotes } from './songs.js'
 import { local } from './store.js'
+import { makeBand } from './band.js'
 
 let ctx = null
 let master = null
@@ -8,6 +9,8 @@ let melBus = null
 let accBus = null
 let padBus = null
 let sfxBus = null
+let drumBus = null
+let band = null
 let noiseBuf = null
 const KEY = 'piano.sound'
 let enabled = local.get(KEY) !== 'off'
@@ -59,9 +62,11 @@ export function unlockAudio() {
     accBus = bus(0.78, 0.55, -0.12)
     padBus = bus(0.32, 0.8, 0.1)
     sfxBus = bus(0.45, 0.2)
+    drumBus = bus(0.7, 0.18)
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
     const d = noiseBuf.getChannelData(0)
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    band = makeBand({ ctx, accBus, padBus, drumBus, noiseBuf, pianoNote, strings })
   }
   if (ctx.state === 'suspended') ctx.resume()
   return ctx
@@ -177,21 +182,6 @@ function softTick(t, hi) {
   o.stop(t + 0.1)
 }
 
-function shaker(t, v) {
-  const s = ctx.createBufferSource()
-  s.buffer = noiseBuf
-  const hp = ctx.createBiquadFilter()
-  hp.type = 'highpass'
-  hp.frequency.value = 7000
-  const g = ctx.createGain()
-  g.gain.setValueAtTime(0.0001, t)
-  g.gain.linearRampToValueAtTime(0.035 * v, t + 0.01)
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06)
-  s.connect(hp).connect(g).connect(accBus)
-  s.start(t, Math.random() * 0.5)
-  s.stop(t + 0.08)
-}
-
 // 화음의 음들 (반주 왼손용)
 function voicing(sym) {
   const [r, th, fi] = chordNotes(sym)
@@ -230,7 +220,6 @@ export class Backing {
     this.startAt = startAt
     this.step = 0
     this.stopped = false
-    this.lastPad = null
     this.timer = setInterval(() => this.pump(), 25)
     this.pump()
   }
@@ -269,48 +258,27 @@ export class Backing {
     const hot = round >= 1
     const sym = chordAt(song, chart, Math.max(0, mb))
     const { bass, mid, third } = voicing(sym)
-    const v = hot ? 0.62 : 0.5
-    const bar = chart.beatSec * meter
-    const P = (m, vel = v, at = t) => pianoNote(m, at, vel, accBus, { partials: 4 })
+    const B = chart.beatSec
+    const bar = Math.floor(this.step / barSteps)
 
     if (ending) {
       if (s === 0) {
+        const P = (m, vel, at = t) => pianoNote(m, at, vel, accBus, { partials: 4 })
         P(bass - 12, 0.6)
         P(bass, 0.6)
         mid.forEach((m, i) => P(m + 12, 0.45, t + 0.04 * i))
         strings([...mid, mid[0] + 12], t, 2.2, 1.2, padBus)
+        band.I.crash(t, 0.5)
+        band.I.kick(t, 0.6)
       }
       return
     }
-    // 화음이 바뀔 때 현악기
-    if (s === 0 || sym !== this.lastPad) {
-      if (s === 0 || (song.chordBeats < meter && s % (song.chordBeats * 2) === 0)) {
-        const len = Math.min(bar, song.chordBeats * chart.beatSec)
-        strings(mid.map((m) => m + 12), t, len, hot ? 1.2 : 0.8, padBus)
-        this.lastPad = sym
-      }
-    }
-    const style = song.style
-    if (style === 'waltz') {
-      // 쿵-짝-짝
-      if (s === 0) P(bass, v + 0.08)
-      if (s === 2 || s === 4) mid.forEach((m) => P(m, v * 0.55))
-      if (hot && s === 5) P(mid[2], v * 0.4)
-    } else if (style === 'march') {
-      // 쿵-짝
-      if (s === 0) P(bass, v + 0.08)
-      if (s === 2) P(bass + 7, v)
-      if (s % 2 === 1) mid.forEach((m) => P(m, v * 0.5))
-      if (hot) shaker(t, 1)
-    } else if (style === 'arp') {
-      // 엘리제 왼손: 라-미-라 (16분음표 세 개)
-      const pat = [bass, bass + 7, bass + 12]
-      if (s < 3) P(pat[s], v * (s === 0 ? 1.05 : 0.8))
-    } else {
-      // 팝 4/4: 펼친 화음 (도-솔-도-미-솔-미-도-솔)
-      const pat = [0, 7, 12, 12 + third, 19, 12 + third, 12, 7]
-      P(bass + pat[s], v * (s === 0 ? 1.1 : s % 2 ? 0.6 : 0.8))
-      if (hot && s % 2 === 1) shaker(t, 0.8)
+    const arrange = band.A[song.arr] || band.A.lullaby
+    const pad = arrange({ t, s, meter, B, bar, hot, intro, bass, mid, third, sym })
+    // 화음이 바뀔 때 현악기 (편곡마다 크기가 다름)
+    if (pad && (s === 0 || (song.chordBeats < meter && s % (song.chordBeats * 2) === 0))) {
+      const len = Math.min(B * meter, song.chordBeats * B)
+      strings(mid.map((m) => m + 12), t, len, pad * (hot ? 1.2 : 0.9), padBus)
     }
     if (intro && s % 2 === 0 && mb >= -meter) softTick(t, s === 0)
   }
