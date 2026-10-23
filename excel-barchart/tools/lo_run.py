@@ -75,6 +75,15 @@ Sub WriteLog(ByVal s As String)
     Print #f, s
     Close #f
 End Sub
+Function FindRow(ByVal ws As Object, ByVal txt As String, Optional ByVal col As Long = 1) As Long
+    Dim q As Long
+    For q = 1 To 400
+        If Trim(ws.Cells(q, col).Value) = txt Then FindRow = q: Exit Function
+    Next q
+End Function
+Function D2(ByVal v As Variant) As String
+    If IsDate(v) Then D2 = Format(v, "mm-dd") Else D2 = "[" & v & "]"
+End Function
 Sub RunTest()
     On Error GoTo EH
     gQuiet = True
