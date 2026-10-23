@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffd6e8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+    <title>봄별 피아노 달리기</title>
+  </head>
+  <body>
+    <canvas id="cv"></canvas>
+
+    <!-- 처음 화면 -->
+    <section id="title" class="screen">
+      <div class="logo">
+        <div class="logo-keys"><i></i><i></i><i></i><i></i></div>
+        <h1>봄별 피아노 달리기</h1>
+        <p class="sub">건반을 톡톡! 콤보가 쌓이면 내 캐릭터가 쌩쌩 달려요</p>
+      </div>
+      <label class="field">
+        <span>내 이름</span>
+        <input id="name" maxlength="8" placeholder="이름을 써요" autocomplete="off" />
+      </label>
+      <div class="label">달릴 친구 고르기</div>
+      <div id="chars" class="chars"></div>
+      <div class="label">무대 고르기</div>
+      <div id="themes" class="themes"></div>
+      <div class="btns">
+        <button id="solo" class="big pink">혼자 연주</button>
+        <button id="race" class="big mint">친구랑 경주</button>
+      </div>
+      <div class="btns small">
+        <button id="rankBtn">🏆 랭킹</button>
+        <button id="howBtn">❓ 하는 법</button>
+        <button class="sound">🔊</button>
+      </div>
+    </section>
+
+    <!-- 곡 고르기 -->
+    <section id="songs" class="screen hidden">
+      <h2 id="songsTitle">곡 고르기</h2>
+      <div class="tabs" id="levelTabs">
+        <button data-level="1" class="on">1단계<small>쉬움</small></button>
+        <button data-level="2">2단계<small>보통</small></button>
+        <button data-level="3">3단계<small>어려움</small></button>
+      </div>
+      <div id="songList" class="song-list"></div>
+      <button id="songsBack" class="back">← 돌아가기</button>
+    </section>
+
+    <!-- 경주 방 -->
+    <section id="lobby" class="screen hidden">
+      <h2>친구랑 경주</h2>
+      <div id="lobbyJoin">
+        <button id="makeRoom" class="big pink">방 만들기</button>
+        <div class="or">또는 친구 방 번호</div>
+        <div class="join">
+          <input id="code" inputmode="numeric" maxlength="4" placeholder="1234" />
+          <button id="joinRoom" class="mint">들어가기</button>
+        </div>
+        <p id="netNote" class="note"></p>
+      </div>
+      <div id="lobbyRoom" class="hidden">
+        <div class="code-box">방 번호 <b id="roomCode">----</b></div>
+        <p class="note">친구 폰에서 같은 번호로 들어오면 같은 곡으로 같이 달려요!</p>
+        <div id="peers" class="peers"></div>
+        <div id="lobbySong" class="lobby-song"></div>
+        <div class="btns">
+          <button id="pickSong">🎵 곡 고르기</button>
+          <button id="startRace" class="big pink">시작!</button>
+        </div>
+        <p id="waitHost" class="note hidden">방장이 곡을 고르고 시작하기를 기다려요…</p>
+      </div>
+      <button id="lobbyBack" class="back">← 처음으로</button>
+    </section>
+
+    <!-- 랭킹 -->
+    <section id="rank" class="screen hidden">
+      <h2>🏆 랭킹</h2>
+      <div class="tabs" id="rankTabs">
+        <button data-tab="song" class="on">곡별 최고 점수</button>
+        <button data-tab="points">누적 점수</button>
+      </div>
+      <select id="rankSong" class="rank-song"></select>
+      <ol id="rankList" class="rank-list"></ol>
+      <p id="rankNote" class="note"></p>
+      <button id="rankBack" class="back">← 돌아가기</button>
+    </section>
+
+    <!-- 하는 법 -->
+    <section id="how" class="screen hidden">
+      <h2>❓ 하는 법</h2>
+      <ul class="how">
+        <li>🎹 위에서 내려오는 <b>건반</b>이 아래 선에 닿을 때 그 줄을 <b>톡</b>!</li>
+        <li>⭐ 딱 맞으면 <b>PERFECT</b>, 조금 빠르거나 느리면 <b>GOOD</b>, 많이 틀리면 <b>BAD</b>, 놓치면 <b>MISS</b></li>
+        <li>🔥 PERFECT·GOOD 이 이어지면 <b>COMBO</b>가 올라가요. 10콤보마다 관중이 응원해요!</li>
+        <li>🌟 별이 달린 <b>긴 건반</b>은 꾹 누르고 있다가 별이 선에 오면 손을 떼요.</li>
+        <li>🏃 잘 맞출수록, 콤보가 클수록 아래의 내 캐릭터가 빨리 달려요. 1등으로 결승선까지!</li>
+        <li>🎵 건반을 맞추면 멜로디가 연주돼요. 다 같이 아는 노래를 완성해 봐요.</li>
+        <li>⌨️ 컴퓨터에서는 D F J K 키로도 칠 수 있어요.</li>
+      </ul>
+      <button id="howBack" class="back">← 돌아가기</button>
+    </section>
+
+    <!-- 연주 중 -->
+    <div id="hud" class="hidden">
+      <button id="quit" class="hud-btn">✕</button>
+      <div class="hud-mid">
+        <div id="hudSong" class="hud-song"></div>
+        <div class="bar"><i id="hudBar"></i></div>
+      </div>
+      <div id="hudScore" class="hud-score">0</div>
+      <button class="hud-btn sound">🔊</button>
+    </div>
+
+    <!-- 결과 -->
+    <section id="result" class="screen overlay hidden">
+      <div class="card">
+        <div id="resPlace" class="res-place"></div>
+        <div id="resGrade" class="grade">S</div>
+        <div id="resSong" class="note"></div>
+        <div id="resScore" class="res-score"></div>
+        <div id="resCounts" class="counts"></div>
+        <div id="resMsg" class="note"></div>
+        <ol id="resRace" class="rank-list"></ol>
+        <div class="btns">
+          <button id="again" class="big pink">다시 하기</button>
+          <button id="toSongs" class="big mint">다른 곡</button>
+        </div>
+        <div class="btns small">
+          <button id="resRank">🏆 랭킹</button>
+          <button id="resHome">처음으로</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast hidden"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
