@@ -1,5 +1,5 @@
 // 피아노 달리기: 내려오는 건반을 박자에 맞춰 톡! 콤보만큼 아래 캐릭터가 빨리 달려요
-import { Backing, tapNote, sfx, audioTime, outputLatency } from './music.js'
+import { Backing, tapNote, sfx, audioTime } from './music.js'
 import { Scene, star } from './scene.js'
 import { drawChar } from './chars.js'
 import { rng, clamp, lerp } from './rng.js'
@@ -84,11 +84,12 @@ export class PianoGame {
     this.raf = requestAnimationFrame(loop)
   }
 
-  // delay 초 뒤에 곡 시작 (반주는 오디오 시계, 화면·판정은 같은 순간에 맞춤)
+  // delay 초 뒤에 곡 시작. 화면은 반주를 '내보내는' 순간에 맞춤:
+  // 건반 소리도 반주와 똑같은 출력 지연을 거치므로, 화면에 맞춰 누르면 반주 박자와 같이 들림
   begin(delay = 1.2) {
     const a = audioTime()
     this.backing = new Backing(this.song, this.chart, a + delay)
-    this.startPerf = performance.now() / 1000 + delay + outputLatency()
+    this.startPerf = performance.now() / 1000 + delay
   }
 
   destroy() {
@@ -169,12 +170,14 @@ export class PianoGame {
     const d = Math.abs(t - best.t)
     const j = d <= WIN.perfect ? 'perfect' : d <= WIN.good ? 'good' : 'bad'
     best.judged = j
-    best.sound = tapNote(this.song, this.chart, best, { vel: j === 'bad' ? 0.55 : j === 'good' ? 0.85 : 1 })
+    const now = audioTime()
+    const at = this.backing ? this.backing.startAt + best.t : now
+    best.sound = tapNote(this.song, this.chart, best, { vel: j === 'bad' ? 0.55 : j === 'good' ? 0.85 : 1, at })
     if (best.hold) {
       best.holding = id
       this.pointers.get(id).note = best
     } else {
-      setTimeout(() => best.sound?.release(), (best.len + 0.25) * 1000)
+      setTimeout(() => best.sound?.release(), (Math.max(0, best.sound.at - now) + best.len + 0.25) * 1000)
     }
     this.apply(j, lane, t)
   }

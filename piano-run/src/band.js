@@ -14,7 +14,7 @@ export const ARR_INFO = {
   march: '🥁 행진 밴드',
 }
 
-export function makeBand({ ctx, accBus, padBus, drumBus, noiseBuf, pianoNote, strings }) {
+export function makeBand({ ctx, accBus, padBus, drumBus, leadBus, noiseBuf, pianoNote, strings }) {
   // ---------------- 악기 ----------------
   const env = (g, t, peak, a, d) => {
     g.gain.setValueAtTime(0.0001, t)
@@ -145,6 +145,116 @@ export function makeBand({ ctx, accBus, padBus, drumBus, noiseBuf, pianoNote, st
       const n = Math.floor(len / 0.05)
       for (let i = 0; i < n; i++) I.snare(t + i * 0.05, v * (0.35 + (0.65 * i) / n))
     },
+  }
+
+  // 사람이 치는 것처럼: 박자는 몇 ms씩, 세기는 조금씩 들쭉날쭉 (북은 더 정확하게)
+  // [시간 인자 위치, 세기 인자 위치, 타악기?]
+  const HUMAN = {
+    piano: [1, 2], bell: [1, 2], marimba: [1, 2], pluck: [1, 2], harpsi: [1, 2], timpani: [1, 2],
+    bass: [1, 3], brass: [1, 3], accordion: [1, 3], flute: [1, 3],
+    kick: [0, 1, 1], snare: [0, 1, 1], brush: [0, 1, 1], hat: [0, 1, 1], shaker: [0, 1, 1], tamb: [0, 1, 1],
+    clap: [0, 1, 1], block: [0, 1, 1], triangle: [0, 1, 1], sleigh: [0, 1, 1],
+  }
+  for (const [k, [ti, vi, drum]] of Object.entries(HUMAN)) {
+    const f = I[k]
+    I[k] = (...a) => {
+      a[ti] += (Math.random() + Math.random() - 1) * (drum ? 0.004 : 0.009)
+      if (a[vi] !== undefined) a[vi] *= 0.88 + Math.random() * 0.22
+      return f(...a)
+    }
+  }
+
+  // ---------------- 리드 악기 ----------------
+  // 건반을 맞추면 피아노와 함께 밴드의 리드 악기도 같은 멜로디를 연주 → 피아노가 따로 놀지 않음
+  const NONE = { release() {} }
+  const held = (m, t, v, len, { waves, peak, attack = 0.04, vib = 0, cutoff = 3000, open = false }) => {
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.linearRampToValueAtTime(peak * v, t + attack)
+    g.gain.setTargetAtTime(peak * v * 0.7, t + attack, 0.25)
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.setValueAtTime(open ? cutoff * 0.3 : cutoff, t)
+    if (open) lp.frequency.exponentialRampToValueAtTime(cutoff, t + attack + 0.05) // 금관의 '빠-' 하고 열리는 소리
+    g.connect(lp).connect(leadBus)
+    const nodes = []
+    let wobble = null
+    if (vib) {
+      // 길게 끌면 조금 늦게 생기는 떨림(비브라토)
+      const lfo = ctx.createOscillator()
+      lfo.frequency.value = 5 + Math.random() * 0.8
+      wobble = ctx.createGain()
+      wobble.gain.setValueAtTime(0, t)
+      wobble.gain.linearRampToValueAtTime(vib, t + 0.4)
+      lfo.connect(wobble)
+      nodes.push(lfo)
+    }
+    for (const [type, mul, amp, det = 0] of waves) {
+      const o = ctx.createOscillator()
+      const og = ctx.createGain()
+      o.type = type
+      o.frequency.value = hz(m) * mul
+      o.detune.value = det
+      og.gain.value = amp
+      if (wobble) wobble.connect(o.detune)
+      o.connect(og).connect(g)
+      nodes.push(o)
+    }
+    for (const o of nodes) {
+      o.start(t)
+      o.stop(t + len + 2)
+    }
+    return {
+      release(at = ctx.currentTime) {
+        const when = Math.max(at, t + attack + 0.01)
+        g.gain.cancelScheduledValues(when)
+        g.gain.setTargetAtTime(0.0001, when, 0.06)
+        for (const o of nodes) {
+          try {
+            o.stop(when + 0.5)
+          } catch {
+            // 이미 멈춤
+          }
+        }
+      },
+    }
+  }
+  const FIDDLE = { waves: [['sawtooth', 1, 0.6], ['sawtooth', 1, 0.4, 7], ['triangle', 2, 0.15]], peak: 0.075, attack: 0.05, vib: 14, cutoff: 3200 }
+  const VIOLINS = { waves: [['sawtooth', 1, 0.4, -9], ['sawtooth', 1, 0.4], ['sawtooth', 1, 0.4, 10]], peak: 0.07, attack: 0.08, vib: 12, cutoff: 2800 }
+  const FLUTE = { waves: [['sine', 1, 1], ['sine', 2, 0.12], ['triangle', 1, 0.2]], peak: 0.1, attack: 0.06, vib: 10, cutoff: 6000 }
+  const ACCORDION = { waves: [['square', 1, 0.45], ['sawtooth', 1, 0.4, 13], ['sawtooth', 1, 0.35, -5]], peak: 0.065, attack: 0.025, cutoff: 2600 }
+  const TRUMPET = { waves: [['sawtooth', 1, 0.7], ['sawtooth', 1, 0.4, 6]], peak: 0.075, attack: 0.03, vib: 8, cutoff: 3200, open: true }
+  const ding = (m, t, v, peak, d) => {
+    tone('sine', hz(m), t, peak * v, 0.002, d, leadBus)
+    tone('sine', hz(m) * 2.76, t, peak * 0.28 * v, 0.002, d * 0.25, leadBus)
+    tone('sine', hz(m) * 5.4, t, peak * 0.1 * v, 0.002, d * 0.1, leadBus)
+    return NONE
+  }
+  // piano: 멜로디 피아노 크기, play: 같이 연주하는 악기
+  const lead = {
+    lullaby: { piano: 0.85, play: (m, t, v) => ding(m + 12, t, v, 0.1, 1.3) }, // 한 옥타브 위 오르골
+    country: { piano: 0.7, play: (m, t, v, len) => held(m, t, v, len, FIDDLE) },
+    spring: {
+      piano: 0.75,
+      play: (m, t, v, len) => {
+        noise(t, 0.012 * v, 0.07, leadBus, 2600, 'bandpass', 1, 0.02) // 숨소리
+        return held(m, t, v, len, FLUTE)
+      },
+    },
+    party: { piano: 0.7, play: (m, t, v, len) => held(m, t, v, len, ACCORDION) },
+    orchestra: { piano: 0.75, play: (m, t, v, len) => held(m, t, v, len, VIOLINS) },
+    sleigh: { piano: 0.85, play: (m, t, v) => ding(m + 12, t, v, 0.085, 0.9) }, // 글로켄슈필
+    farm: { piano: 0.7, play: (m, t, v, len) => held(m, t, v, len, FIDDLE) },
+    baroque: {
+      piano: 0.7,
+      play: (m, t, v) => {
+        tone('square', hz(m), t, 0.045 * v, 0.002, 0.7, leadBus, { filter: { f: 6500, to: 1000 } })
+        tone('sawtooth', hz(m) * 2, t, 0.018 * v, 0.002, 0.3, leadBus, { filter: { f: 7000, to: 1800 } })
+        return NONE
+      },
+    },
+    elise: { piano: 1, play: null }, // 피아노 독주곡은 피아노만
+    march: { piano: 0.7, play: (m, t, v, len) => held(m, t, v, len, TRUMPET) },
   }
 
   // ---------------- 편곡 ----------------
@@ -296,5 +406,5 @@ export function makeBand({ ctx, accBus, padBus, drumBus, noiseBuf, pianoNote, st
     },
   }
 
-  return { I, A }
+  return { I, A, lead }
 }

@@ -1,4 +1,4 @@
-// 음악 엔진: 반주는 은은한 피아노 왼손 + 현악기, 멜로디(+화음)는 건반을 맞출 때 연주
+// 음악 엔진: 곡마다 다른 밴드가 반주, 멜로디(+화음)는 건반을 맞출 때 피아노와 밴드의 리드 악기가 함께 연주
 import { chordAt, chordNotes } from './songs.js'
 import { local } from './store.js'
 import { makeBand } from './band.js'
@@ -6,6 +6,7 @@ import { makeBand } from './band.js'
 let ctx = null
 let master = null
 let melBus = null
+let leadBus = null
 let accBus = null
 let padBus = null
 let sfxBus = null
@@ -17,13 +18,25 @@ let enabled = local.get(KEY) !== 'off'
 
 const hz = (m) => 440 * 2 ** ((m - 69) / 12)
 
-// 공간 울림(리버브)용 가짜 방 소리
+// 공간 울림(리버브)용 가짜 공연장 소리: 벽에서 처음 돌아오는 소리 몇 개 + 높은 소리부터 먼저 사라지는 잔향
 function impulse(sec, decay) {
-  const len = Math.floor(ctx.sampleRate * sec)
-  const buf = ctx.createBuffer(2, len, ctx.sampleRate)
+  const rate = ctx.sampleRate
+  const len = Math.floor(rate * sec)
+  const pre = Math.floor(rate * 0.012)
+  const buf = ctx.createBuffer(2, len, rate)
   for (let ch = 0; ch < 2; ch++) {
     const d = buf.getChannelData(ch)
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay)
+    for (let k = 0; k < 7; k++) {
+      const i = pre + Math.floor(rate * (0.004 + Math.random() * 0.06))
+      d[i] += (Math.random() < 0.5 ? -1 : 1) * (0.6 - k * 0.06)
+    }
+    let lp = 0
+    for (let i = pre; i < len; i++) {
+      const x = i / len
+      const k = 0.85 - 0.6 * x
+      lp += (Math.random() * 2 - 1 - lp) * k
+      d[i] += (lp / Math.sqrt(k / (2 - k))) * Math.pow(1 - x, decay)
+    }
   }
   return buf
 }
@@ -58,7 +71,9 @@ export function unlockAudio() {
       g.connect(s).connect(rev)
       return g
     }
-    melBus = bus(0.9, 0.45, 0.05)
+    // 멜로디도 반주와 같은 방에서 울리도록 잔향을 비슷하게
+    melBus = bus(0.85, 0.52, 0.05)
+    leadBus = bus(0.8, 0.55, -0.08)
     accBus = bus(0.78, 0.55, -0.12)
     padBus = bus(0.32, 0.8, 0.1)
     sfxBus = bus(0.45, 0.2)
@@ -66,14 +81,13 @@ export function unlockAudio() {
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
     const d = noiseBuf.getChannelData(0)
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
-    band = makeBand({ ctx, accBus, padBus, drumBus, noiseBuf, pianoNote, strings })
+    band = makeBand({ ctx, accBus, padBus, drumBus, leadBus, noiseBuf, pianoNote, strings })
   }
   if (ctx.state === 'suspended') ctx.resume()
   return ctx
 }
 
 export const audioTime = () => (ctx ? ctx.currentTime : performance.now() / 1000)
-export const outputLatency = () => (ctx ? ctx.outputLatency || ctx.baseLatency || 0 : 0)
 export const isSoundOn = () => enabled
 export function setSound(on) {
   enabled = on
@@ -200,16 +214,37 @@ function harmonyUnder(midi, sym, count) {
   return out
 }
 
-/** 건반을 맞췄을 때: 멜로디 + 화음 */
-export function tapNote(song, chart, note, { vel = 1 } = {}) {
-  if (!ctx) return { release() {} }
-  const t = ctx.currentTime
+// 연주자처럼: 마디 첫 박은 조금 세게, 박 사이 음은 살짝 여리게, 매번 조금씩 다르게
+function phrasing(song, chart, note) {
+  const inBar = (((note.beat - chart.pickup) % song.meter) + song.meter) % song.meter
+  const accent = inBar < 0.01 ? 1 : Number.isInteger(inBar) ? 0.9 : 0.8
+  return accent * (0.94 + Math.random() * 0.12)
+}
+
+/** 멜로디 한 음: 피아노(+아래 화음) + 밴드의 리드 악기. 반환한 release 로 손 뗄 때 멈춤 */
+function melodyNote(song, chart, note, t, vel) {
   const sym = chordAt(song, chart, note.beat)
+  const lead = band.lead[song.arr] || band.lead.elise
+  const v = vel * phrasing(song, chart, note)
   const count = note.len >= 0.45 ? 2 : note.len >= 0.25 ? 1 : 0
-  const voices = [pianoNote(note.midi, t, vel, melBus, { hold: note.hold })]
-  for (const m of harmonyUnder(note.midi, sym, count)) voices.push(pianoNote(m, t + 0.008, vel * 0.42, melBus, { partials: 4, hold: note.hold }))
+  const voices = [pianoNote(note.midi, t, v * lead.piano, melBus, { hold: note.hold })]
+  for (const m of harmonyUnder(note.midi, sym, count)) voices.push(pianoNote(m, t + 0.008, v * 0.38 * lead.piano, melBus, { partials: 4, hold: note.hold }))
+  if (lead.play) {
+    const lv = lead.play(note.midi, t, v, note.len)
+    // 길게 누르는 음은 손 뗄 때까지, 나머지는 음 길이만큼만 (다음 음과 뭉개지지 않게)
+    if (note.hold) voices.push(lv)
+    else lv.release(t + note.len * 0.92)
+  }
+  return voices
+}
+
+/** 건반을 맞췄을 때. at(반주 시계로 그 음의 박자)보다 일찍 누르면 정확히 그 박자에 울림 */
+export function tapNote(song, chart, note, { vel = 1, at = 0 } = {}) {
+  if (!ctx) return { at: 0, release() {} }
+  const t = Math.max(ctx.currentTime, at)
+  const voices = melodyNote(song, chart, note, t, vel)
   if (note.hold) strings([note.midi], t, note.len, 0.9, padBus)
-  return { release: () => voices.forEach((v) => v.release()) }
+  return { at: t, release: () => voices.forEach((v) => v.release()) }
 }
 
 // ---------------- 반주 ----------------
@@ -323,8 +358,8 @@ export const sfx = {
     for (const n of chart.notes.slice(0, end)) {
       const t = t0 + (n.t - first)
       const sym = chordAt(song, chart, n.beat)
-      pianoNote(n.midi, t, 0.85, melBus)
-      for (const m of harmonyUnder(n.midi, sym, n.len >= 0.45 ? 2 : 1)) pianoNote(m, t + 0.01, 0.35, melBus, { partials: 4 })
+      const voices = melodyNote(song, chart, { ...n, hold: false }, t, 0.85)
+      setTimeout(() => voices.forEach((v) => v.release()), (t - ctx.currentTime + n.len + 0.25) * 1000)
       if (Number.isInteger(n.beat - (chart.pickup || 0)) && (n.beat - chart.pickup) % song.meter === 0) {
         pianoNote(voicing(sym).bass, t, 0.5, accBus, { partials: 4 })
       }
