@@ -143,6 +143,7 @@ export default function MessageItem({
 }) {
   const pressTimer = useRef(null)
   const hadSelection = useRef(false)
+  const press = useRef(null)
 
   if (msg.kind === 'system') {
     return <div className="system-msg">{msg.body}</div>
@@ -169,17 +170,35 @@ export default function MessageItem({
       e.preventDefault()
       onMenu(e.clientX, e.clientY)
     },
+    // 휴대폰 길게 누르기
     onTouchStart: (e) => {
       const t = e.touches[0]
-      pressTimer.current = setTimeout(() => onMenu(t.clientX, t.clientY), 500)
+      press.current = { x: t.clientX, y: t.clientY, fired: false }
+      clearTimeout(pressTimer.current)
+      pressTimer.current = setTimeout(() => {
+        press.current.fired = true
+        navigator.vibrate?.(25)
+        onMenu(t.clientX, t.clientY)
+      }, 500)
     },
-    onTouchEnd: () => clearTimeout(pressTimer.current),
-    onTouchMove: () => clearTimeout(pressTimer.current),
+    // 누르는 동안 손가락이 조금 흔들리는 건 무시하고, 스크롤할 만큼 움직이면 취소
+    onTouchMove: (e) => {
+      const t = e.touches[0]
+      const p = press.current
+      if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) clearTimeout(pressTimer.current)
+    },
+    onTouchEnd: (e) => {
+      clearTimeout(pressTimer.current)
+      // 메뉴가 뜬 뒤 손을 뗄 때 생기는 클릭이 메뉴를 바로 닫지 않도록
+      if (press.current?.fired) e.preventDefault()
+    },
+    onTouchCancel: () => clearTimeout(pressTimer.current),
   }
 
   const meta = (
     <div className="msg-meta">
       {unread > 0 && <span className="unread">{unread}</span>}
+      {msg.edited_at && !msg.deleted_at && <span className="edited">수정됨</span>}
       {showTime && <span className="time">{formatTime(msg.created_at)}</span>}
     </div>
   )
@@ -217,6 +236,7 @@ export default function MessageItem({
   const bubble = (
     <div className={classes} style={bubbleStyle} {...(deleted ? {} : menuHandlers)}>
       {msg.is_urgent && !deleted && <div className="urgent-label">🚨 긴급</div>}
+      {msg.is_forwarded && !deleted && <div className="forwarded-label">↪ 전달됨</div>}
       {!deleted && <ReplyQuote msg={msg} onJump={onJump} />}
       {content}
     </div>

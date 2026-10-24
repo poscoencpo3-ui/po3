@@ -23,6 +23,8 @@ import GalleryPanel from './GalleryPanel'
 import SearchPanel from './SearchPanel'
 import BackgroundPicker from './BackgroundPicker'
 import ProfileModal from './ProfileModal'
+import ForwardModal from './ForwardModal'
+import EditModal from './EditModal'
 import { useBackground } from '../lib/theme'
 
 const PAGE_SIZE = 50
@@ -63,7 +65,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const [jumpTick, setJumpTick] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [newBelow, setNewBelow] = useState(false)
-  const [modal, setModal] = useState(null) // background | profile
+  const [modal, setModal] = useState(null) // background | profile | { type: 'forward' | 'edit', msg }
   const background = useBackground(roomId)
 
   const listRef = useRef(null)
@@ -718,6 +720,17 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
         <ScheduleForm initial={scheduleForm.initial} isAdmin={isAdmin} onSave={saveSchedule} onCancel={() => setScheduleForm(null)} />
       )}
 
+      {modal?.type === 'forward' && <ForwardModal msg={modal.msg} me={me} currentRoomId={roomId} onClose={() => setModal(null)} />}
+      {modal?.type === 'edit' && (
+        <EditModal
+          msg={modal.msg}
+          onSaved={async () => {
+            const { data } = await supabase.from('messages').select('*').eq('id', modal.msg.id).maybeSingle()
+            if (data) setMessages((prev) => prev.map((m) => (m.id === data.id ? data : m)))
+          }}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal === 'background' && <BackgroundPicker roomId={roomId} roomName={room.name} onClose={() => setModal(null)} />}
       {modal === 'profile' && (
         <ProfileModal
@@ -759,12 +772,15 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       {menu && (
         <MessageMenu
           menu={menu}
+          me={me}
           mine={menu.msg.user_id === me}
           isAdmin={isAdmin}
           isNotice={menu.msg.id === noticeId}
           onClose={() => setMenu(null)}
           actions={{
             reply: () => setReplyTo(menu.msg),
+            forward: () => setModal({ type: 'forward', msg: menu.msg }),
+            edit: () => setModal({ type: 'edit', msg: menu.msg }),
             copy: () => copyText(menu.msg.kind === 'report' ? reportText(menu.msg.data) : menu.msg.body),
             openImage: () => setViewer(menu.msg),
             downloadFile: () => download(menu.msg),
