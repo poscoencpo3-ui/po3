@@ -172,9 +172,12 @@ async function sendForMessage(env: Env, userId: string, messageId: number) {
 
 // 방 참여자들에게 메시지 알림 발송 (보낸 사람은 제외)
 async function notifyRoom(env: Env, msg: Record<string, any>, excludeUserId: string | null) {
-  const [room] = await db(env, `rooms?id=eq.${msg.room_id}&select=name`)
+  const [room] = await db(env, `rooms?id=eq.${msg.room_id}&select=name,notifications_enabled`)
+  // 알림을 끈 방/사람은 제외 (🚨 긴급 메시지는 알림을 꺼도 항상 보냄)
+  if (room.notifications_enabled === false && !msg.is_urgent) return { sent: 0, total: 0, muted: 'room' }
   const exclude = excludeUserId ? `&user_id=neq.${excludeUserId}` : ''
-  const members = await db(env, `room_members?room_id=eq.${msg.room_id}${exclude}&select=user_id`)
+  const unmuted = msg.is_urgent ? '' : '&muted=is.false'
+  const members = await db(env, `room_members?room_id=eq.${msg.room_id}${exclude}${unmuted}&select=user_id`)
   if (!members.length) return { sent: 0, total: 0 }
   const subs = await db(
     env,

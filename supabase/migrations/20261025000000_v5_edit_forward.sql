@@ -1,5 +1,5 @@
 -- =====================================================================
---  협력사 소통방 v5 - 메시지 수정 · 전달
+--  협력사 소통방 v5 - 메시지 수정 · 전달 · 채팅방 알림 끄기
 --  Supabase 대시보드 > SQL Editor 에 이 파일 전체를 붙여넣고 Run 하세요.
 -- =====================================================================
 
@@ -70,3 +70,76 @@ begin
 end $$;
 
 revoke execute on function public.edit_message(bigint, text) from public, anon;
+
+-- ---------------------------------------------------------------------
+-- 채팅방 알림 끄기
+--   room_members.muted              : 내가 이 방 알림을 끔 (🔕). 안 읽은 숫자는 그대로 표시
+--   rooms.notifications_enabled     : 관리자가 방 전체 알림을 끔
+--   🚨 긴급 메시지는 알림을 꺼도 항상 알림
+-- ---------------------------------------------------------------------
+
+alter table public.room_members add column muted boolean not null default false;
+alter table public.rooms add column notifications_enabled boolean not null default true;
+
+create or replace function public.set_room_muted(p_room uuid, p_muted boolean)
+returns void language sql security definer set search_path = public as $$
+  update room_members set muted = coalesce(p_muted, false)
+  where room_id = p_room and user_id = auth.uid();
+$$;
+
+create or replace function public.set_room_notifications(p_room uuid, p_enabled boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'NOT_ADMIN';
+  end if;
+  update rooms set notifications_enabled = coalesce(p_enabled, true)
+  where id = p_room and notifications_enabled is distinct from coalesce(p_enabled, true);
+  if found then
+    insert into messages (room_id, user_id, kind, body)
+    values (p_room, null, 'system',
+      case when p_enabled then '🔔 관리자가 이 방의 알림을 켰습니다.'
+           else '🔕 관리자가 이 방의 알림을 껐습니다. (안 읽은 숫자는 표시되고, 긴급 메시지는 알림이 옵니다)' end);
+  end if;
+end $$;
+
+revoke execute on function public.set_room_muted(uuid, boolean) from public, anon;
+revoke execute on function public.set_room_notifications(uuid, boolean) from public, anon;
+
+-- 채팅 목록에 알림 상태도 함께
+drop function public.my_rooms();
+create function public.my_rooms()
+returns table (
+  room_id               uuid,
+  name                  text,
+  code                  text,
+  member_count          int,
+  unread                int,
+  last_kind             text,
+  last_body             text,
+  last_sender           text,
+  last_urgent           boolean,
+  last_deleted          boolean,
+  last_at               timestamptz,
+  muted                 boolean,
+  notifications_enabled boolean
+) language sql stable security definer set search_path = public as $$
+  select
+    r.id, r.name, r.code,
+    (select count(*)::int from room_members x where x.room_id = r.id),
+    (select count(*)::int from messages x
+      where x.room_id = r.id and x.id > m.last_read_id
+        and x.kind <> 'system' and x.user_id is distinct from auth.uid()),
+    lm.kind, lm.body, lm.sender_name, lm.is_urgent, lm.deleted_at is not null,
+    coalesce(lm.created_at, r.created_at),
+    m.muted, r.notifications_enabled
+  from room_members m
+  join rooms r on r.id = m.room_id
+  left join lateral (
+    select kind, body, sender_name, is_urgent, deleted_at, created_at from messages
+    where room_id = r.id order by id desc limit 1
+  ) lm on true
+  where m.user_id = auth.uid()
+  order by coalesce(lm.created_at, r.created_at) desc;
+$$;
+revoke execute on function public.my_rooms() from public, anon;

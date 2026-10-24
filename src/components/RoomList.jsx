@@ -68,6 +68,11 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
                   <div className="room-top">
                     <span className="room-name">{r.name}</span>
                     <span className="room-count">{r.member_count}</span>
+                    {(r.muted || r.notifications_enabled === false) && (
+                      <span className="room-muted" title="알림 꺼짐">
+                        🔕
+                      </span>
+                    )}
                     <span className="room-time">{formatListTime(r.last_at)}</span>
                   </div>
                   <div className="room-bottom">
@@ -75,7 +80,11 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
                       {r.last_kind && r.last_kind !== 'system' && !r.last_deleted && r.last_sender ? `${r.last_sender}: ` : ''}
                       {previewText(r.last_kind, r.last_body, { deleted: r.last_deleted, urgent: r.last_urgent })}
                     </span>
-                    {r.unread > 0 && <span className="badge">{r.unread > 999 ? '999+' : r.unread}</span>}
+                    {r.unread > 0 && (
+                      <span className={'badge' + (r.muted || r.notifications_enabled === false ? ' muted' : '')}>
+                        {r.unread > 999 ? '999+' : r.unread}
+                      </span>
+                    )}
                   </div>
                 </div>
               </a>
