@@ -106,3 +106,22 @@
     ' 17) 작업입력 적용 공종 (배관설비에는 공종 없음 → 빈 값) / 새 행 들여쓰기
     ri = FindRow(wi, "용접", 3)
     WriteLog "17 용접: 구분 " & wi.Cells(ri, 1).Value & " 들여쓰기 " & wi.Cells(ri, 3).IndentLevel & " 적용공종[" & wi.Cells(ri, 9).Value & "]"
+    ' 18) 작업입력 간트 막대 글자 : 바뀐 행과 요약 행만 다시 씀
+    Dim qc As Long, c11 As Long, c6a As Long, c6b As Long, t11 As String
+    Set wi = Worksheets("작업입력")
+    ri = FindRow(wi, "철근·거푸집", 3)
+    wi.Cells(ri, 3).Value = "철근·거푸집 공사"
+    OnSheetChange wi, wi.Cells(ri, 3)
+    For qc = 12 To 411
+        If wi.Cells(ri, qc).Value <> "" Then c11 = qc: t11 = wi.Cells(ri, qc).Value: Exit For
+    Next qc
+    r = FindRow(wi, "기계정비동", 3)
+    For qc = 12 To 411
+        If wi.Cells(r, qc).Value <> "" Then c6a = qc: Exit For
+    Next qc
+    wi.Cells(r + 1, 5).Value = CDate("2026-11-01")          ' 첫 세부작업 시작일을 뒤로 → 작업항목 요약 시작도 뒤로
+    OnSheetChange wi, wi.Cells(r + 1, 5)
+    For qc = 12 To 411
+        If wi.Cells(r, qc).Value <> "" Then c6b = qc: Exit For
+    Next qc
+    WriteLog "18 글자: [" & t11 & "] 열" & c11 & " / 요약 글자 열 " & c6a & " → " & c6b & " / 요약 시작 " & D2(wi.Cells(r, 5).Value)
