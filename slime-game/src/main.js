@@ -4,6 +4,7 @@ import { MAPS, LEVELS, loadMap } from './map.js'
 import { Game, ITEMS } from './game.js'
 import { unlockAudio, startMusic, setSound, isSoundOn, sfx } from './audio.js'
 import { canRace, online, localTest, joinRoom, newCode, hostOf } from './net.js'
+import { makeChat } from './chat.js'
 import { local, session } from './store.js'
 import { saveRun, topTimes, topPoints, myBest, calcPoints, starsFor, rankKey } from './rank.js'
 
@@ -360,6 +361,14 @@ $('#resHome').onclick = () => {
 
 // ---------- 친구랑 경주 ----------
 let room = null
+const chat = makeChat({
+  log: $('#chatLog'),
+  form: $('#chatForm'),
+  input: $('#chatInput'),
+  quick: $('#chatQuick'),
+  icon: (m) => charIcon(m.char, 30, m.hat),
+  onNew: () => !$('#lobby').classList.contains('hidden') && sfx.click(),
+})
 const race = { code: '', peers: [], players: [], finishes: new Map(), running: false }
 
 function openLobby() {
@@ -394,6 +403,7 @@ function enterRoom(code) {
     onPeers: (list) => {
       race.peers = list
       renderPeers()
+      chat.peers(list, isHost())
       if (game && mode === 'race') {
         const ids = new Set(list.map((p) => p.id))
         for (const p of race.players) if (!ids.has(p.id)) game.removeOther(p.id)
@@ -404,6 +414,7 @@ function enterRoom(code) {
       if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') toast('연결이 불안정해요 📶')
     },
   })
+  chat.start(room, { id: profile.id, name: profile.name, char: profile.char, hat: profile.hat })
   $('#roomCode').textContent = code
   openLobby()
 }
@@ -411,6 +422,7 @@ function enterRoom(code) {
 function leaveRoom() {
   if (room) room.leave()
   room = null
+  chat.stop()
   race.running = false
 }
 
@@ -473,6 +485,7 @@ function beginRace({ map, level, seed, players }) {
 }
 
 function onRoomMsg(from, type, d) {
+  if (type === 'chat' || type === 'chatlog') return chat.receive(from, type, d)
   if (type === 'start') {
     if (d.players.some((p) => p.id === profile.id)) beginRace(d)
     return

@@ -64,6 +64,15 @@
         <div id="lobbyMap" class="note"></div>
         <button id="startRace" class="big pink">시작!</button>
         <p id="waitHost" class="note hidden">방장이 시작하기를 기다려요…</p>
+        <div class="chat">
+          <div class="chat-title">💬 대기실 이야기</div>
+          <div id="chatLog" class="chat-log"></div>
+          <div id="chatQuick" class="chat-quick"></div>
+          <form id="chatForm" class="chat-form">
+            <input id="chatInput" placeholder="친구에게 한마디" autocomplete="off" enterkeyhint="send" />
+            <button class="mint">보내기</button>
+          </form>
+        </div>
       </div>
       <button id="lobbyBack" class="back">← 처음으로</button>
     </section>
