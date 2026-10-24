@@ -9,7 +9,7 @@
   --chat-bg: #b9cbdc;
   --bubble-other: #ffffff;
   --bubble-mine: #ffe15c;
-  --unread: #e6a800;
+  --unread: #111111;
   --danger: #d64545;
   --hover: #f3f5f7;
   --radius: 14px;
@@ -2222,4 +2222,10 @@ mark {
 .chat-room.bg-photo .msg-meta {
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* 안 읽은 사람 수: 어두운 배경·사진 배경에서는 흰색 */
+.chat-room.bg-dark .unread,
+.chat-room.bg-photo .unread {
+  color: #ffffff;
 }
