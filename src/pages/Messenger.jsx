@@ -54,6 +54,8 @@ export default function Messenger({ session, admin, route }) {
           const viewing = row.room_id === activeRef.current && !document.hidden && document.hasFocus()
           if (viewing) return
           const room = roomsRef.current.find((r) => r.room_id === row.room_id)
+          // 🔕 알림 끈 방(내가 끔 / 관리자가 끔)은 알림 없이 안 읽은 숫자만. 🚨 긴급은 예외
+          if (room && (room.muted || room.notifications_enabled === false) && !row.is_urgent) return
           const show = () =>
             showNotification(
               (row.is_urgent ? '🚨 [긴급] ' : '') + (room ? room.name : '새 메시지'),

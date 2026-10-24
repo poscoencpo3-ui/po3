@@ -23,6 +23,8 @@ import GalleryPanel from './GalleryPanel'
 import SearchPanel from './SearchPanel'
 import BackgroundPicker from './BackgroundPicker'
 import ProfileModal from './ProfileModal'
+import ForwardModal from './ForwardModal'
+import EditModal from './EditModal'
 import { useBackground } from '../lib/theme'
 
 const PAGE_SIZE = 50
@@ -63,7 +65,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const [jumpTick, setJumpTick] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [newBelow, setNewBelow] = useState(false)
-  const [modal, setModal] = useState(null) // background | profile
+  const [modal, setModal] = useState(null) // background | profile | { type: 'forward' | 'edit', msg }
   const background = useBackground(roomId)
 
   const listRef = useRef(null)
@@ -567,6 +569,19 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
 
   const membersById = new Map(members.map((m) => [m.user_id, m]))
   const myMember = membersById.get(me)
+  const roomNotifyOff = room.notifications_enabled === false
+  const notifyOn = !roomNotifyOff && !myMember?.muted
+
+  // 🔔 ↔ 🔕 : 내 알림만 켜고 끔 (안 읽은 숫자는 계속 표시)
+  async function toggleMute() {
+    if (roomNotifyOff) return toast('관리자가 이 방의 알림을 꺼 두었습니다. (긴급 메시지는 알림이 옵니다)')
+    const next = !myMember?.muted
+    const { error } = await supabase.rpc('set_room_muted', { p_room: roomId, p_muted: next })
+    if (error) return toast('변경에 실패했습니다. (v5 SQL을 실행했는지 확인해 주세요)')
+    setMembers((prev) => prev.map((m) => (m.user_id === me ? { ...m, muted: next } : m)))
+    onRoomsChanged()
+    toast(next ? '🔕 이 방 알림을 껐습니다. 안 읽은 숫자는 계속 표시됩니다.' : '🔔 이 방 알림을 켰습니다.')
+  }
 
   return (
     <div
@@ -587,6 +602,14 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
           </button>
         </div>
         <div className="header-actions">
+          <button
+            className={'icon-btn bell' + (notifyOn ? '' : ' off')}
+            onClick={toggleMute}
+            title={roomNotifyOff ? '관리자가 이 방 알림을 껐습니다' : notifyOn ? '알림 켜짐 (누르면 끄기)' : '알림 꺼짐 (누르면 켜기)'}
+            aria-label={notifyOn ? '알림 끄기' : '알림 켜기'}
+          >
+            {notifyOn ? '🔔' : '🔕'}
+          </button>
           <button className="icon-btn" onClick={() => setPanel('search')} title="대화 검색" aria-label="대화 검색">
             🔍
           </button>
@@ -718,6 +741,17 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
         <ScheduleForm initial={scheduleForm.initial} isAdmin={isAdmin} onSave={saveSchedule} onCancel={() => setScheduleForm(null)} />
       )}
 
+      {modal?.type === 'forward' && <ForwardModal msg={modal.msg} me={me} currentRoomId={roomId} onClose={() => setModal(null)} />}
+      {modal?.type === 'edit' && (
+        <EditModal
+          msg={modal.msg}
+          onSaved={async () => {
+            const { data } = await supabase.from('messages').select('*').eq('id', modal.msg.id).maybeSingle()
+            if (data) setMessages((prev) => prev.map((m) => (m.id === data.id ? data : m)))
+          }}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal === 'background' && <BackgroundPicker roomId={roomId} roomName={room.name} onClose={() => setModal(null)} />}
       {modal === 'profile' && (
         <ProfileModal
@@ -759,12 +793,15 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       {menu && (
         <MessageMenu
           menu={menu}
+          me={me}
           mine={menu.msg.user_id === me}
           isAdmin={isAdmin}
           isNotice={menu.msg.id === noticeId}
           onClose={() => setMenu(null)}
           actions={{
             reply: () => setReplyTo(menu.msg),
+            forward: () => setModal({ type: 'forward', msg: menu.msg }),
+            edit: () => setModal({ type: 'edit', msg: menu.msg }),
             copy: () => copyText(menu.msg.kind === 'report' ? reportText(menu.msg.data) : menu.msg.body),
             openImage: () => setViewer(menu.msg),
             downloadFile: () => download(menu.msg),

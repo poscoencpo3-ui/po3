@@ -2229,3 +2229,77 @@ mark {
 .chat-room.bg-photo .unread {
   color: #ffffff;
 }
+
+/* 전달 · 수정 */
+.forwarded-label {
+  font-size: 11px;
+  color: #5d6875;
+  margin-bottom: 3px;
+}
+
+.msg-meta .edited {
+  color: #6b7380;
+}
+
+.chat-room.bg-dark .msg-meta .edited,
+.chat-room.bg-photo .msg-meta .edited {
+  color: #e3e6ea;
+}
+
+.forward-preview {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.forward-rooms {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.forward-rooms button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.forward-rooms button span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.forward-rooms button:hover {
+  background: var(--hover);
+}
+
+.forward-rooms button.active {
+  background: #eef3fb;
+  box-shadow: inset 0 0 0 2px #2f6fd6;
+}
+
+/* 채팅방 알림 끄기 */
+.room-muted {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.badge.muted {
+  background: #9aa1ab;
+}
+
+.chat-header .icon-btn.bell.off {
+  opacity: 0.75;
+}
+
+.notify-toggle.off {
+  background: #eef0f2;
+  color: #6b7380;
+}

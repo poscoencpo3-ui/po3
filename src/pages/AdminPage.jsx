@@ -101,6 +101,18 @@ function AdminDashboard({ admin, onAdminChange }) {
     load()
   }
 
+  async function toggleRoomNotify(room) {
+    const enable = room.notifications_enabled === false
+    const msg = enable
+      ? `'${room.name}' 방의 알림을 켤까요?`
+      : `'${room.name}' 방의 알림을 모든 참여자에게서 끌까요?\n안 읽은 숫자는 계속 표시되고, 🚨 긴급 메시지는 알림이 갑니다.`
+    if (!window.confirm(msg)) return
+    const { error } = await supabase.rpc('set_room_notifications', { p_room: room.id, p_enabled: enable })
+    if (error) return toast('변경에 실패했습니다. (v5 SQL을 실행했는지 확인해 주세요)')
+    toast(enable ? '🔔 알림을 켰습니다.' : '🔕 알림을 껐습니다.')
+    load()
+  }
+
   async function enter(room) {
     const { data, error } = await supabase.rpc('join_room', {
       p_code: room.code,
@@ -170,6 +182,7 @@ function AdminDashboard({ admin, onAdminChange }) {
                   <th>입장코드</th>
                   <th>인원</th>
                   <th>만든 날</th>
+                  <th>알림</th>
                   <th></th>
                 </tr>
               </thead>
@@ -180,6 +193,15 @@ function AdminDashboard({ admin, onAdminChange }) {
                     <td className="mono">{formatCode(r.code)}</td>
                     <td>{r.room_members?.[0]?.count ?? 0}</td>
                     <td>{formatListTime(r.created_at)}</td>
+                    <td>
+                      <button
+                        className={'btn small notify-toggle' + (r.notifications_enabled === false ? ' off' : '')}
+                        onClick={() => toggleRoomNotify(r)}
+                        title="이 방 모든 참여자의 알림을 켜고 끕니다"
+                      >
+                        {r.notifications_enabled === false ? '🔕 꺼짐' : '🔔 켜짐'}
+                      </button>
+                    </td>
                     <td className="row-actions">
                       <button className="btn small" onClick={() => copyText(inviteText(r), '초대 안내문을 복사했습니다.')}>
                         초대문 복사
