@@ -4,7 +4,20 @@ import EmojiPanel from './EmojiPanel'
 import Avatar from './Avatar'
 
 const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
-const PLACEHOLDER = isTouch ? '메시지 입력' : '메시지 입력 (Enter 전송 · Shift+Enter 줄바꿈 · Ctrl+V 캡쳐 붙여넣기 · @ 멘션)'
+const LONG_PLACEHOLDER = '메시지 입력 (Enter 전송 · Shift+Enter 줄바꿈 · Ctrl+V 캡쳐 붙여넣기 · @ 멘션)'
+const narrowQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 900px)') : null
+
+// 좁은 창(앱 창을 카톡처럼 줄인 경우)에서는 안내 문구가 두 줄로 넘치지 않게 짧게
+function usePlaceholder() {
+  const [narrow, setNarrow] = useState(() => isTouch || Boolean(narrowQuery?.matches))
+  useEffect(() => {
+    if (!narrowQuery || isTouch) return
+    const onChange = () => setNarrow(narrowQuery.matches)
+    narrowQuery.addEventListener('change', onChange)
+    return () => narrowQuery.removeEventListener('change', onChange)
+  }, [])
+  return narrow ? '메시지 입력' : LONG_PLACEHOLDER
+}
 
 export default function Composer({ members, me, replyTo, onCancelReply, onSend, onPickImages, onPickDocs, onOpenReport, onOpenSchedule }) {
   const [text, setText] = useState('')
@@ -18,6 +31,7 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
   const cameraRef = useRef(null)
   const docRef = useRef(null)
   const caretRef = useRef(null) // 내용을 바꾼 직후 커서를 둘 위치
+  const placeholder = usePlaceholder()
 
   // 화면이 그려지기 전에 커서를 옮겨야 그 사이 입력한 글자가 엉뚱한 곳에 들어가지 않음
   useLayoutEffect(() => {
@@ -185,7 +199,7 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
           ref={inputRef}
           rows={1}
           value={text}
-          placeholder={PLACEHOLDER}
+          placeholder={placeholder}
           maxLength={5000}
           onChange={(e) => {
             setText(e.target.value)

@@ -113,15 +113,13 @@ function AdminDashboard({ admin, onAdminChange }) {
 
   async function saveProfile(e) {
     e.preventDefault()
-    const { data, error } = await supabase
-      .from('admins')
-      .update({ display_name: profile.display_name.trim(), company: profile.company.trim() })
-      .eq('user_id', admin.user_id)
-      .select()
-      .single()
-    if (error) return toast('저장에 실패했습니다.')
-    onAdminChange(data)
-    toast('저장했습니다. (새로 들어가는 방부터 적용)')
+    const { error } = await supabase.rpc('update_my_profile', {
+      p_name: profile.display_name.trim(),
+      p_company: profile.company.trim(),
+    })
+    if (error) return toast('저장에 실패했습니다. (v4 SQL을 실행했는지 확인해 주세요)')
+    onAdminChange({ ...admin, display_name: profile.display_name.trim(), company: profile.company.trim() })
+    toast('저장했습니다. 모든 채팅방에 바로 적용됩니다.')
   }
 
   function inviteText(room) {

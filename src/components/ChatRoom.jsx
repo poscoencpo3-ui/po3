@@ -21,6 +21,9 @@ import ScheduleForm from './ScheduleForm'
 import ReportModal from './ReportModal'
 import GalleryPanel from './GalleryPanel'
 import SearchPanel from './SearchPanel'
+import BackgroundPicker from './BackgroundPicker'
+import ProfileModal from './ProfileModal'
+import { useBackground } from '../lib/theme'
 
 const PAGE_SIZE = 50
 const JUMP_WINDOW = 25
@@ -60,6 +63,8 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const [jumpTick, setJumpTick] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [newBelow, setNewBelow] = useState(false)
+  const [modal, setModal] = useState(null) // background | profile
+  const background = useBackground(roomId)
 
   const listRef = useRef(null)
   const atBottomRef = useRef(true)
@@ -564,7 +569,13 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const myMember = membersById.get(me)
 
   return (
-    <div className="chat-room" onDragOver={onDragOver} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
+    <div
+      className={'chat-room' + (background.dark ? ' bg-dark' : '') + (background.photo ? ' bg-photo' : '')}
+      style={{ background: background.css }}
+      onDragOver={onDragOver}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+    >
       <header className="chat-header">
         <a className="icon-btn back-btn" href="#/" aria-label="뒤로">
           ‹
@@ -595,6 +606,8 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
                 <ul className="dropdown" onClick={() => setMoreOpen(false)}>
                   <li onClick={() => copyText(inviteText(), '초대 안내문을 복사했습니다.')}>✉️ 초대 안내문 복사</li>
                   <li onClick={() => setPanel('members')}>👥 참여자 ({members.length})</li>
+                  <li onClick={() => setModal('profile')}>👤 내 정보 수정</li>
+                  <li onClick={() => setModal('background')}>🎨 배경화면</li>
                   <li onClick={leave} className="danger">
                     🚪 채팅방 나가기
                   </li>
@@ -703,6 +716,18 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       {showReport && <ReportModal company={myMember?.company} onSend={sendReport} onCancel={() => setShowReport(false)} />}
       {scheduleForm && (
         <ScheduleForm initial={scheduleForm.initial} isAdmin={isAdmin} onSave={saveSchedule} onCancel={() => setScheduleForm(null)} />
+      )}
+
+      {modal === 'background' && <BackgroundPicker roomId={roomId} roomName={room.name} onClose={() => setModal(null)} />}
+      {modal === 'profile' && (
+        <ProfileModal
+          member={myMember}
+          onSaved={() => {
+            loadMembers()
+            onRoomsChanged()
+          }}
+          onClose={() => setModal(null)}
+        />
       )}
 
       {panel === 'members' && (

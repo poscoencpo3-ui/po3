@@ -142,6 +142,7 @@ export default function MessageItem({
   onDownload,
 }) {
   const pressTimer = useRef(null)
+  const hadSelection = useRef(false)
 
   if (msg.kind === 'system') {
     return <div className="system-msg">{msg.body}</div>
@@ -153,7 +154,18 @@ export default function MessageItem({
   const bigEmoji = !deleted && msg.kind === 'text' && !msg.reply_snapshot && !msg.is_urgent && isEmojiOnly(msg.body)
 
   const menuHandlers = {
+    // 우클릭 직전에 이미 글자를 선택해 둔 상태였는지 기억 (맥은 우클릭만 해도 단어가 선택되므로)
+    onMouseDown: (e) => {
+      if (e.button !== 2) return
+      const sel = window.getSelection()
+      hadSelection.current = Boolean(sel && !sel.isCollapsed && e.currentTarget.contains(sel.anchorNode))
+    },
     onContextMenu: (e) => {
+      // 마우스로 글자를 선택해 둔 상태면 브라우저 기본 메뉴(복사)를 그대로 띄움
+      if (hadSelection.current) {
+        hadSelection.current = false
+        return
+      }
       e.preventDefault()
       onMenu(e.clientX, e.clientY)
     },
