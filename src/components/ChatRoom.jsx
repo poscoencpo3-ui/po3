@@ -8,6 +8,7 @@ import { downloadFile, FILES_BUCKET, fileIcon, MAX_FILE_SIZE, storageExtension }
 import { sendPush } from '../lib/push'
 import { avatarColor, dayKey, formatCode, formatDay, MEMBER_COLORS, minuteKey, reportText } from '../lib/format'
 import { copyText, toast } from '../lib/toast'
+import { clearRoomNotifications } from '../lib/notify'
 import MessageItem from './MessageItem'
 import MessageMenu from './MessageMenu'
 import Composer from './Composer'
@@ -291,6 +292,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
     supabase.rpc('mark_read', { p_room: roomId, p_message_id: lastId }).then(({ error }) => {
       if (!error) onRoomsChanged()
     })
+    clearRoomNotifications(roomId)
   }, [roomId, me, onRoomsChanged])
 
   useEffect(() => {

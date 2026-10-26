@@ -28,6 +28,22 @@ export async function showNotification(title, body, roomId, messageId) {
   }
 }
 
+// 읽은 방의 알림을 알림창에서 지움.
+// 안드로이드는 홈 화면 아이콘 숫자가 '알림창에 남은 알림 개수'라서, 지우지 않으면 읽어도 숫자가 남음
+export async function clearRoomNotifications(roomIds) {
+  const ids = new Set(Array.isArray(roomIds) ? roomIds : [roomIds])
+  if (!ids.size || !('serviceWorker' in navigator)) return
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (!reg) return
+    for (const n of await reg.getNotifications()) {
+      if (ids.has(n.data?.roomId)) n.close()
+    }
+  } catch {
+    // 알림 목록을 못 읽는 브라우저는 무시
+  }
+}
+
 // 탭 제목에 안 읽은 수 표시: "(3) 협력사 소통방"
 export function setTitleUnread(count) {
   document.title = count > 0 ? `(${count > 999 ? '999+' : count}) ${APP_NAME}` : APP_NAME
