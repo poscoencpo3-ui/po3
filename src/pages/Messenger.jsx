@@ -16,6 +16,15 @@ export default function Messenger({ session, admin, route }) {
   const roomsRef = useRef([])
   const activeRef = useRef(activeRoomId)
   activeRef.current = activeRoomId
+  // 내 사람 번호: 연결한 내 다른 기기(PC·휴대폰)에서 보낸 메시지는 알림을 띄우지 않음
+  const myPersonRef = useRef(me)
+
+  useEffect(() => {
+    myPersonRef.current = me
+    supabase.rpc('my_person').then(({ data, error }) => {
+      if (!error && data) myPersonRef.current = data
+    })
+  }, [me])
 
   const loadRooms = useCallback(async () => {
     const { data, error } = await supabase.rpc('my_rooms')
@@ -51,7 +60,7 @@ export default function Messenger({ session, admin, route }) {
         } else if (evt.type === 'message') {
           scheduleRefresh()
           const row = evt.row
-          if (row.kind === 'system' || row.user_id === me) return
+          if (row.kind === 'system' || row.user_id === me || (row.sender_person && row.sender_person === myPersonRef.current)) return
           const viewing = row.room_id === activeRef.current && !document.hidden && document.hasFocus()
           if (viewing) return
           const room = roomsRef.current.find((r) => r.room_id === row.room_id)

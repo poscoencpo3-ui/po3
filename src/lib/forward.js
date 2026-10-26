@@ -1,6 +1,7 @@
 import { supabase, BUCKET } from './supabase'
 import { FILES_BUCKET } from './files'
 import { sendPush } from './push'
+import { senderOf } from './person'
 
 const extOf = (path) => path.split('.').pop()
 
@@ -36,6 +37,7 @@ export function canForward(msg) {
   return true
 }
 
+// me: 내 사람 번호 (연결한 다른 기기에서 보낸 글도 수정 가능)
 export function canEdit(msg, me) {
-  return msg.kind === 'text' && !msg.deleted_at && msg.user_id === me && Date.now() - new Date(msg.created_at).getTime() < 24 * 60 * 60 * 1000
+  return msg.kind === 'text' && !msg.deleted_at && senderOf(msg) === me && Date.now() - new Date(msg.created_at).getTime() < 24 * 60 * 60 * 1000
 }

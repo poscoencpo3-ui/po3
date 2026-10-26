@@ -6,7 +6,7 @@ import { copyText, toast } from '../lib/toast'
 import IntegrationsModal from '../components/IntegrationsModal'
 
 export default function AdminPage({ session, admin, onAdminChange }) {
-  if (!session || session.user.is_anonymous) return <AdminLogin hasGuestSession={Boolean(session)} />
+  if (!session || (session.user.is_anonymous && !admin)) return <AdminLogin hasGuestSession={Boolean(session)} />
   if (!admin) {
     return (
       <div className="center-screen">
@@ -20,7 +20,8 @@ export default function AdminPage({ session, admin, onAdminChange }) {
       </div>
     )
   }
-  return <AdminDashboard admin={admin} onAdminChange={onAdminChange} />
+  // 관리자와 연결된 기기(익명 접속)는 로그아웃하면 연결이 끊기므로 로그아웃 버튼을 숨김
+  return <AdminDashboard admin={admin} onAdminChange={onAdminChange} canSignOut={!session.user.is_anonymous} />
 }
 
 function AdminLogin({ hasGuestSession }) {
@@ -55,6 +56,8 @@ function AdminLogin({ hasGuestSession }) {
           <p className="warn small">
             이 브라우저는 참여자로 입장한 상태입니다. 관리자로 로그인하면 참여자 계정에서 로그아웃되며, 해당 방들에 다시 들어가려면
             입장코드가 필요합니다.
+            <br />
+            관리자 휴대폰이라면 로그인 대신, 관리자 PC의 <b>📱 기기 연결</b>에서 코드를 만들어 이 기기에서 입력하세요.
           </p>
         )}
         {error && <p className="error">{error}</p>}
@@ -69,7 +72,7 @@ function AdminLogin({ hasGuestSession }) {
   )
 }
 
-function AdminDashboard({ admin, onAdminChange }) {
+function AdminDashboard({ admin, onAdminChange, canSignOut }) {
   const [rooms, setRooms] = useState(null)
   const [newName, setNewName] = useState('')
   const [profile, setProfile] = useState({ display_name: admin.display_name, company: admin.company })
@@ -147,9 +150,11 @@ function AdminDashboard({ admin, onAdminChange }) {
           <a className="btn small" href="#/">
             채팅 목록
           </a>
-          <button className="btn small ghost" onClick={() => supabase.auth.signOut().then(() => navigate(''))}>
-            로그아웃
-          </button>
+          {canSignOut && (
+            <button className="btn small ghost" onClick={() => supabase.auth.signOut().then(() => navigate(''))}>
+              로그아웃
+            </button>
+          )}
         </div>
       </header>
 

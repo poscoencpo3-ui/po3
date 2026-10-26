@@ -131,6 +131,7 @@ export default function MessageItem({
   showSender,
   showTime,
   unread,
+  deletedByOther,
   isNotice,
   highlighted,
   mentionNames,
@@ -205,7 +206,7 @@ export default function MessageItem({
 
   let content
   if (deleted) {
-    content = <span className="deleted-text">{msg.deleted_by && msg.deleted_by !== msg.user_id ? '관리자가 삭제한 메시지입니다' : '삭제된 메시지입니다'}</span>
+    content = <span className="deleted-text">{deletedByOther ? '관리자가 삭제한 메시지입니다' : '삭제된 메시지입니다'}</span>
   } else if (msg.kind === 'image') {
     content = <ImageThumb msg={msg} onOpen={onOpenImage} onLoad={onMediaLoad} />
   } else if (msg.kind === 'file') {

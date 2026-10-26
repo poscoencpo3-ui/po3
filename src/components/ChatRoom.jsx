@@ -26,6 +26,8 @@ import BackgroundPicker from './BackgroundPicker'
 import ProfileModal from './ProfileModal'
 import ForwardModal from './ForwardModal'
 import EditModal from './EditModal'
+import LinkDeviceModal from './LinkDeviceModal'
+import { groupPeople, personOf, senderOf } from '../lib/person'
 import { useBackground } from '../lib/theme'
 
 const PAGE_SIZE = 50
@@ -82,6 +84,9 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   messagesRef.current = messages
   const hasNewerRef = useRef(hasNewer)
   hasNewerRef.current = hasNewer
+  // 내 사람 번호 (기기를 연결했으면 PC·휴대폰이 같음)
+  const myPersonRef = useRef(me)
+  myPersonRef.current = personOf(members.find((m) => m.user_id === me)) ?? me
 
   // ---------------- 불러오기 ----------------
 
@@ -111,17 +116,20 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
         return
       }
 
-      // 내가 마지막으로 읽은 곳 다음의 첫 메시지 (다른 사람이 보낸 것, 안내 메시지 제외)
+      // 내가 마지막으로 읽은 곳 다음의 첫 메시지 (다른 사람이 보낸 것, 안내 메시지 제외. 내 다른 기기에서 보낸 것도 제외)
       const mine = (memberRes.data || []).find((m) => m.user_id === me)
       let firstUnread = null
       if (withMarker && mine) {
+        const fromOthers = mine.person_id
+          ? `sender_person.is.null,sender_person.neq.${mine.person_id}`
+          : `user_id.is.null,user_id.neq.${me}`
         const { data } = await supabase
           .from('messages')
           .select('id')
           .eq('room_id', roomId)
           .gt('id', mine.last_read_id)
           .neq('kind', 'system')
-          .or(`user_id.is.null,user_id.neq.${me}`)
+          .or(fromOthers)
           .order('id')
           .limit(1)
         firstUnread = data?.[0] || null
@@ -233,7 +241,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
             setNewBelow(true)
             return
           }
-          if (!atBottomRef.current && row.user_id !== me) setNewBelow(true)
+          if (!atBottomRef.current && senderOf(row) !== myPersonRef.current) setNewBelow(true)
           setMessages((prev) => mergeMessages(prev, [row]))
         } else if (evt.type === 'message-update' && row.room_id === roomId) {
           setMessages((prev) => prev.map((m) => (m.id === row.id ? row : m)))
@@ -288,7 +296,9 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
     const lastId = list[list.length - 1].id
     if (lastId <= lastMarkedRef.current) return
     lastMarkedRef.current = lastId
-    setMembers((prev) => prev.map((m) => (m.user_id === me && m.last_read_id < lastId ? { ...m, last_read_id: lastId } : m)))
+    // 같은 사람의 다른 기기도 함께 읽음 처리됨 (서버에서도 같이 바뀜)
+    const person = myPersonRef.current
+    setMembers((prev) => prev.map((m) => (personOf(m) === person && m.last_read_id < lastId ? { ...m, last_read_id: lastId } : m)))
     supabase.rpc('mark_read', { p_room: roomId, p_message_id: lastId }).then(({ error }) => {
       if (!error) onRoomsChanged()
     })
@@ -308,21 +318,25 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
     }
   }, [markRead])
 
-  // 메시지별 안 읽은 사람 수: 보낸 사람 제외, 메시지 이후에 들어온 사람 제외
+  // 사람별로 묶은 참여자 (PC·휴대폰을 연결한 사람은 한 명)
+  const people = useMemo(() => groupPeople(members), [members])
+
+  // 메시지별 안 읽은 사람 수: 보낸 사람 제외, 메시지 이후에 들어온 사람 제외 (기기가 여럿이면 한 기기라도 읽으면 읽음)
   const unreadCount = useMemo(() => {
-    const parsed = members.map((m) => ({ ...m, joined: new Date(m.joined_at).getTime() }))
+    const parsed = people.map((p) => ({ ...p, joined: new Date(p.joined_at).getTime() }))
     return (msg) => {
       const at = new Date(msg.created_at).getTime()
-      return parsed.filter((m) => m.user_id !== msg.user_id && m.joined <= at && m.last_read_id < msg.id).length
+      const sender = senderOf(msg)
+      return parsed.filter((p) => p.person_id !== sender && p.joined <= at && p.last_read_id < msg.id).length
     }
-  }, [members])
+  }, [people])
 
   // 참여자별 말풍선 색: 들어온 순서대로 서로 다른 색
   const colorOf = useMemo(() => {
-    const sorted = [...members].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
-    const map = new Map(sorted.map((m, i) => [m.user_id, MEMBER_COLORS[i % MEMBER_COLORS.length]]))
-    return (userId) => map.get(userId) || MEMBER_COLORS[parseInt(avatarColor(userId || '').slice(1), 16) % MEMBER_COLORS.length]
-  }, [members])
+    const sorted = [...people].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+    const map = new Map(sorted.map((p, i) => [p.person_id, MEMBER_COLORS[i % MEMBER_COLORS.length]]))
+    return (personId) => map.get(personId) || MEMBER_COLORS[parseInt(avatarColor(personId || '').slice(1), 16) % MEMBER_COLORS.length]
+  }, [people])
 
   // ---------------- 스크롤 ----------------
 
@@ -627,7 +641,11 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   if (!room) return <div className="chat-empty muted">불러오는 중…</div>
 
   const membersById = new Map(members.map((m) => [m.user_id, m]))
+  const peopleById = new Map(people.map((p) => [p.person_id, p]))
   const myMember = membersById.get(me)
+  const myPerson = personOf(myMember) ?? me
+  // 멘션에는 사람 번호가 들어감 (v6 전 메시지는 기기 번호)
+  const memberOf = (id) => peopleById.get(id) ?? membersById.get(id)
   const roomNotifyOff = room.notifications_enabled === false
   const notifyOn = !roomNotifyOff && !myMember?.muted
 
@@ -637,7 +655,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
     const next = !myMember?.muted
     const { error } = await supabase.rpc('set_room_muted', { p_room: roomId, p_muted: next })
     if (error) return toast('변경에 실패했습니다. (v5 SQL을 실행했는지 확인해 주세요)')
-    setMembers((prev) => prev.map((m) => (m.user_id === me ? { ...m, muted: next } : m)))
+    setMembers((prev) => prev.map((m) => (personOf(m) === myPerson ? { ...m, muted: next } : m)))
     onRoomsChanged()
     toast(next ? '🔕 이 방 알림을 껐습니다. 안 읽은 숫자는 계속 표시됩니다.' : '🔔 이 방 알림을 켰습니다.')
   }
@@ -657,7 +675,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
         <div className="chat-title">
           <strong>{room.name}</strong>
           <button className="member-count" onClick={() => setPanel('members')}>
-            👤 {members.length}
+            👤 {people.length}
           </button>
         </div>
         <div className="header-actions">
@@ -687,8 +705,9 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
                 <div className="menu-backdrop" onClick={() => setMoreOpen(false)} />
                 <ul className="dropdown" onClick={() => setMoreOpen(false)}>
                   <li onClick={() => copyText(inviteText(), '초대 안내문을 복사했습니다.')}>✉️ 초대 안내문 복사</li>
-                  <li onClick={() => setPanel('members')}>👥 참여자 ({members.length})</li>
+                  <li onClick={() => setPanel('members')}>👥 참여자 ({people.length})</li>
                   <li onClick={() => setModal('profile')}>👤 내 정보 수정</li>
+                  <li onClick={() => setModal('link')}>📱 다른 기기 연결</li>
                   <li onClick={() => setModal('background')}>🎨 배경화면</li>
                   <li onClick={leave} className="danger">
                     🚪 채팅방 나가기
@@ -712,8 +731,9 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
           const next = messages[i + 1]
           const newDay = !prev || dayKey(prev.created_at) !== dayKey(msg.created_at)
           const sameGroup = (a, b) =>
-            a && b && a.kind !== 'system' && b.kind !== 'system' && a.user_id === b.user_id && minuteKey(a.created_at) === minuteKey(b.created_at)
-          const mentionNames = (msg.mentions || []).map((id) => membersById.get(id)?.display_name).filter(Boolean)
+            a && b && a.kind !== 'system' && b.kind !== 'system' && senderOf(a) === senderOf(b) && minuteKey(a.created_at) === minuteKey(b.created_at)
+          const mentionNames = [...new Set((msg.mentions || []).map((id) => memberOf(id)?.display_name).filter(Boolean))]
+          const sender = senderOf(msg)
           return (
             <div key={msg.id}>
               {newDay && (
@@ -728,16 +748,17 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
               )}
               <MessageItem
                 msg={msg}
-                mine={msg.user_id === me}
-                member={membersById.get(msg.user_id)}
-                colors={colorOf(msg.user_id)}
+                mine={sender === myPerson}
+                member={memberOf(sender) ?? membersById.get(msg.user_id)}
+                colors={colorOf(sender)}
+                deletedByOther={Boolean(msg.deleted_by) && (personOf(membersById.get(msg.deleted_by)) ?? msg.deleted_by) !== sender}
                 showSender={newDay || !sameGroup(prev, msg)}
                 showTime={!sameGroup(msg, next)}
                 unread={msg.kind === 'system' ? 0 : unreadCount(msg)}
                 isNotice={msg.id === noticeId}
                 highlighted={msg.id === highlightId}
                 mentionNames={mentionNames}
-                mentionsMe={(msg.mentions || []).includes(me)}
+                mentionsMe={(msg.mentions || []).some((id) => id === myPerson || id === me)}
                 onOpenImage={() => setViewer(msg)}
                 onMediaLoad={onMediaLoad}
                 onMenu={(x, y) => setMenu({ x, y, msg })}
@@ -785,8 +806,8 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       )}
 
       <Composer
-        members={members}
-        me={me}
+        members={people}
+        me={myPerson}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         onSend={sendText}
@@ -816,6 +837,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
           onClose={() => setModal(null)}
         />
       )}
+      {modal === 'link' && <LinkDeviceModal onClose={() => setModal(null)} />}
       {modal === 'background' && <BackgroundPicker roomId={roomId} roomName={room.name} onClose={() => setModal(null)} />}
       {modal === 'profile' && (
         <ProfileModal
@@ -831,8 +853,8 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       {panel === 'members' && (
         <MembersPanel
           room={room}
-          members={members}
-          me={me}
+          members={people}
+          me={myPerson}
           colorOf={colorOf}
           onCopyInvite={() => copyText(inviteText(), '초대 안내문을 복사했습니다.')}
           onClose={() => setPanel(null)}
@@ -857,8 +879,8 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       {menu && (
         <MessageMenu
           menu={menu}
-          me={me}
-          mine={menu.msg.user_id === me}
+          me={myPerson}
+          mine={senderOf(menu.msg) === myPerson}
           isAdmin={isAdmin}
           isNotice={menu.msg.id === noticeId}
           onClose={() => setMenu(null)}

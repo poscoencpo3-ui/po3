@@ -6,10 +6,12 @@ import { ensurePush, isIOS, isStandalone } from '../lib/push'
 import { toast } from '../lib/toast'
 import Avatar from './Avatar'
 import NotifyTest from './NotifyTest'
+import LinkDeviceModal from './LinkDeviceModal'
 
 export default function RoomList({ rooms, activeRoomId, admin }) {
   const [permission, setPermission] = useState(notifyPermission)
   const [showTest, setShowTest] = useState(false)
+  const [showLink, setShowLink] = useState(false)
 
   async function enableNotify() {
     const result = await requestNotifyPermission()
@@ -96,7 +98,11 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
         <button className="btn small ghost" onClick={() => setShowTest(true)}>
           🔔 알림 테스트
         </button>
+        <button className="btn small ghost" onClick={() => setShowLink(true)}>
+          📱 기기 연결
+        </button>
       </footer>
+      {showLink && <LinkDeviceModal onClose={() => setShowLink(false)} />}
       {showTest && (
         <NotifyTest
           onClose={() => {

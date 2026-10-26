@@ -2345,3 +2345,35 @@ mark {
 .chat-room.bg-photo .read-marker span {
   background: rgba(0, 0, 0, 0.4);
 }
+
+/* 다른 기기 연결 */
+.link-modal {
+  max-width: 420px;
+}
+
+.link-code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-align: center;
+  padding: 14px 0 4px;
+}
+
+.link-left {
+  text-align: center;
+}
+
+.link-steps {
+  padding-left: 20px;
+  line-height: 1.7;
+}
+
+.room-list-footer {
+  gap: 8px;
+}
+
+.member-devices {
+  margin-left: 6px;
+  font-size: 11px;
+}
