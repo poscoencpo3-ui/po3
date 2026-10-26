@@ -4,6 +4,7 @@ import { onRealtime, startRealtime } from '../lib/realtime'
 import { previewText } from '../lib/format'
 import { setTitleUnread, showNotification } from '../lib/notify'
 import { ensurePush, isPushActive, pushShown } from '../lib/push'
+import { setAppBadge } from '../lib/badge'
 import RoomList from '../components/RoomList'
 import ChatRoom from '../components/ChatRoom'
 
@@ -78,8 +79,15 @@ export default function Messenger({ session, admin, route }) {
     [me, scheduleRefresh]
   )
 
-  const totalUnread = (rooms || []).reduce((sum, r) => sum + r.unread, 0)
-  useEffect(() => setTitleUnread(totalUnread), [totalUnread])
+  // 창 제목·앱 아이콘 숫자: 알림을 끈 방(🔕)은 빼고 셈 (목록의 방별 숫자는 그대로 표시)
+  const totalUnread = (rooms || [])
+    .filter((r) => !r.muted && r.notifications_enabled !== false)
+    .reduce((sum, r) => sum + r.unread, 0)
+  useEffect(() => {
+    if (rooms === null) return
+    setTitleUnread(totalUnread)
+    setAppBadge(totalUnread)
+  }, [totalUnread, rooms])
 
   return (
     <div className={'messenger' + (activeRoomId ? ' has-room' : '')}>
