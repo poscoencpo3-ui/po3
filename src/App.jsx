@@ -24,13 +24,18 @@ export default function App() {
   const isAnonymous = session?.user?.is_anonymous
   useEffect(() => {
     setAdmin(null)
-    if (!userId || isAnonymous) return
-    supabase
-      .from('admins')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data }) => setAdmin(data))
+    if (!userId) return
+    let cancelled = false
+    // 관리자 휴대폰처럼 관리자와 연결된 기기도 관리자 (v6). v6 SQL 전에는 관리자 계정만
+    supabase.rpc('my_admin').then(async ({ data, error }) => {
+      if (!error) return cancelled || setAdmin(data?.[0] ?? null)
+      if (isAnonymous) return
+      const { data: row } = await supabase.from('admins').select('*').eq('user_id', userId).maybeSingle()
+      if (!cancelled) setAdmin(row)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [userId, isAnonymous])
 
   let page

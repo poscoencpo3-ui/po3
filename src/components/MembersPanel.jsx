@@ -1,9 +1,10 @@
 import { formatCode } from '../lib/format'
 import Avatar from './Avatar'
 
+// members: 사람별로 묶은 참여자, me: 내 사람 번호
 export default function MembersPanel({ room, members, me, colorOf, onCopyInvite, onClose }) {
   const sorted = [...members].sort(
-    (a, b) => (b.user_id === me) - (a.user_id === me) || b.is_admin - a.is_admin || a.display_name.localeCompare(b.display_name, 'ko')
+    (a, b) => (b.person_id === me) - (a.person_id === me) || b.is_admin - a.is_admin || a.display_name.localeCompare(b.display_name, 'ko')
   )
   return (
     <div className="drawer-backdrop" onClick={onClose}>
@@ -23,13 +24,14 @@ export default function MembersPanel({ room, members, me, colorOf, onCopyInvite,
         </div>
         <ul className="member-list">
           {sorted.map((m) => (
-            <li key={m.user_id}>
-              <Avatar name={m.display_name} seed={m.user_id} size={36} color={colorOf?.(m.user_id)[1]} />
+            <li key={m.person_id}>
+              <Avatar name={m.display_name} seed={m.user_id} size={36} color={colorOf?.(m.person_id)[1]} />
               <div>
                 <div>
                   {m.display_name}
-                  {m.user_id === me && <span className="me-tag">나</span>}
+                  {m.person_id === me && <span className="me-tag">나</span>}
                   {m.is_admin && <span className="admin-tag">관리자</span>}
+                  {m.devices > 1 && <span className="member-devices muted">기기 {m.devices}대</span>}
                 </div>
                 {m.company && <div className="muted small">{m.company}</div>}
               </div>

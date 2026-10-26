@@ -152,7 +152,7 @@ function json(body: unknown, status = 200) {
 async function sendForMessage(env: Env, userId: string, messageId: number) {
   const [msg] = await db(
     env,
-    `messages?id=eq.${messageId}&select=id,room_id,user_id,kind,body,sender_name,is_urgent,mentions,file_name,deleted_at,pushed_at,created_at`
+    `messages?id=eq.${messageId}&select=id,room_id,user_id,sender_person,kind,body,sender_name,is_urgent,mentions,file_name,deleted_at,pushed_at,created_at`
   )
   if (!msg || msg.user_id !== userId) return { status: 403, body: { error: 'NOT_ALLOWED' } }
   if (msg.pushed_at || msg.deleted_at || Date.now() - Date.parse(msg.created_at) > 10 * 60 * 1000) {
@@ -175,10 +175,13 @@ async function notifyRoom(env: Env, msg: Record<string, any>, excludeUserId: str
   const [room] = await db(env, `rooms?id=eq.${msg.room_id}&select=name,notifications_enabled`)
   // 알림을 끈 방/사람은 제외 (🚨 긴급 메시지는 알림을 꺼도 항상 보냄)
   if (room.notifications_enabled === false && !msg.is_urgent) return { sent: 0, total: 0, muted: 'room' }
-  const exclude = excludeUserId ? `&user_id=neq.${excludeUserId}` : ''
+  // 보낸 사람의 모든 기기(PC·휴대폰)는 제외
+  const senderPerson = msg.sender_person ?? excludeUserId
+  const exclude = senderPerson ? `&person_id=neq.${senderPerson}` : ''
   const unmuted = msg.is_urgent ? '' : '&muted=is.false'
-  const members = await db(env, `room_members?room_id=eq.${msg.room_id}${exclude}${unmuted}&select=user_id`)
+  const members = await db(env, `room_members?room_id=eq.${msg.room_id}${exclude}${unmuted}&select=user_id,person_id`)
   if (!members.length) return { sent: 0, total: 0 }
+  const personOf = new Map(members.map((m: { user_id: string; person_id: string }) => [m.user_id, m.person_id]))
   const subs = await db(
     env,
     `push_subscriptions?user_id=in.(${members.map((m: { user_id: string }) => m.user_id).join(',')})&select=endpoint,user_id,p256dh,auth`
@@ -188,7 +191,8 @@ async function notifyRoom(env: Env, msg: Record<string, any>, excludeUserId: str
   const mentions: string[] = msg.mentions || []
   const results = await Promise.all(
     subs.map((sub: Subscription) => {
-      const mentioned = mentions.includes(sub.user_id)
+      // 멘션은 사람 번호로 저장 (예전 메시지는 기기 번호일 수 있어 둘 다 확인)
+      const mentioned = mentions.includes(sub.user_id) || mentions.includes(personOf.get(sub.user_id) as string)
       const payload = {
         title: msg.is_urgent ? `🚨 [긴급] ${room.name}` : mentioned ? `${room.name} · @회원님` : msg.kind === 'bot' ? `📌 ${room.name}` : room.name,
         body: `${msg.sender_name}: ${preview(msg)}`,

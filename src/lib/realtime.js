@@ -13,6 +13,11 @@ function emit(event) {
   listeners.forEach((fn) => fn(event))
 }
 
+// 목록·참여자·메시지를 서버에서 다시 맞춤 (예: 다른 기기를 연결한 뒤)
+export function requestResync() {
+  emit({ type: 'resync' })
+}
+
 export function startRealtime() {
   // 같은 이름의 채널은 재사용되므로, 다시 시작할 때마다 새 이름을 씀
   const channel = supabase

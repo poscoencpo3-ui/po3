@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { previewText } from '../lib/format'
 import EmojiPanel from './EmojiPanel'
 import Avatar from './Avatar'
+import { personOf } from '../lib/person'
 
 const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 const LONG_PLACEHOLDER = '메시지 입력 (Enter 전송 · Shift+Enter 줄바꿈 · Ctrl+V 캡쳐 붙여넣기 · @ 멘션)'
@@ -47,7 +48,8 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
     if (replyTo) inputRef.current?.focus()
   }, [replyTo])
 
-  const others = members.filter((m) => m.user_id !== me)
+  // members는 사람별로 묶인 목록, me는 내 사람 번호 → 멘션에는 사람 번호를 저장
+  const others = members.filter((m) => personOf(m) !== me)
   const candidates = mention
     ? others
         .filter((m) => `${m.display_name}${m.company}`.toLowerCase().includes(mention.query.toLowerCase()))
@@ -92,7 +94,7 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
     const value = text.trim()
     if (!value || sending) return
     setSending(true)
-    const mentions = [...new Set(others.filter((m) => value.includes(`@${m.display_name}`)).map((m) => m.user_id))]
+    const mentions = [...new Set(others.filter((m) => value.includes(`@${m.display_name}`)).map((m) => personOf(m)))]
     setText('')
     setMention(null)
     requestAnimationFrame(() => inputRef.current && resize(inputRef.current))
@@ -169,7 +171,7 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
       {mention && candidates.length > 0 && (
         <ul className="mention-picker">
           {candidates.map((m, i) => (
-            <li key={m.user_id}>
+            <li key={personOf(m)}>
               <button
                 className={i === mentionIndex ? 'active' : ''}
                 onMouseDown={(e) => {
