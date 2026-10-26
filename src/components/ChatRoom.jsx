@@ -28,6 +28,8 @@ import EditModal from './EditModal'
 import { useBackground } from '../lib/theme'
 
 const PAGE_SIZE = 50
+const MARKER_CONTEXT = 15 // "여기까지 읽었습니다" 위에 함께 보여줄 이미 읽은 메시지 수
+const MARKER_WINDOW = 100 // 안 읽은 메시지를 한 번에 불러올 수
 const JUMP_WINDOW = 25
 
 function mergeMessages(prev, rows) {
@@ -63,6 +65,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const [replyTo, setReplyTo] = useState(null)
   const [highlightId, setHighlightId] = useState(null)
   const [jumpTick, setJumpTick] = useState(0)
+  const [readMarkerId, setReadMarkerId] = useState(null) // "여기까지 읽었습니다"를 이 메시지 앞에 표시
   const [dragging, setDragging] = useState(false)
   const [newBelow, setNewBelow] = useState(false)
   const [modal, setModal] = useState(null) // background | profile | { type: 'forward' | 'edit', msg }
@@ -73,6 +76,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const scrollRestoreRef = useRef(null)
   const initialScrollRef = useRef(false)
   const jumpRef = useRef(null)
+  const markerScrollRef = useRef(false)
   const messagesRef = useRef(messages)
   messagesRef.current = messages
   const hasNewerRef = useRef(hasNewer)
@@ -89,31 +93,72 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   const loadSeqRef = useRef(0)
   const initialInFlightRef = useRef(false)
 
-  const loadInitial = useCallback(async () => {
-    const seq = ++loadSeqRef.current
-    initialInFlightRef.current = true
-    const [roomRes, memberRes, msgRes, schedRes] = await Promise.all([
-      supabase.from('rooms').select('*').eq('id', roomId).maybeSingle(),
-      supabase.from('room_members').select('*').eq('room_id', roomId),
-      supabase.from('messages').select('*').eq('room_id', roomId).order('id', { ascending: false }).limit(PAGE_SIZE),
-      supabase.from('schedules').select('*').eq('room_id', roomId).order('start_date'),
-    ])
-    if (seq !== loadSeqRef.current) return
-    initialInFlightRef.current = false
-    if (!roomRes.data) {
-      setNotFound(true)
-      return
-    }
-    initialScrollRef.current = false
-    setRoom(roomRes.data)
-    setMembers(memberRes.data || [])
-    setSchedules(schedRes.data || [])
-    const rows = (msgRes.data || []).reverse()
-    setMessages(rows)
-    setHasMore(rows.length === PAGE_SIZE)
-    setHasNewer(false)
-    setNewBelow(false)
-  }, [roomId])
+  // withMarker: 처음 들어올 때만. 안 읽은 메시지가 있으면 "여기까지 읽었습니다"부터 보여줌
+  const loadInitial = useCallback(
+    async ({ withMarker = false } = {}) => {
+      const seq = ++loadSeqRef.current
+      initialInFlightRef.current = true
+      const [roomRes, memberRes, schedRes] = await Promise.all([
+        supabase.from('rooms').select('*').eq('id', roomId).maybeSingle(),
+        supabase.from('room_members').select('*').eq('room_id', roomId),
+        supabase.from('schedules').select('*').eq('room_id', roomId).order('start_date'),
+      ])
+      if (seq !== loadSeqRef.current) return
+      if (!roomRes.data) {
+        initialInFlightRef.current = false
+        setNotFound(true)
+        return
+      }
+
+      // 내가 마지막으로 읽은 곳 다음의 첫 메시지 (다른 사람이 보낸 것, 안내 메시지 제외)
+      const mine = (memberRes.data || []).find((m) => m.user_id === me)
+      let firstUnread = null
+      if (withMarker && mine) {
+        const { data } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('room_id', roomId)
+          .gt('id', mine.last_read_id)
+          .neq('kind', 'system')
+          .or(`user_id.is.null,user_id.neq.${me}`)
+          .order('id')
+          .limit(1)
+        firstUnread = data?.[0] || null
+      }
+
+      let rows, more, newer
+      if (firstUnread) {
+        const [olderRes, newerRes] = await Promise.all([
+          supabase.from('messages').select('*').eq('room_id', roomId).lt('id', firstUnread.id).order('id', { ascending: false }).limit(MARKER_CONTEXT),
+          supabase.from('messages').select('*').eq('room_id', roomId).gte('id', firstUnread.id).order('id').limit(MARKER_WINDOW),
+        ])
+        rows = [...(olderRes.data || []).reverse(), ...(newerRes.data || [])]
+        more = (olderRes.data || []).length === MARKER_CONTEXT
+        newer = (newerRes.data || []).length === MARKER_WINDOW
+      } else {
+        const { data } = await supabase.from('messages').select('*').eq('room_id', roomId).order('id', { ascending: false }).limit(PAGE_SIZE)
+        rows = (data || []).reverse()
+        more = rows.length === PAGE_SIZE
+        newer = false
+      }
+      if (seq !== loadSeqRef.current) return
+      initialInFlightRef.current = false
+
+      initialScrollRef.current = false
+      if (firstUnread) {
+        setReadMarkerId(firstUnread.id)
+        markerScrollRef.current = true
+      }
+      setRoom(roomRes.data)
+      setMembers(memberRes.data || [])
+      setSchedules(schedRes.data || [])
+      setMessages(rows)
+      setHasMore(more)
+      setHasNewer(newer)
+      setNewBelow(false)
+    },
+    [roomId, me]
+  )
 
   // 연결이 다시 됐을 때 놓친 내용만 이어 받기
   const resync = useCallback(async () => {
@@ -173,7 +218,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   }
 
   useEffect(() => {
-    loadInitial()
+    loadInitial({ withMarker: true })
   }, [loadInitial])
 
   // ---------------- 실시간 ----------------
@@ -289,6 +334,18 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
   useLayoutEffect(() => {
     const el = listRef.current
     if (!el) return
+    if (markerScrollRef.current) {
+      markerScrollRef.current = false
+      const marker = el.querySelector('.read-marker')
+      if (marker) {
+        initialScrollRef.current = true
+        // 표시선 위로 이미 읽은 대화가 조금 보이도록 살짝 여유를 둠
+        el.scrollTop += marker.getBoundingClientRect().top - el.getBoundingClientRect().top - 56
+        atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+        if (!atBottomRef.current) setNewBelow(true)
+        return
+      }
+    }
     if (jumpRef.current) {
       const target = el.querySelector(`[data-id="${jumpRef.current}"]`)
       jumpRef.current = null
@@ -660,6 +717,11 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
               {newDay && (
                 <div className="day-divider">
                   <span>{formatDay(msg.created_at)}</span>
+                </div>
+              )}
+              {msg.id === readMarkerId && (
+                <div className="read-marker">
+                  <span>여기까지 읽었습니다</span>
                 </div>
               )}
               <MessageItem

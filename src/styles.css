@@ -2303,3 +2303,45 @@ mark {
   background: #eef0f2;
   color: #6b7380;
 }
+
+/* "여기까지 읽었습니다" */
+.read-marker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 8px;
+  color: #3c4a5c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.read-marker::before,
+.read-marker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(60, 74, 92, 0.35);
+}
+
+.read-marker span {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 4px 12px;
+}
+
+.chat-room.bg-dark .read-marker,
+.chat-room.bg-photo .read-marker {
+  color: #fff;
+}
+
+.chat-room.bg-dark .read-marker::before,
+.chat-room.bg-dark .read-marker::after,
+.chat-room.bg-photo .read-marker::before,
+.chat-room.bg-photo .read-marker::after {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.chat-room.bg-dark .read-marker span,
+.chat-room.bg-photo .read-marker span {
+  background: rgba(0, 0, 0, 0.4);
+}
