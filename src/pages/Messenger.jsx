@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { onRealtime, startRealtime } from '../lib/realtime'
 import { previewText } from '../lib/format'
-import { setTitleUnread, showNotification } from '../lib/notify'
+import { clearRoomNotifications, setTitleUnread, showNotification } from '../lib/notify'
 import { ensurePush, isPushActive, pushShown } from '../lib/push'
 import { setAppBadge } from '../lib/badge'
 import RoomList from '../components/RoomList'
@@ -87,6 +87,8 @@ export default function Messenger({ session, admin, route }) {
     if (rooms === null) return
     setTitleUnread(totalUnread)
     setAppBadge(totalUnread)
+    // 다 읽은 방(다른 기기에서 읽은 경우 포함)의 알림이 알림창에 남아 있으면 지움
+    clearRoomNotifications(rooms.filter((r) => r.unread === 0).map((r) => r.room_id))
   }, [totalUnread, rooms])
 
   return (
