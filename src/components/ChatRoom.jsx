@@ -855,8 +855,14 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
           room={room}
           members={people}
           me={myPerson}
+          isAdmin={isAdmin}
           colorOf={colorOf}
           onCopyInvite={() => copyText(inviteText(), '초대 안내문을 복사했습니다.')}
+          onChanged={() => {
+            // 묶기·풀기 뒤에는 참여자와 메시지의 사람 번호가 바뀌므로 새로 불러옴
+            loadInitial()
+            onRoomsChanged()
+          }}
           onClose={() => setPanel(null)}
         />
       )}

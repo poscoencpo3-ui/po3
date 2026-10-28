@@ -19,12 +19,16 @@ export default function Messenger({ session, admin, route }) {
   // 내 사람 번호: 연결한 내 다른 기기(PC·휴대폰)에서 보낸 메시지는 알림을 띄우지 않음
   const myPersonRef = useRef(me)
 
-  useEffect(() => {
-    myPersonRef.current = me
+  const loadMyPerson = useCallback(() => {
     supabase.rpc('my_person').then(({ data, error }) => {
       if (!error && data) myPersonRef.current = data
     })
-  }, [me])
+  }, [])
+
+  useEffect(() => {
+    myPersonRef.current = me
+    loadMyPerson()
+  }, [me, loadMyPerson])
 
   const loadRooms = useCallback(async () => {
     const { data, error } = await supabase.rpc('my_rooms')
@@ -81,11 +85,13 @@ export default function Messenger({ session, admin, route }) {
         } else if (evt.type === 'member') {
           // 다른 사람의 읽음 표시 변경은 목록과 무관하므로 무시
           if (evt.event !== 'UPDATE' || evt.row.user_id === me) scheduleRefresh()
+          // 관리자가 나를 다른 기기와 묶거나 풀면 내 사람 번호가 바뀜
+          if (evt.row.user_id === me && evt.row.person_id && evt.row.person_id !== myPersonRef.current) loadMyPerson()
         } else if (evt.type === 'room' || evt.type === 'resync') {
           scheduleRefresh()
         }
       }),
-    [me, scheduleRefresh]
+    [me, scheduleRefresh, loadMyPerson]
   )
 
   // 창 제목·앱 아이콘 숫자: 알림을 끈 방(🔕)은 빼고 셈 (목록의 방별 숫자는 그대로 표시)
