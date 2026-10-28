@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase, isConfigured, APP_NAME } from './lib/supabase'
 import { useRoute } from './lib/router'
 import { useToast } from './lib/toast'
+import { useUpdateAvailable } from './lib/update'
 import JoinPage from './pages/JoinPage'
 import AdminPage from './pages/AdminPage'
 import Messenger from './pages/Messenger'
@@ -9,6 +10,7 @@ import Messenger from './pages/Messenger'
 export default function App() {
   const route = useRoute()
   const toastMessage = useToast()
+  const updateAvailable = useUpdateAvailable()
   const [session, setSession] = useState(undefined) // undefined = 확인 중
   const [admin, setAdmin] = useState(null)
 
@@ -54,6 +56,11 @@ export default function App() {
   return (
     <>
       {page}
+      {updateAvailable && (
+        <button className="update-bar" onClick={() => location.reload()}>
+          🔄 새 버전이 나왔습니다. 여기를 눌러 적용하세요
+        </button>
+      )}
       {toastMessage && <div className="toast">{toastMessage}</div>}
     </>
   )

@@ -7,6 +7,7 @@ import { toast } from '../lib/toast'
 import Avatar from './Avatar'
 import NotifyTest from './NotifyTest'
 import LinkDeviceModal from './LinkDeviceModal'
+import { formatVersion } from '../lib/update'
 
 export default function RoomList({ rooms, activeRoomId, admin }) {
   const [permission, setPermission] = useState(notifyPermission)
@@ -102,6 +103,7 @@ export default function RoomList({ rooms, activeRoomId, admin }) {
           📱 기기 연결
         </button>
       </footer>
+      <div className="app-version muted">버전 {formatVersion()}</div>
       {showLink && <LinkDeviceModal onClose={() => setShowLink(false)} />}
       {showTest && (
         <NotifyTest

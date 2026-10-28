@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { canEdit, canForward } from '../lib/forward'
+import { isTouch } from '../lib/device'
 
-const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
 export default function MessageMenu({ menu, me, mine, isAdmin, isNotice, onClose, actions }) {
   const { x, y, msg } = menu

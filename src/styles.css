@@ -2377,3 +2377,28 @@ mark {
   margin-left: 6px;
   font-size: 11px;
 }
+
+/* 새 버전 안내 */
+.update-bar {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: calc(100% - 32px);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 16px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.app-version {
+  text-align: center;
+  font-size: 11px;
+  padding: 0 0 6px;
+}

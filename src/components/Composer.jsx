@@ -3,8 +3,8 @@ import { previewText } from '../lib/format'
 import EmojiPanel from './EmojiPanel'
 import Avatar from './Avatar'
 import { personOf } from '../lib/person'
+import { isTouch } from '../lib/device'
 
-const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 const LONG_PLACEHOLDER = '메시지 입력 (Enter 전송 · Shift+Enter 줄바꿈 · Ctrl+V 캡쳐 붙여넣기 · @ 멘션)'
 const narrowQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 900px)') : null
 
