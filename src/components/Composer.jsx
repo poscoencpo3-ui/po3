@@ -127,6 +127,8 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
         return
       }
     }
+    // 휴대폰은 키보드 엔터 = 줄바꿈, 전송은 [전송] 버튼으로 (카톡과 같음)
+    if (isTouch) return
     // 한글 조합 중 Enter 는 위에서 걸러짐 (마지막 글자가 두 번 전송되는 문제 방지)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -203,6 +205,7 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
           value={text}
           placeholder={placeholder}
           maxLength={5000}
+          enterKeyHint={isTouch ? 'enter' : 'send'}
           onChange={(e) => {
             setText(e.target.value)
             resize(e.target)
