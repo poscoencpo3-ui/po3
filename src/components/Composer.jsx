@@ -4,6 +4,8 @@ import EmojiPanel from './EmojiPanel'
 import Avatar from './Avatar'
 import { personOf } from '../lib/person'
 import { isTouch } from '../lib/device'
+import { FILES_BLOCKED_MESSAGE } from '../lib/files'
+import { toast } from '../lib/toast'
 
 const LONG_PLACEHOLDER = '메시지 입력 (Enter 전송 · Shift+Enter 줄바꿈 · Ctrl+V 캡쳐 붙여넣기 · @ 멘션)'
 const narrowQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 900px)') : null
@@ -20,7 +22,18 @@ function usePlaceholder() {
   return narrow ? '메시지 입력' : LONG_PLACEHOLDER
 }
 
-export default function Composer({ members, me, replyTo, onCancelReply, onSend, onPickImages, onPickDocs, onOpenReport, onOpenSchedule }) {
+export default function Composer({
+  members,
+  me,
+  filesBlocked,
+  replyTo,
+  onCancelReply,
+  onSend,
+  onPickImages,
+  onPickDocs,
+  onOpenReport,
+  onOpenSchedule,
+}) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [panel, setPanel] = useState(null) // 'menu' | 'emoji'
@@ -232,7 +245,9 @@ export default function Composer({ members, me, replyTo, onCancelReply, onSend, 
         <div className="plus-menu">
           {menuItem('🖼️', '사진', () => imageRef.current.click())}
           {menuItem('📷', '카메라', () => cameraRef.current.click())}
-          {menuItem('📎', '파일', () => docRef.current.click())}
+          {filesBlocked
+            ? menuItem('📎', '파일 (제한)', () => toast(FILES_BLOCKED_MESSAGE), 'disabled')
+            : menuItem('📎', '파일', () => docRef.current.click())}
           {menuItem('😀', '이모티콘', () => setPanel('emoji'))}
           {menuItem('📅', '일정', () => {
             setPanel(null)

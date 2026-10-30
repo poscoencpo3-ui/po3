@@ -88,9 +88,23 @@ function AdminDashboard({ admin, onAdminChange, canSignOut }) {
     setRooms(data || [])
   }, [])
 
+  // 파일 금지 직원 명단 (이름은 참여 기록에서)
+  const [blocked, setBlocked] = useState(null)
+  const loadBlocked = useCallback(async () => {
+    const { data, error } = await supabase.from('file_blocked_people').select('person_id, blocked_at').order('blocked_at')
+    if (error) return setBlocked(null)
+    const ids = data.map((b) => b.person_id)
+    const { data: names } = ids.length
+      ? await supabase.from('room_members').select('person_id, display_name, company').in('person_id', ids)
+      : { data: [] }
+    const byId = new Map((names || []).map((m) => [m.person_id, m]))
+    setBlocked(data.map((b) => ({ ...b, ...(byId.get(b.person_id) || { display_name: '(나간 참여자)', company: '' }) })))
+  }, [])
+
   useEffect(() => {
     load()
-  }, [load])
+    loadBlocked()
+  }, [load, loadBlocked])
 
   async function createRoom(e) {
     e.preventDefault()
@@ -114,6 +128,26 @@ function AdminDashboard({ admin, onAdminChange, canSignOut }) {
     if (error) return toast('변경에 실패했습니다. (v5 SQL을 실행했는지 확인해 주세요)')
     toast(enable ? '🔔 알림을 켰습니다.' : '🔕 알림을 껐습니다.')
     load()
+  }
+
+  async function toggleRoomFiles(room) {
+    const on = !room.restrict_files
+    const msg = on
+      ? `'${room.name}' 방에 파일 제한을 켤까요?\n'파일 금지'로 지정한 직원은 이 방에서 사진·캡쳐만 올릴 수 있습니다. (지정은 채팅방 참여자 목록에서)`
+      : `'${room.name}' 방의 파일 제한을 끌까요?\n모든 참여자가 다시 파일을 올릴 수 있습니다.`
+    if (!window.confirm(msg)) return
+    const { error } = await supabase.rpc('set_room_restrict_files', { p_room: room.id, p_on: on })
+    if (error) return toast('변경에 실패했습니다. (v7 SQL을 실행했는지 확인해 주세요)')
+    toast(on ? '📎 파일 제한을 켰습니다.' : '📎 파일 제한을 껐습니다.')
+    load()
+  }
+
+  async function unblock(b) {
+    if (!window.confirm(`'${b.display_name}'의 파일 금지를 해제할까요?`)) return
+    const { error } = await supabase.rpc('admin_set_files_blocked', { p_person: b.person_id, p_blocked: false })
+    if (error) return toast('해제에 실패했습니다.')
+    toast('파일 금지를 해제했습니다.')
+    loadBlocked()
   }
 
   async function enter(room) {
@@ -188,6 +222,7 @@ function AdminDashboard({ admin, onAdminChange, canSignOut }) {
                   <th>인원</th>
                   <th>만든 날</th>
                   <th>알림</th>
+                  <th>파일</th>
                   <th></th>
                 </tr>
               </thead>
@@ -206,6 +241,17 @@ function AdminDashboard({ admin, onAdminChange, canSignOut }) {
                       >
                         {r.notifications_enabled === false ? '🔕 꺼짐' : '🔔 켜짐'}
                       </button>
+                    </td>
+                    <td>
+                      {r.restrict_files !== undefined && (
+                        <button
+                          className={'btn small notify-toggle' + (r.restrict_files ? ' off' : '')}
+                          onClick={() => toggleRoomFiles(r)}
+                          title="파일 금지로 지정한 직원이 이 방에서 파일을 못 올리게 합니다 (사진·캡쳐는 가능)"
+                        >
+                          {r.restrict_files ? '📎 제한' : '📎 허용'}
+                        </button>
+                      )}
                     </td>
                     <td className="row-actions">
                       <button className="btn small" onClick={() => copyText(inviteText(r), '초대 안내문을 복사했습니다.')}>
@@ -227,6 +273,33 @@ function AdminDashboard({ admin, onAdminChange, canSignOut }) {
       </section>
 
       {integrationRoom && <IntegrationsModal room={integrationRoom} onClose={() => setIntegrationRoom(null)} />}
+
+      {blocked && (
+        <section className="card">
+          <h2>📎 파일 금지 직원 ({blocked.length}명)</h2>
+          <p className="muted small">
+            <b>📎 제한</b>을 켠 방에서는 이 사람들이 문서 파일을 올릴 수 없고 사진·캡쳐만 올릴 수 있습니다. 지정은 채팅방 👤 참여자
+            목록 → <b>📎 파일 금지 지정</b>에서 합니다.
+          </p>
+          {blocked.length === 0 ? (
+            <p className="muted small">아직 지정한 사람이 없습니다.</p>
+          ) : (
+            <ul className="blocked-list">
+              {blocked.map((b) => (
+                <li key={b.person_id}>
+                  <span>
+                    {b.display_name}
+                    {b.company && <span className="muted small"> {b.company}</span>}
+                  </span>
+                  <button className="btn small ghost" onClick={() => unblock(b)}>
+                    해제
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="card">
         <h2>내 표시 정보</h2>

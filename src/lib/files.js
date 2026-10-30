@@ -37,3 +37,6 @@ export function fileIcon(name) {
   if (['zip', '7z', 'rar'].includes(ext)) return '🗜️'
   return '📄'
 }
+
+// 파일 금지(관리자 지정)인 사람이 파일 제한 방에서 파일을 보내려 할 때 안내
+export const FILES_BLOCKED_MESSAGE = '관리자가 이 방에서 파일 전송을 막았습니다. 사진·캡쳐는 보낼 수 있습니다.'

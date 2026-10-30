@@ -2506,3 +2506,47 @@ mark {
 .merge-joined {
   display: block;
 }
+
+/* 직원 파일 전송 제한 */
+.plus-item.disabled {
+  opacity: 0.45;
+}
+
+.forward-rooms button.locked {
+  opacity: 0.5;
+}
+
+.files-tag {
+  font-size: 10px;
+  background: #fde7e7;
+  color: #b3261e;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+
+.files-bar {
+  flex-wrap: wrap;
+}
+
+.files-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.blocked-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blocked-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

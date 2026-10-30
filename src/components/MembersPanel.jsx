@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatCode } from '../lib/format'
 import { toast } from '../lib/toast'
 import Avatar from './Avatar'
 
 const MERGE_ERRORS = {
-  NOT_ALLOWED: '관리자만 묶을 수 있습니다.',
+  NOT_ALLOWED: '관리자만 할 수 있습니다.',
   ADMIN_MUST_BE_TARGET: '관리자는 대표로만 묶을 수 있습니다.',
   TWO_ADMINS: '관리자 두 명은 한 사람으로 묶을 수 없습니다.',
   NOTHING_TO_MERGE: '두 명 이상 골라 주세요.',
@@ -25,10 +25,22 @@ function joinedText(at) {
 
 // members: 사람별로 묶은 참여자, me: 내 사람 번호
 export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCopyInvite, onChanged, onClose }) {
-  const [selecting, setSelecting] = useState(false)
+  const [mode, setMode] = useState(null) // null | 'merge' (동일인 묶기) | 'files' (파일 금지 지정)
+  const selecting = mode !== null
   const [selected, setSelected] = useState([]) // 고른 순서대로 사람 번호
   const [merging, setMerging] = useState(null) // 묶기 확인 창에 보일 사람들
   const [busy, setBusy] = useState(false)
+  const [blocked, setBlocked] = useState(new Set()) // 파일 금지된 사람 (관리자만 볼 수 있음)
+
+  const loadBlocked = useCallback(async () => {
+    if (!isAdmin) return
+    const { data, error } = await supabase.from('file_blocked_people').select('person_id')
+    if (!error) setBlocked(new Set(data.map((b) => b.person_id)))
+  }, [isAdmin])
+
+  useEffect(() => {
+    loadBlocked()
+  }, [loadBlocked, members])
 
   const sorted = [...members].sort(
     (a, b) => (b.person_id === me) - (a.person_id === me) || b.is_admin - a.is_admin || a.display_name.localeCompare(b.display_name, 'ko')
@@ -50,8 +62,45 @@ export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCo
   }
 
   function stopSelecting() {
-    setSelecting(false)
+    setMode(null)
     setSelected([])
+  }
+
+  function startFiles() {
+    setMode('files')
+    setSelected(members.filter((m) => blocked.has(m.person_id)).map((m) => m.person_id))
+  }
+
+  // 파일 금지 지정 저장: 바뀐 사람만
+  async function saveFiles() {
+    const changes = members
+      .map((m) => ({ id: m.person_id, want: selected.includes(m.person_id), had: blocked.has(m.person_id) }))
+      .filter((c) => c.want !== c.had)
+    setBusy(true)
+    for (const c of changes) {
+      const { error } = await supabase.rpc('admin_set_files_blocked', { p_person: c.id, p_blocked: c.want })
+      if (error) {
+        setBusy(false)
+        return toast(errorText(error, '저장에 실패했습니다. (v7 SQL을 실행했는지 확인해 주세요)'))
+      }
+    }
+    setBusy(false)
+    await loadBlocked()
+    stopSelecting()
+    const count = members.filter((m) => selected.includes(m.person_id)).length
+    toast(
+      room.restrict_files
+        ? `📎 파일 금지 ${count}명으로 저장했습니다. 이 방에서는 사진·캡쳐만 올릴 수 있습니다.`
+        : `📎 파일 금지 ${count}명으로 저장했습니다. 방의 '파일 제한'을 켜야 적용됩니다.`
+    )
+  }
+
+  async function toggleRoomFiles() {
+    const on = !room.restrict_files
+    const { error } = await supabase.rpc('set_room_restrict_files', { p_room: room.id, p_on: on })
+    if (error) return toast(errorText(error, '변경에 실패했습니다. (v7 SQL을 실행했는지 확인해 주세요)'))
+    toast(on ? '📎 이 방에 파일 제한을 켰습니다.' : '📎 이 방의 파일 제한을 껐습니다.')
+    onChanged()
   }
 
   async function merge(target, others) {
@@ -114,15 +163,34 @@ export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCo
             )}
             {selecting ? (
               <div className="merge-bar">
-                <span className="small">한 사람으로 묶을 참여자를 고르세요</span>
+                <span className="small">
+                  {mode === 'merge' ? '한 사람으로 묶을 참여자를 고르세요' : '파일을 못 올리게 할 직원을 고르세요 (사진·캡쳐는 가능)'}
+                </span>
                 <button className="btn small ghost" onClick={stopSelecting}>
                   취소
                 </button>
               </div>
             ) : (
-              <button className="btn small ghost block" onClick={() => setSelecting(true)}>
-                👥 동일인 묶기 (직접 고르기)
-              </button>
+              <>
+                <button className="btn small ghost block" onClick={() => setMode('merge')}>
+                  👥 동일인 묶기 (직접 고르기)
+                </button>
+                {room.restrict_files !== undefined && (
+                  <div className="merge-bar files-bar">
+                    <span className="small">
+                      이 방 파일 제한: <b>{room.restrict_files ? '켜짐' : '꺼짐'}</b>
+                    </span>
+                    <span className="files-actions">
+                      <button className="btn small ghost" onClick={toggleRoomFiles}>
+                        {room.restrict_files ? '끄기' : '켜기'}
+                      </button>
+                      <button className="btn small ghost" onClick={startFiles}>
+                        📎 파일 금지 지정
+                      </button>
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -142,9 +210,10 @@ export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCo
                   {m.person_id === me && <span className="me-tag">나</span>}
                   {m.is_admin && <span className="admin-tag">관리자</span>}
                   {m.devices > 1 && <span className="member-devices muted">기기 {m.devices}대</span>}
+                  {isAdmin && blocked.has(m.person_id) && <span className="files-tag">📎금지</span>}
                 </div>
                 {m.company && <div className="muted small">{m.company}</div>}
-                {selecting && <div className="muted small">{joinedText(m.joined_at)}</div>}
+                {mode === 'merge' && <div className="muted small">{joinedText(m.joined_at)}</div>}
               </div>
               {isAdmin && !selecting && m.devices > 1 && (
                 <button className="btn small ghost split-btn" onClick={() => split(m)}>
@@ -155,7 +224,7 @@ export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCo
           ))}
         </ul>
 
-        {selecting && (
+        {mode === 'merge' && (
           <div className="merge-footer">
             <button
               className="btn primary block"
@@ -163,6 +232,13 @@ export default function MembersPanel({ room, members, me, isAdmin, colorOf, onCo
               onClick={() => setMerging(selected.map((id) => byId.get(id)).filter(Boolean))}
             >
               {selected.length < 2 ? '두 명 이상 고르세요' : `선택한 ${selected.length}명을 한 사람으로 묶기`}
+            </button>
+          </div>
+        )}
+        {mode === 'files' && (
+          <div className="merge-footer">
+            <button className="btn primary block" disabled={busy} onClick={saveFiles}>
+              {busy ? '저장 중…' : `저장 (파일 금지 ${selected.length}명)`}
             </button>
           </div>
         )}

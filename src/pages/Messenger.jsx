@@ -112,7 +112,14 @@ export default function Messenger({ session, admin, route }) {
       <RoomList rooms={rooms} activeRoomId={activeRoomId} admin={admin} />
       <main className="chat-pane">
         {activeRoomId ? (
-          <ChatRoom key={activeRoomId} roomId={activeRoomId} me={me} isAdmin={Boolean(admin)} onRoomsChanged={loadRooms} />
+          <ChatRoom
+            key={activeRoomId}
+            roomId={activeRoomId}
+            me={me}
+            isAdmin={Boolean(admin)}
+            filesBlocked={Boolean(rooms?.find((r) => r.room_id === activeRoomId)?.files_blocked)}
+            onRoomsChanged={loadRooms}
+          />
         ) : (
           <div className="chat-empty muted">
             <img src="/icon.svg" alt="" width="72" />

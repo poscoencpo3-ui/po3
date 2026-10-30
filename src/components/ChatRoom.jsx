@@ -4,7 +4,7 @@ import { onRealtime } from '../lib/realtime'
 import { navigate } from '../lib/router'
 import { compressImage, extensionFor, imageFilesFrom } from '../lib/image'
 import { primeImageUrl } from '../lib/imageUrls'
-import { downloadFile, FILES_BUCKET, fileIcon, MAX_FILE_SIZE, storageExtension } from '../lib/files'
+import { downloadFile, FILES_BLOCKED_MESSAGE, FILES_BUCKET, fileIcon, MAX_FILE_SIZE, storageExtension } from '../lib/files'
 import { sendPush } from '../lib/push'
 import { avatarColor, dayKey, formatCode, formatDay, MEMBER_COLORS, minuteKey, reportText } from '../lib/format'
 import { copyText, toast } from '../lib/toast'
@@ -46,7 +46,7 @@ function upsertById(list, row) {
   return [...list.filter((x) => x.id !== row.id), row]
 }
 
-export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
+export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsChanged }) {
   const [room, setRoom] = useState(null)
   const [members, setMembers] = useState([])
   const [messages, setMessages] = useState([])
@@ -498,6 +498,13 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       removePending(item.tempId)
     } catch (err) {
       console.error(err)
+      // 관리자가 방금 파일 금지로 지정한 경우: 다시 보내도 안 되므로 안내하고 지움
+      if (item.kind === 'file' && /FILES_BLOCKED|row-level security/.test(err?.message || '')) {
+        toast(FILES_BLOCKED_MESSAGE)
+        removePending(item.tempId)
+        onRoomsChanged()
+        return
+      }
       setPendingStatus(item.tempId, 'failed')
     }
   }
@@ -517,6 +524,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
 
   function pickDocs(list) {
     const files = Array.from(list || [])
+    if (files.length && filesBlocked) return toast(FILES_BLOCKED_MESSAGE)
     const tooBig = files.filter((f) => f.size > MAX_FILE_SIZE)
     if (tooBig.length) toast(`20MB가 넘는 파일은 보낼 수 없습니다: ${tooBig.map((f) => f.name).join(', ')}`)
     const ok = files.filter((f) => f.size <= MAX_FILE_SIZE && f.size > 0)
@@ -808,6 +816,7 @@ export default function ChatRoom({ roomId, me, isAdmin, onRoomsChanged }) {
       <Composer
         members={people}
         me={myPerson}
+        filesBlocked={filesBlocked}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
         onSend={sendText}
