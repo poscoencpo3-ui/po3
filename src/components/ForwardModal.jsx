@@ -4,6 +4,7 @@ import { forwardMessage } from '../lib/forward'
 import { navigate } from '../lib/router'
 import { previewText } from '../lib/format'
 import { toast } from '../lib/toast'
+import { FILES_BLOCKED_MESSAGE } from '../lib/files'
 import Avatar from './Avatar'
 
 export default function ForwardModal({ msg, me, currentRoomId, onClose }) {
@@ -24,7 +25,8 @@ export default function ForwardModal({ msg, me, currentRoomId, onClose }) {
       if (target.room_id !== currentRoomId) navigate(`room/${target.room_id}`)
     } catch (err) {
       console.error(err)
-      toast('전달에 실패했습니다.')
+      const blocked = msg.kind === 'file' && /FILES_BLOCKED|row-level security/.test(err?.message || '')
+      toast(blocked ? FILES_BLOCKED_MESSAGE : '전달에 실패했습니다.')
       setBusy(false)
     }
   }
@@ -39,18 +41,25 @@ export default function ForwardModal({ msg, me, currentRoomId, onClose }) {
         <div className="form-scroll">
           {rooms === null && <p className="muted small">불러오는 중…</p>}
           <ul className="forward-rooms">
-            {(rooms || []).map((r) => (
-              <li key={r.room_id}>
-                <button className={target?.room_id === r.room_id ? 'active' : ''} onClick={() => setTarget(r)}>
-                  <Avatar name={r.name} seed={r.room_id} size={36} square />
-                  <span className="ellipsis">
-                    {r.name}
-                    {r.room_id === currentRoomId && <span className="muted small"> (현재 방)</span>}
-                  </span>
-                  <span className="muted small">{r.member_count}명</span>
-                </button>
-              </li>
-            ))}
+            {(rooms || []).map((r) => {
+              // 파일은 파일 제한 방(내가 파일 금지인 경우)으로 전달할 수 없음
+              const locked = msg.kind === 'file' && r.files_blocked
+              return (
+                <li key={r.room_id}>
+                  <button
+                    className={(target?.room_id === r.room_id ? 'active' : '') + (locked ? ' locked' : '')}
+                    onClick={() => (locked ? toast(FILES_BLOCKED_MESSAGE) : setTarget(r))}
+                  >
+                    <Avatar name={r.name} seed={r.room_id} size={36} square />
+                    <span className="ellipsis">
+                      {r.name}
+                      {r.room_id === currentRoomId && <span className="muted small"> (현재 방)</span>}
+                    </span>
+                    <span className="muted small">{locked ? '📎 파일 제한' : `${r.member_count}명`}</span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </div>
         <div className="modal-actions">

@@ -2402,3 +2402,151 @@ mark {
   font-size: 11px;
   padding: 0 0 6px;
 }
+
+/* 관리자: 동일인 묶기 */
+.members-drawer .member-list {
+  flex: 1;
+}
+
+.merge-tools {
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.merge-suggest {
+  background: #fff8e1;
+  border: 1px solid #f3dd9b;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.merge-suggest-row,
+.merge-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.member-list li.selectable {
+  cursor: pointer;
+}
+
+.member-list li.selected {
+  background: #eef3fb;
+}
+
+.member-list li input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.member-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.split-btn {
+  flex-shrink: 0;
+}
+
+.merge-footer {
+  padding: 10px 18px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+
+.merge-modal {
+  max-width: 420px;
+}
+
+.merge-choices {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.merge-choices label {
+  display: flex !important;
+  flex-direction: row !important;
+  text-align: left;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.merge-choices label.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.merge-choices input {
+  width: auto !important;
+  margin: 0;
+}
+
+.merge-notes {
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.merge-joined {
+  display: block;
+}
+
+/* 직원 파일 전송 제한 */
+.plus-item.disabled {
+  opacity: 0.45;
+}
+
+.forward-rooms button.locked {
+  opacity: 0.5;
+}
+
+.files-tag {
+  font-size: 10px;
+  background: #fde7e7;
+  color: #b3261e;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+
+.files-bar {
+  flex-wrap: wrap;
+}
+
+.files-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.blocked-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blocked-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
