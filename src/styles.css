@@ -2550,3 +2550,161 @@ mark {
   justify-content: space-between;
   gap: 8px;
 }
+
+/* 🚨 긴급·중요: 확인 전까지 깜빡임 */
+@keyframes urgent-bg {
+  0%,
+  100% {
+    background: rgba(211, 47, 47, 0.94);
+  }
+  50% {
+    background: rgba(110, 0, 0, 0.94);
+  }
+}
+
+@keyframes urgent-blink {
+  0%,
+  100% {
+    background: #ffe8e6;
+    border-color: #e5483b;
+  }
+  50% {
+    background: #ff8a80;
+    border-color: #a50e0e;
+  }
+}
+
+@keyframes urgent-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.urgent-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: urgent-bg 1s infinite;
+}
+
+.urgent-card {
+  background: #fff;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 32px);
+  border-radius: 16px;
+  border: 4px solid #d32f2f;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 버튼은 누르기 쉽게 고정하고, 제목만 커졌다 작아졌다 */
+.urgent-head {
+  color: #c62828;
+  font-size: 22px;
+  font-weight: 800;
+  transform-origin: left center;
+  animation: urgent-pulse 1s infinite;
+}
+
+.urgent-count {
+  font-size: 15px;
+}
+
+.urgent-room {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.urgent-from {
+  font-size: 14px;
+}
+
+.urgent-body {
+  background: #fff3f2;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 18px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  min-height: 60px;
+}
+
+.btn.urgent-ok {
+  background: #d32f2f;
+  border-color: #d32f2f;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 14px;
+  width: 100%;
+}
+
+.bubble.urgent.urgent-pending {
+  animation: urgent-blink 1s infinite;
+}
+
+.ack-status {
+  display: block;
+  margin-top: 6px;
+  border: 1px solid #e5483b;
+  background: #fff;
+  color: #c62828;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.ack-status.pending {
+  background: #d32f2f;
+  color: #fff;
+}
+
+.ack-modal {
+  max-width: 400px;
+}
+
+.ack-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ack-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.ack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.ack-time {
+  margin-left: 6px;
+}
+
+.btn.danger-outline {
+  border-color: #e5483b;
+  color: #c62828;
+}

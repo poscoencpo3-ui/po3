@@ -206,6 +206,36 @@ async function notifyRoom(env: Env, msg: Record<string, any>, excludeUserId: str
   return { sent: results.filter((r) => r.ok).length, total: subs.length }
 }
 
+// 🚨 긴급 메시지 다시 알림: 보낸 사람(또는 관리자)이 누르면 아직 확인 안 한 사람에게만 다시 보냄
+async function sendRemind(env: Env, userId: string, messageId: number) {
+  let userIds: string[]
+  try {
+    userIds = await db(env, 'rpc/claim_urgent_remind', {
+      method: 'POST',
+      body: JSON.stringify({ p_message_id: messageId, p_user: userId }),
+    })
+  } catch (err) {
+    const code = ['NOT_ALLOWED', 'TOO_SOON', 'NOT_URGENT'].find((c) => String(err).includes(c))
+    if (code) return { status: code === 'NOT_ALLOWED' ? 403 : 409, body: { error: code } }
+    throw err
+  }
+  if (!userIds.length) return { status: 200, body: { sent: 0, total: 0, people: 0 } }
+
+  const [msg] = await db(env, `messages?id=eq.${messageId}&select=id,room_id,kind,body,sender_name,file_name,data`)
+  const [room] = await db(env, `rooms?id=eq.${msg.room_id}&select=name`)
+  const subs = await db(env, `push_subscriptions?user_id=in.(${userIds.join(',')})&select=endpoint,user_id,p256dh,auth`)
+  const vapid = await getVapid(env)
+  const payload = {
+    title: `🚨 [긴급·확인 요청] ${room.name}`,
+    body: `${msg.sender_name}: ${preview(msg)}`,
+    roomId: msg.room_id,
+    messageId: msg.id,
+    urgent: true,
+  }
+  const results = await Promise.all(subs.map((sub: Subscription) => pushTo(env, vapid, sub, payload, true)))
+  return { status: 200, body: { sent: results.filter((r) => r.ok).length, total: subs.length } }
+}
+
 // ---------------------------------------------------------------------
 // 외부 사이트 연동: 연동 키로 지정된 방에 📌 메시지를 넣고 알림 발송
 //   POST { hook: '<연동 키>', title?, text, author?, url? }
@@ -314,8 +344,12 @@ export function createHandler(env: Env) {
 
       const userId = await getUserId(env, req.headers.get('Authorization'))
       if (!userId) return json({ error: 'NOT_SIGNED_IN' }, 401)
-      const { message_id, test } = body
+      const { message_id, test, remind } = body
       if (test) return json(await sendTest(env, userId))
+      if (remind) {
+        const reminded = await sendRemind(env, userId, Number(remind))
+        return json(reminded.body, reminded.status)
+      }
       const result = await sendForMessage(env, userId, Number(message_id))
       return json(result.body, result.status)
     } catch (err) {
