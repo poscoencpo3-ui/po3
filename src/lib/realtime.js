@@ -34,6 +34,9 @@ export function startRealtime() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (p) =>
       emit({ type: 'room', row: p.new })
     )
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'urgent_acks' }, (p) =>
+      emit({ type: 'ack', row: p.new })
+    )
     .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, (p) =>
       emit({ type: 'schedule', event: p.eventType, row: p.eventType === 'DELETE' ? p.old : p.new })
     )

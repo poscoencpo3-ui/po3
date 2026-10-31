@@ -176,7 +176,7 @@ export default function Composer({
       )}
       {urgent && (
         <div className="composer-bar urgent-bar">
-          <span>🚨 긴급 메시지로 보냅니다 (모두에게 강조 알림)</span>
+          <span>🚨 긴급·중요로 보냅니다 — 받는 사람 화면이 깜빡이고, 확인을 눌러야 사라집니다</span>
           <button className="icon-btn" onClick={() => setUrgent(false)} aria-label="긴급 취소">
             ✕
           </button>
@@ -257,7 +257,7 @@ export default function Composer({
             setPanel(null)
             onOpenReport()
           })}
-          {menuItem('🚨', urgent ? '긴급 해제' : '긴급 메시지', () => {
+          {menuItem('🚨', urgent ? '긴급 해제' : '긴급·중요', () => {
             setUrgent(!urgent)
             setPanel(null)
             inputRef.current?.focus()

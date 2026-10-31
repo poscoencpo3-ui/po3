@@ -136,6 +136,8 @@ export default function MessageItem({
   highlighted,
   mentionNames,
   mentionsMe,
+  ackInfo,
+  onShowAcks,
   onOpenImage,
   onMediaLoad,
   onMenu,
@@ -226,6 +228,7 @@ export default function MessageItem({
     msg.kind === 'bot' && !deleted ? 'bot' : '',
     deleted ? 'deleted' : '',
     msg.is_urgent && !deleted ? 'urgent' : '',
+    ackInfo?.pending ? 'urgent-pending' : '',
     isNotice ? 'notice' : '',
     mentionsMe ? 'mentions-me' : '',
   ]
@@ -236,10 +239,21 @@ export default function MessageItem({
 
   const bubble = (
     <div className={classes} style={bubbleStyle} {...(deleted ? {} : menuHandlers)}>
-      {msg.is_urgent && !deleted && <div className="urgent-label">🚨 긴급</div>}
+      {msg.is_urgent && !deleted && <div className="urgent-label">🚨 긴급·중요</div>}
       {msg.is_forwarded && !deleted && <div className="forwarded-label">↪ 전달됨</div>}
       {!deleted && <ReplyQuote msg={msg} onJump={onJump} />}
       {content}
+      {ackInfo && (
+        <button
+          className={'ack-status' + (ackInfo.pending ? ' pending' : '')}
+          onClick={(e) => {
+            e.stopPropagation()
+            onShowAcks()
+          }}
+        >
+          {ackInfo.pending ? '👆 눌러서 확인' : `✅ 확인 ${ackInfo.acked}/${ackInfo.total}`}
+        </button>
+      )}
     </div>
   )
 

@@ -48,7 +48,8 @@ self.addEventListener('push', (event) => {
         icon: '/icon-192.png',
         badge: '/icon-192.png',
         requireInteraction: Boolean(data.urgent), // 긴급은 직접 닫을 때까지 화면에 남음
-        vibrate: data.urgent ? [400, 150, 400, 150, 400] : [150],
+        // 긴급은 길게 여러 번 진동 (휴대폰 설정에 따라 한 번만 울릴 수 있음)
+        vibrate: data.urgent ? [600, 200, 600, 200, 600, 200, 600, 200, 600, 200, 600] : [150],
         data: { roomId: data.roomId, messageId: data.messageId },
       })
     })()

@@ -74,6 +74,19 @@ export function sendPush(messageId) {
   supabase.functions.invoke('push', { body: { message_id: messageId } }).catch(() => {})
 }
 
+// 🚨 긴급 메시지를 아직 확인 안 한 사람에게 다시 알림 (보낸 사람·관리자, 1분에 한 번)
+export async function sendRemind(messageId) {
+  const { data, error } = await supabase.functions.invoke('push', { body: { remind: messageId } })
+  if (!error) return data
+  let code = 'FAILED'
+  try {
+    code = (await error.context.json()).error || code
+  } catch {
+    // 응답을 못 읽으면 일반 실패
+  }
+  throw new Error(code)
+}
+
 // 알림 테스트 1: 서버를 거치지 않고 이 브라우저가 직접 알림을 띄움 (Windows 표시 여부 확인)
 export async function showLocalTest() {
   const reg = pushSupported ? await getRegistration(2000) : null

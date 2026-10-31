@@ -2,11 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { onRealtime, startRealtime } from '../lib/realtime'
 import { previewText } from '../lib/format'
-import { clearRoomNotifications, setTitleUnread, showNotification } from '../lib/notify'
+import { clearRoomNotifications, flashTitle, setTitleUnread, showNotification } from '../lib/notify'
 import { ensurePush, isPushActive, pushShown } from '../lib/push'
 import { setAppBadge } from '../lib/badge'
 import RoomList from '../components/RoomList'
 import ChatRoom from '../components/ChatRoom'
+import UrgentAlert from '../components/UrgentAlert'
+import { navigate } from '../lib/router'
+import { toast } from '../lib/toast'
 
 export default function Messenger({ session, admin, route }) {
   const me = session.user.id
@@ -51,6 +54,35 @@ export default function Messenger({ session, admin, route }) {
 
   useEffect(() => startRealtime(), [me])
 
+  // 🚨 아직 확인하지 않은 긴급·중요 메시지 (모든 방)
+  const [urgent, setUrgent] = useState([])
+  const ackedRef = useRef(new Set()) // 방금 확인한 것 (서버 반영 전에 다시 뜨지 않도록)
+  const loadUrgent = useCallback(async () => {
+    const { data, error } = await supabase.rpc('my_pending_urgent')
+    if (!error) setUrgent((data || []).filter((m) => !ackedRef.current.has(m.id)))
+  }, [])
+
+  useEffect(() => {
+    loadUrgent()
+  }, [me, loadUrgent])
+
+  useEffect(() => {
+    flashTitle(urgent.length > 0)
+    return () => flashTitle(false)
+  }, [urgent.length])
+
+  async function ackUrgent(msg, open) {
+    ackedRef.current.add(msg.id)
+    setUrgent((prev) => prev.filter((m) => m.id !== msg.id))
+    const { error } = await supabase.rpc('ack_urgent', { p_message_id: msg.id })
+    if (error) {
+      ackedRef.current.delete(msg.id)
+      toast('확인 처리에 실패했습니다. 다시 눌러 주세요.')
+      return loadUrgent()
+    }
+    if (open) navigate(`room/${msg.room_id}`)
+  }
+
   // 알림이 허용된 브라우저는 푸시 구독을 이 계정으로 등록 (사이트를 닫아도 알림)
   useEffect(() => {
     ensurePush()
@@ -64,6 +96,7 @@ export default function Messenger({ session, admin, route }) {
         } else if (evt.type === 'message') {
           scheduleRefresh()
           const row = evt.row
+          if (row.needs_ack) loadUrgent()
           if (row.kind === 'system' || row.user_id === me || (row.sender_person && row.sender_person === myPersonRef.current)) return
           const viewing = row.room_id === activeRef.current && !document.hidden && document.hasFocus()
           if (viewing) return
@@ -89,9 +122,15 @@ export default function Messenger({ session, admin, route }) {
           if (evt.row.user_id === me && evt.row.person_id && evt.row.person_id !== myPersonRef.current) loadMyPerson()
         } else if (evt.type === 'room' || evt.type === 'resync') {
           scheduleRefresh()
+          if (evt.type === 'resync') loadUrgent()
+        } else if (evt.type === 'ack') {
+          // 내 다른 기기에서 확인한 경우 이 기기에서도 닫힘
+          loadUrgent()
+        } else if (evt.type === 'message-update' && evt.row.needs_ack && evt.row.deleted_at) {
+          loadUrgent()
         }
       }),
-    [me, scheduleRefresh, loadMyPerson]
+    [me, scheduleRefresh, loadMyPerson, loadUrgent]
   )
 
   // 창 제목·앱 아이콘 숫자: 알림을 끈 방(🔕)은 빼고 셈 (목록의 방별 숫자는 그대로 표시)
@@ -109,6 +148,7 @@ export default function Messenger({ session, admin, route }) {
   return (
     <div className={'messenger' + (activeRoomId ? ' has-room' : '')}>
       {!connected && <div className="offline-bar">연결이 끊겼습니다. 다시 연결하는 중…</div>}
+      {urgent.length > 0 && <UrgentAlert key={urgent[0].id} items={urgent} onAck={ackUrgent} />}
       <RoomList rooms={rooms} activeRoomId={activeRoomId} admin={admin} />
       <main className="chat-pane">
         {activeRoomId ? (

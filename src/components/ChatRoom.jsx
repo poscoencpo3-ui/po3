@@ -27,6 +27,7 @@ import ProfileModal from './ProfileModal'
 import ForwardModal from './ForwardModal'
 import EditModal from './EditModal'
 import LinkDeviceModal from './LinkDeviceModal'
+import AckPanel from './AckPanel'
 import { groupPeople, personOf, senderOf } from '../lib/person'
 import { useBackground } from '../lib/theme'
 
@@ -254,6 +255,16 @@ export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsCha
         } else if (evt.type === 'schedule') {
           if (evt.event === 'DELETE') setSchedules((prev) => prev.filter((s) => s.id !== row.id))
           else if (row.room_id === roomId) setSchedules((prev) => upsertById(prev, row))
+        } else if (evt.type === 'ack') {
+          // 🚨 누군가 긴급 메시지를 확인함 → 확인 숫자 바로 갱신
+          if (!messagesRef.current.some((m) => m.id === row.message_id)) return
+          setAcks((prev) => {
+            const next = new Map(prev)
+            const inner = new Map(next.get(row.message_id) || [])
+            inner.set(row.person_id, row.acked_at)
+            next.set(row.message_id, inner)
+            return next
+          })
         } else if (evt.type === 'resync') {
           resync()
         }
@@ -320,6 +331,30 @@ export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsCha
 
   // 사람별로 묶은 참여자 (PC·휴대폰을 연결한 사람은 한 명)
   const people = useMemo(() => groupPeople(members), [members])
+
+  // ---------------- 🚨 긴급 메시지 확인 현황 ----------------
+  // 메시지 번호 → (확인한 사람 번호 → 확인 시각)
+  const [acks, setAcks] = useState(() => new Map())
+  const ackIds = messages
+    .filter((m) => m.needs_ack)
+    .map((m) => m.id)
+    .join(',')
+  useEffect(() => {
+    if (!ackIds) return
+    supabase
+      .from('urgent_acks')
+      .select('message_id, person_id, acked_at')
+      .in('message_id', ackIds.split(',').map(Number))
+      .then(({ data }) => {
+        if (!data) return
+        const next = new Map()
+        for (const a of data) {
+          if (!next.has(a.message_id)) next.set(a.message_id, new Map())
+          next.get(a.message_id).set(a.person_id, a.acked_at)
+        }
+        setAcks(next)
+      })
+  }, [ackIds])
 
   // 메시지별 안 읽은 사람 수: 보낸 사람 제외, 메시지 이후에 들어온 사람 제외 (기기가 여럿이면 한 기기라도 읽으면 읽음)
   const unreadCount = useMemo(() => {
@@ -654,6 +689,33 @@ export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsCha
   const myPerson = personOf(myMember) ?? me
   // 멘션에는 사람 번호가 들어감 (v6 전 메시지는 기기 번호)
   const memberOf = (id) => peopleById.get(id) ?? membersById.get(id)
+  // 긴급 메시지별: 확인해야 할 사람(보낸 사람 제외, 메시지 이후에 들어온 사람 제외), 확인한 사람, 내가 확인할 차례인지
+  const ackInfoOf = (msg) => {
+    if (!msg.needs_ack || msg.deleted_at) return null
+    const at = new Date(msg.created_at).getTime()
+    const sender = senderOf(msg)
+    const targets = people.filter((p) => p.person_id !== sender && new Date(p.joined_at).getTime() <= at)
+    const ackedAt = new Map()
+    for (const [id, t] of acks.get(msg.id) || []) ackedAt.set(membersById.get(id)?.person_id ?? id, t)
+    const acked = targets.filter((p) => ackedAt.has(p.person_id)).length
+    const pending = targets.some((p) => p.person_id === myPerson) && !ackedAt.has(myPerson)
+    return { targets, ackedAt, acked, total: targets.length, pending }
+  }
+
+  async function ackMessage(msg) {
+    const { error } = await supabase.rpc('ack_urgent', { p_message_id: msg.id })
+    if (error) return toast('확인 처리에 실패했습니다. 다시 눌러 주세요.')
+    setAcks((prev) => {
+      const next = new Map(prev)
+      const inner = new Map(next.get(msg.id) || [])
+      inner.set(myPerson, new Date().toISOString())
+      next.set(msg.id, inner)
+      return next
+    })
+  }
+  const ackMsg = modal?.type === 'acks' ? messages.find((m) => m.id === modal.id) : null
+  const ackMsgInfo = ackMsg ? ackInfoOf(ackMsg) : null
+
   const roomNotifyOff = room.notifications_enabled === false
   const notifyOn = !roomNotifyOff && !myMember?.muted
 
@@ -767,6 +829,8 @@ export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsCha
                 highlighted={msg.id === highlightId}
                 mentionNames={mentionNames}
                 mentionsMe={(msg.mentions || []).some((id) => id === myPerson || id === me)}
+                ackInfo={ackInfoOf(msg)}
+                onShowAcks={() => setModal({ type: 'acks', id: msg.id })}
                 onOpenImage={() => setViewer(msg)}
                 onMediaLoad={onMediaLoad}
                 onMenu={(x, y) => setMenu({ x, y, msg })}
@@ -836,6 +900,15 @@ export default function ChatRoom({ roomId, me, isAdmin, filesBlocked, onRoomsCha
       )}
 
       {modal?.type === 'forward' && <ForwardModal msg={modal.msg} me={me} currentRoomId={roomId} onClose={() => setModal(null)} />}
+      {ackMsgInfo && (
+        <AckPanel
+          msg={ackMsg}
+          info={ackMsgInfo}
+          canRemind={senderOf(ackMsg) === myPerson || isAdmin}
+          onAck={() => ackMessage(ackMsg)}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal?.type === 'edit' && (
         <EditModal
           msg={modal.msg}
