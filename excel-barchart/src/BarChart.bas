@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.6.3 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.6.4 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -1626,10 +1626,16 @@ Public Sub OnSheetChange(ByVal Sh As Object, ByVal Target As Range)
         If Not Intersect(Target, Sh.Range(Sh.Cells(CFG_TITLE, CFG_COL), Sh.Cells(CFG_LAST, CFG_COL))) Is Nothing Then
             BumpVersion
         End If
-        If Not Intersect(Target, Sh.Cells(CFG_START, CFG_COL)) Is Nothing And SheetExists(SH_INPUT) Then
+        ' 차트 시작일·종료일이 바뀌면 작업입력 간트 날짜도 다시 그림
+        If Not Intersect(Target, Sh.Range(Sh.Cells(CFG_START, CFG_COL), Sh.Cells(CFG_END, CFG_COL))) Is Nothing _
+           And SheetExists(SH_INPUT) Then
             gBusy = True
             Application.EnableEvents = False
-            If Not RefreshInputGantt(ThisWorkbook.Worksheets(SH_INPUT), False) Then RefreshGanttLabels ThisWorkbook.Worksheets(SH_INPUT)
+            Application.ScreenUpdating = False
+            Application.Calculation = xlCalculationManual
+            RefreshInputGantt ThisWorkbook.Worksheets(SH_INPUT), True
+            Application.Calculation = xlCalculationAutomatic
+            Application.ScreenUpdating = True
             Application.EnableEvents = True
             gBusy = False
         End If
@@ -2438,21 +2444,31 @@ End Function
 ' 작업입력 간트 날짜 머리글 (월 / 일 / 요일) : 메인의 차트 시작일, 없으면 최초 시작일이 있는 주 월요일부터 IN_GANTT_DAYS 일
 ' 시작일이 바뀌었을 때만 머리글을 다시 만들고, 막대 안 글자는 항상 다시 씀
 Private Function RefreshInputGantt(ByVal wsIn As Worksheet, ByVal force As Boolean) As Boolean
-    Dim d0 As Date, mn As Double, i As Long, dts() As Variant, wds() As Variant, d As Date, cur As Variant, dCfg As Date
+    Dim d0 As Date, mn As Double, i As Long, dts() As Variant, wds() As Variant, d As Date, cur As Variant
+    Dim dCfgS As Date, dCfgE As Date, hasCfgS As Boolean, hasCfgE As Boolean, nShow As Long, gEnd As Long
     Dim g1 As Long, g2 As Long, lastFmt As Long, c As Long, band As Long, c1 As Long, newGrp As Boolean
 
-    ' 시작 : 최초 작업이 있는 주 월요일. 메인의 차트 시작일이 더 이르면 그 날부터 (작업이 잘리지 않게)
-    mn = Application.WorksheetFunction.Min(wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_S), _
-                                                      wsIn.Cells(IN_FIRST_ROW + IN_FORMULA_ROWS * 2, IN_S)))
-    If mn > 0 Then d0 = CDate(mn) Else d0 = Date
-    d0 = d0 - (Weekday(d0, vbMonday) - 1)
+    ' 기간 : 메인의 차트 시작일·종료일을 그대로 따름 (바차트와 같은 범위)
+    '        시작일이 비어 있으면 최초 작업이 있는 주 월요일, 종료일이 비어 있으면 IN_GANTT_DAYS 일
     If SheetExists(SH_MAIN) Then
-        If ToDate(ThisWorkbook.Worksheets(SH_MAIN).Cells(CFG_START, CFG_COL).Value, dCfg) Then
-            If dCfg < d0 Then d0 = dCfg
-        End If
+        hasCfgS = ToDate(ThisWorkbook.Worksheets(SH_MAIN).Cells(CFG_START, CFG_COL).Value, dCfgS)
+        hasCfgE = ToDate(ThisWorkbook.Worksheets(SH_MAIN).Cells(CFG_END, CFG_COL).Value, dCfgE)
+    End If
+    If hasCfgS Then
+        d0 = dCfgS
+    Else
+        mn = Application.WorksheetFunction.Min(wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_S), _
+                                                          wsIn.Cells(IN_FIRST_ROW + IN_FORMULA_ROWS * 2, IN_S)))
+        If mn > 0 Then d0 = CDate(mn) Else d0 = Date
+        d0 = d0 - (Weekday(d0, vbMonday) - 1)
+    End If
+    nShow = IN_GANTT_DAYS
+    If hasCfgE Then
+        If dCfgE >= d0 And CLng(dCfgE - d0) + 1 < IN_GANTT_DAYS Then nShow = CLng(dCfgE - d0) + 1
     End If
     g1 = IN_GANTT0
     g2 = IN_GANTT0 + IN_GANTT_DAYS - 1
+    gEnd = g1 + nShow - 1
     cur = wsIn.Cells(IN_DAY_ROW, g1).Value
     If force Or Not IsDate(cur) Then
         GoTo Build
@@ -2531,7 +2547,10 @@ Build:
         .Weight = xlMedium
         .Color = 0
     End With
-    wsIn.Range(wsIn.Cells(IN_MONTH_ROW, g1), wsIn.Cells(IN_WD_ROW, g2)).BorderAround _
+    ' 종료일 뒤 칸은 숨김
+    wsIn.Range(wsIn.Columns(g1), wsIn.Columns(g2)).Hidden = False
+    If gEnd < g2 Then wsIn.Range(wsIn.Columns(gEnd + 1), wsIn.Columns(g2)).Hidden = True
+    wsIn.Range(wsIn.Cells(IN_MONTH_ROW, g1), wsIn.Cells(IN_WD_ROW, gEnd)).BorderAround _
         LineStyle:=xlContinuous, Weight:=xlMedium, Color:=0
     RefreshGanttLabels wsIn
     RefreshInputGantt = True

@@ -153,7 +153,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">바차트_자동작성.xlsm · v0.6.3</span>
+    <span class="ver">바차트_자동작성.xlsm · v0.6.4</span>
   </div>
 </header>
 
@@ -226,7 +226,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
           <tbody>
             <tr><td class="k">공사명</td><td class="v">포항 3제강 1전로 상저취 공사</td><td>바차트 제목이 「공사명 + 공정표」로 나옵니다.</td></tr>
             <tr><td class="k">표시 단위</td><td class="v">일 / 주 / 10일 / 월</td><td>일간 작업 계획은 <b>일</b>, 주간 공정회의는 <b>주</b>, 장기 공정은 <b>10일</b>·<b>월</b>. 단위를 바꿔 생성하면 시트가 따로 생겨서 함께 둘 수 있습니다.</td></tr>
-            <tr><td class="k">차트 시작일·종료일</td><td class="v">2026-11-01</td><td>보고 기간만 잘라서 보고 싶을 때. 비우면 작업 일정에 맞춰 자동입니다. 작업입력 간트는 이 날짜와 최초 작업 중 더 이른 날부터 보입니다.</td></tr>
+            <tr><td class="k">차트 시작일·종료일</td><td class="v">2026-11-01</td><td>보고 기간만 잘라서 보고 싶을 때. 비우면 작업 일정에 맞춰 자동입니다. <b>작업입력 간트도 같은 기간</b>으로 바로 바뀝니다.</td></tr>
             <tr><td class="k">기준일 (빨간 세로선)</td><td class="v">2026-11-05</td><td>「오늘까지 진행」이나 보고 기준일을 빨간 굵은 세로선으로 표시합니다.</td></tr>
             <tr><td class="k">세부작업 행</td><td class="v">펼침 / 접힘</td><td>접힘이면 바차트를 만들 때 세부작업 행을 숨기고 작업항목 줄에 바만 모아 보여줍니다.</td></tr>
             <tr><td class="k">시작·종료·기간 열</td><td class="v">표시 / 숨김</td><td>보고서에 날짜 열이 필요 없으면 숨김.</td></tr>
@@ -307,7 +307,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <ul class="plain">
         <li>막대 색 = 공종 색. 막대 가운데에 작업내용이 쓰이고, 막대가 짧으면 오른쪽에 씁니다.</li>
         <li>토요일은 파랑, 일요일·공휴일은 빨강이고 그날 칸은 연노랑입니다. 오늘 날짜는 노랑으로 표시됩니다.</li>
-        <li>간트는 400일까지 보입니다. 시작일은 메인의 <b>차트 시작일</b>, 비우면 최초 작업이 있는 주의 월요일입니다.</li>
+        <li>간트 날짜 범위는 메인의 <b>차트 시작일 ~ 종료일</b>을 따릅니다(바꾸면 바로 반영). 비우면 최초 작업이 있는 주의 월요일부터 400일입니다.</li>
       </ul>
       <div class="warn"><strong>빨간 배경 행</strong><p>종료일이 시작일보다 빠른 행입니다. 바차트에서 빠지니 날짜를 고쳐 주세요.</p></div>
     </section>
