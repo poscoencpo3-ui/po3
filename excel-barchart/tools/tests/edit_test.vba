@@ -4,7 +4,7 @@
     Set wi = Worksheets("작업입력")
     ' 0) 작업입력 : 적용 공종(숨김 I열)과 들여쓰기
     WriteLog "0 적용공종: 기계정비창고=" & wi.Cells(6, 9).Value & " 진입로=" & wi.Cells(7, 9).Value & " 2구간=" & wi.Cells(15, 9).Value & " / 들여쓰기 " & wi.Cells(5, 3).IndentLevel & wi.Cells(6, 3).IndentLevel & wi.Cells(7, 3).IndentLevel
-    WriteLog "0 바차트: 대분류행=" & wc.Cells(12, 1).Value & " / 진입로행=" & FindRow(wc, "· 진입로") & " / D-DAY행 숨김 " & wc.Rows(4).Hidden & " / 이벤트 " & wc.Cells(8, 1).Value
+    WriteLog "0 바차트: 대분류행=" & FindRow(wc, "○ 분체설비") & " 구역줄=" & wc.Cells(12, 1).Value & " / 진입로행=" & FindRow(wc, "· 진입로") & " / D-DAY행 숨김 " & wc.Rows(4).Hidden & " / 이벤트 " & wc.Cells(8, 1).Value
     ' 1) 진입로 시작일 변경 → 기간 6일 유지, 종료일 이동
     r = FindRow(wc, "· 진입로")
     wc.Cells(r, 2).Value = CDate("2026-10-30")

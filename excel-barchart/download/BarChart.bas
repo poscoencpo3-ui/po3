@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.6.4 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -41,6 +41,8 @@ Private Const SH_CHART_PREFIX As String = "바차트_"
 Private Const SH_START As String = "시작"   ' 배포용 xlsm 의 안내 시트 (초기 설정 후 삭제)
 Private Const SH_TRADE As String = "공종"   ' 공종 이름과 색
 Private Const SH_EVT As String = "주요일정" ' 주요 이벤트 (날짜 아래 ▼ 표시)
+Private Const SH_LANE As String = "구역일정" ' 구역별 기간 일정 (크레인 사용 등, 머리글 아래 색 띠)
+Private Const MAX_LANES As Long = 4
 
 '--- 표시 단위 ---
 Private Const UNIT_DAY As String = "일"
@@ -62,7 +64,8 @@ Private Const CFG_LABELSIZE As Long = 13
 Private Const CFG_DDAY As Long = 14     ' D-DAY 기준일 (SD 착수일 등)
 Private Const CFG_BARCOLOR As Long = 15 ' 바 색상 : 검정 / 공종색
 Private Const CFG_EVENTS As Long = 16   ' 주요 이벤트 : 표시 / 숨김
-Private Const CFG_LAST As Long = 16     ' 마지막 설정 행
+Private Const CFG_LANES As Long = 17    ' 구역 일정 : 표시 / 숨김
+Private Const CFG_LAST As Long = 17     ' 마지막 설정 행
 
 '--- 작업입력 시트 열 ---
 Private Const IN_HDR_ROW As Long = 4
@@ -112,7 +115,8 @@ Private Const CH_EV1L As Long = 8     ' 주요 이벤트 윗단 : 내용
 Private Const CH_EV1A As Long = 9     '                  : ▼ + 날짜
 Private Const CH_EV2L As Long = 10    ' 주요 이벤트 아랫단 : 내용
 Private Const CH_EV2A As Long = 11    '                    : ▼ + 날짜
-Private Const CH_BODY As Long = 12
+Private Const CH_LANE1 As Long = 12   ' 구역 일정 1~4 줄 (12~15행, 쓰지 않는 줄은 숨김)
+Private Const CH_BODY As Long = 16
 Private Const COL_LABEL As Long = 1   ' A 구분
 Private Const COL_S As Long = 2       ' B 시작일
 Private Const COL_E As Long = 3       ' C 종료일
@@ -193,7 +197,7 @@ Private mCircleN As Long
 Private mBarByTrade As Boolean        ' 바 선 색을 공종색으로
 Private mHdrFirst As Long             ' 보이는 머리글 첫 행 (D-DAY 있으면 4행)
 Private mHdrLast As Long              ' 보이는 머리글 마지막 행 (주요 이벤트 포함)
-Private Const LAYOUT_VER As String = "2"  ' 바차트 시트 배치 버전 (바뀌면 틀 고정/인쇄 설정 다시)
+Private Const LAYOUT_VER As String = "3"  ' 바차트 시트 배치 버전 (바뀌면 틀 고정/인쇄 설정 다시)
 
 
 '===================================================================
@@ -333,6 +337,7 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     WriteHeader ws, lastCol
     WriteDDay ws, hasDDay, dDay
     DrawEvents ws, lastCol, (CfgText(CFG_EVENTS) <> "숨김")
+    DrawLanes ws, lastCol, (CfgText(CFG_LANES) <> "숨김")
     If mBarByTrade Then WriteLegend ws
     lastRow = LayoutBody(ws, lastCol + 2)
     If lastRow < CH_BODY Then lastRow = CH_BODY
@@ -1534,9 +1539,105 @@ Private Function EventColor(ByVal s As String) As Long
         Case InStr(s, "초") > 0 Or InStr(s, "녹") > 0 Or InStr(s, "green") > 0: EventColor = RGB(0, 150, 70)
         Case InStr(s, "검") > 0 Or InStr(s, "black") > 0: EventColor = 0
         Case InStr(s, "주황") > 0 Or InStr(s, "orange") > 0: EventColor = RGB(237, 125, 49)
+        Case InStr(s, "보라") > 0 Or InStr(s, "purple") > 0: EventColor = RGB(112, 48, 160)
+        Case InStr(s, "노") > 0 Or InStr(s, "yellow") > 0: EventColor = RGB(255, 192, 0)
+        Case InStr(s, "남") > 0 Or InStr(s, "navy") > 0: EventColor = RGB(31, 56, 100)
+        Case InStr(s, "회") > 0 Or InStr(s, "gray") > 0: EventColor = RGB(128, 128, 128)
         Case Else: EventColor = RGB(230, 0, 0)
     End Select
 End Function
+
+' 구역 일정 : [구역일정] 시트의 기간 일정을 구역(최대 4줄)별로 머리글 아래에 색 띠 + 내용으로
+Private Sub DrawLanes(ByVal ws As Worksheet, ByVal lastCol As Long, ByVal show As Boolean)
+    Dim wl As Worksheet, lastRow As Long, r As Long, k As Long, nL As Long, lane As String
+    Dim names(1 To MAX_LANES) As String, dS As Date, dE As Date, nd As Long, txt As String, clr As Long
+    Dim c1 As Long, c2 As Long, row As Long, skipped As Long, defClr As Variant
+
+    ws.Rows(CH_LANE1 & ":" & (CH_LANE1 + MAX_LANES - 1)).Hidden = True
+    If Not show Or Not SheetExists(SH_LANE) Then Exit Sub
+    Set wl = ThisWorkbook.Worksheets(SH_LANE)
+    lastRow = wl.Cells(wl.Rows.Count, 1).End(xlUp).Row
+    If lastRow < 3 Then Exit Sub
+    defClr = Array(RGB(237, 125, 49), RGB(0, 112, 192), RGB(0, 150, 70), RGB(112, 48, 160))
+
+    For r = 3 To lastRow
+        lane = Trim$(CellText(wl.Cells(r, 1)))
+        If lane <> "" And ToDate(wl.Cells(r, 3).Value, dS) Then
+            ' 구역 줄 찾기 (처음 나온 순서, 최대 4개)
+            k = 0
+            For c1 = 1 To nL
+                If names(c1) = lane Then k = c1: Exit For
+            Next c1
+            If k = 0 Then
+                If nL < MAX_LANES Then
+                    nL = nL + 1
+                    names(nL) = lane
+                    k = nL
+                    row = CH_LANE1 + k - 1
+                    ws.Rows(row).Hidden = False
+                    ws.Rows(row).RowHeight = 15
+                    With ws.Range(ws.Cells(row, COL_LABEL), ws.Cells(row, COL_D))
+                        .Merge
+                        .HorizontalAlignment = xlLeft
+                        .IndentLevel = 1
+                        .Interior.Color = CLR_EVENT_BG
+                        .Font.Bold = True
+                    End With
+                    SetText ws.Cells(row, COL_LABEL), lane
+                Else
+                    skipped = skipped + 1
+                End If
+            End If
+            If k > 0 Then
+                row = CH_LANE1 + k - 1
+                If ToDuration(wl.Cells(r, 4).Value, nd) Then
+                    dE = dS + nd - 1
+                ElseIf Not ToDate(wl.Cells(r, 5).Value, dE) Then
+                    dE = dS
+                End If
+                If dE < dS Then dE = dS
+                If Trim$(CellText(wl.Cells(r, 6))) = "" Then clr = defClr(k - 1) Else clr = EventColor(CellText(wl.Cells(r, 6)))
+                txt = Trim$(CellText(wl.Cells(r, 2)))
+                If dE >= mDay0 And dS <= mPE(mPN) Then
+                    If dS < mDay0 Then dS = mDay0
+                    If dE > mPE(mPN) Then dE = mPE(mPN)
+                    c1 = DateToCol(dS)
+                    c2 = DateToCol(dE)
+                    ws.Range(ws.Cells(row, c1), ws.Cells(row, c2)).Interior.Color = clr
+                    If txt <> "" Then
+                        If TextWidthPt(txt, 8) <= ColsWidth(ws, c1, c2) - 2 Then
+                            SetText ws.Cells(row, c1), txt
+                            ws.Range(ws.Cells(row, c1), ws.Cells(row, c2)).HorizontalAlignment = xlCenterAcrossSelection
+                            ws.Cells(row, c1).Font.Color = IIf(IsDarkColor(clr), RGB(255, 255, 255), 0)
+                        ElseIf c2 < lastCol Then
+                            If IsEmpty(ws.Cells(row, c2 + 1).Value) Then
+                                SetText ws.Cells(row, c2 + 1), txt     ' 기간이 짧으면 띠 오른쪽에
+                                ws.Cells(row, c2 + 1).HorizontalAlignment = xlLeft
+                                ws.Cells(row, c2 + 1).Font.Color = 0
+                            End If
+                        End If
+                        ws.Range(ws.Cells(row, c1), ws.Cells(row, c2 + 1)).Font.Size = 8
+                        ws.Cells(row, c1).Font.Bold = True
+                    End If
+                End If
+            End If
+        End If
+    Next r
+    If nL > 0 Then
+        mHdrLast = CH_LANE1 + nL - 1
+        With ws.Range(ws.Cells(CH_LANE1, COL_LABEL), ws.Cells(mHdrLast, lastCol)).Borders(xlInsideHorizontal)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+            .Color = CLR_GRID
+        End With
+        With ws.Range(ws.Cells(CH_LANE1, COL_LABEL), ws.Cells(CH_LANE1, lastCol)).Borders(xlEdgeTop)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+            .Color = CLR_GRID_DARK
+        End With
+    End If
+    If skipped > 0 Then gLog = gLog & "구역은 " & MAX_LANES & "개까지 표시됩니다 (" & skipped & "건 제외)" & vbCrLf
+End Sub
 
 ' 공종색 범례 (제목 줄 오른쪽) : 바차트에 쓰인 공종만
 Private Sub WriteLegend(ByVal ws As Worksheet)
@@ -1618,7 +1719,7 @@ Public Sub OnSheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Sh.Name = SH_INPUT Then
         FixChangedInputRows Sh, Target
         BumpVersion
-    ElseIf Sh.Name = SH_HOL Or Sh.Name = SH_EVT Then
+    ElseIf Sh.Name = SH_HOL Or Sh.Name = SH_EVT Or Sh.Name = SH_LANE Then
         BumpVersion
     ElseIf Sh.Name = SH_TRADE Then
         RefreshInputSheet                    ' 공종 이름이 바뀌면 간트 색 규칙 다시 만들기
@@ -2205,6 +2306,24 @@ Public Sub ImportFromFile(ByVal f As String)
         Next r
     End If
 
+    On Error Resume Next
+    Set srcSh = Nothing
+    Set srcSh = wb.Worksheets(SH_LANE)
+    On Error GoTo EH
+    If Not srcSh Is Nothing And SheetExists(SH_LANE) Then
+        Set dstSh = ThisWorkbook.Worksheets(SH_LANE)
+        dstSh.Range("A3:D300").ClearContents
+        dstSh.Range("F3:F300").ClearContents
+        lr = srcSh.Cells(srcSh.Rows.Count, 1).End(xlUp).Row
+        For r = 3 To lr
+            dstSh.Cells(r, 1).Value = srcSh.Cells(r, 1).Value
+            dstSh.Cells(r, 2).Value = srcSh.Cells(r, 2).Value
+            dstSh.Cells(r, 3).Value = srcSh.Cells(r, 3).Value
+            dstSh.Cells(r, 4).Value = srcSh.Cells(r, 4).Value
+            dstSh.Cells(r, 6).Value = srcSh.Cells(r, 6).Value
+        Next r
+    End If
+
     '--- 공휴일 ---
     If Not srcHol Is Nothing Then
         Set dstHol = ThisWorkbook.Worksheets(SH_HOL)
@@ -2744,6 +2863,7 @@ Public Sub SetupWorkbook()
     Application.ScreenUpdating = False
     BuildHolidaySheet RecreateSheet(SH_HOL)
     BuildEventSheet RecreateSheet(SH_EVT)
+    BuildLaneSheet RecreateSheet(SH_LANE)
     BuildTradeSheet RecreateSheet(SH_TRADE)
     BuildMainSheet RecreateSheet(SH_MAIN)
     BuildInputSheet RecreateSheet(SH_INPUT)
@@ -2753,12 +2873,13 @@ Public Sub SetupWorkbook()
     ThisWorkbook.Worksheets(SH_INPUT).Move After:=ThisWorkbook.Worksheets(SH_MAIN)
     ThisWorkbook.Worksheets(SH_TRADE).Move After:=ThisWorkbook.Worksheets(SH_INPUT)
     ThisWorkbook.Worksheets(SH_EVT).Move After:=ThisWorkbook.Worksheets(SH_TRADE)
-    ThisWorkbook.Worksheets(SH_HOL).Move After:=ThisWorkbook.Worksheets(SH_EVT)
+    ThisWorkbook.Worksheets(SH_LANE).Move After:=ThisWorkbook.Worksheets(SH_EVT)
+    ThisWorkbook.Worksheets(SH_HOL).Move After:=ThisWorkbook.Worksheets(SH_LANE)
     Application.DisplayAlerts = False
     For i = ThisWorkbook.Worksheets.Count To 1 Step -1
         Set ws = ThisWorkbook.Worksheets(i)
         If ws.Name <> SH_MAIN And ws.Name <> SH_INPUT And ws.Name <> SH_HOL _
-           And ws.Name <> SH_TRADE And ws.Name <> SH_EVT And Not IsChartSheet(ws.Name) Then
+           And ws.Name <> SH_TRADE And ws.Name <> SH_EVT And ws.Name <> SH_LANE And Not IsChartSheet(ws.Name) Then
             If ws.Name = SH_START Then
                 ws.Delete
             ElseIf Application.WorksheetFunction.CountA(ws.Cells) = 0 And ws.Shapes.Count = 0 Then
@@ -2828,11 +2949,13 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     CfgRow ws, CFG_DDAY, "D-DAY 기준일", "", "SD 착수일 등. 입력하면 날짜 위에 D+1, D+2 … 줄 표시 (기준일 = D+1, 비우면 없음)"
     CfgRow ws, CFG_BARCOLOR, "바 색상", "검정", "검정 / 공종색 - 공종색이면 바 선과 원을 공종 색으로 표시하고 범례 추가"
     CfgRow ws, CFG_EVENTS, "주요 이벤트", "표시", "표시 / 숨김 - [주요일정] 시트의 일정을 날짜 아래 ▼ 화살표로 표시"
+    CfgRow ws, CFG_LANES, "구역 일정", "표시", "표시 / 숨김 - [구역일정] 시트의 크레인 사용 등 기간 일정을 구역별 색 띠로 표시 (최대 4줄)"
 
     ws.Range(ws.Cells(CFG_START, CFG_COL), ws.Cells(CFG_BASE, CFG_COL)).NumberFormat = "yyyy-mm-dd"
     ws.Cells(CFG_DDAY, CFG_COL).NumberFormat = "yyyy-mm-dd"
     AddListValidation ws.Cells(CFG_BARCOLOR, CFG_COL), "검정,공종색"
     AddListValidation ws.Cells(CFG_EVENTS, CFG_COL), "표시,숨김"
+    AddListValidation ws.Cells(CFG_LANES, CFG_COL), "표시,숨김"
     AddListValidation ws.Cells(CFG_UNIT, CFG_COL), UNIT_DAY & "," & UNIT_WEEK & "," & UNIT_10D & "," & UNIT_MONTH
     AddListValidation ws.Cells(CFG_DETAIL, CFG_COL), "펼침,접힘"
     AddListValidation ws.Cells(CFG_DATECOLS, CFG_COL), "표시,숨김"
@@ -2857,6 +2980,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
         "   (작업입력을 고친 경우에는 바차트 시트를 열 때 자동으로 다시 그려짐 / 바 영역에 직접 그린 것은 지워짐)", _
         "5. 공휴일은 [공휴일] 시트에서 추가/삭제하세요 (빨간 날짜로 표시).", _
         "6. 주요 이벤트는 [주요 이벤트 추가] 버튼이나 [주요일정] 시트에 날짜·내용을 넣으면 바차트에 ▼로 표시됩니다.", _
+        "   크레인 사용처럼 기간이 있는 일정은 [구역일정] 시트에 구역별로 넣으면 머리글 아래 색 띠로 표시됩니다 (최대 4구역).", _
         "7. 새 버전 파일을 받으면 [이전 파일에서 가져오기]로 기존 작업입력·설정을 옮길 수 있습니다.")
     For i = LBound(notes) To UBound(notes)
         SetText ws.Cells(r + 1 + i, 2), notes(i)
@@ -2869,8 +2993,9 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     AddButton ws, "세부작업 펼치기", "ExpandDetails", ws.Range("F9:F9")
     AddButton ws, "작업입력 시트로", "GoToInput", ws.Range("F11:F11")
     AddButton ws, "주요 이벤트 추가", "AddEvent", ws.Range("F13:F13")
-    AddButton ws, "공종·색상 설정", "GoToTrades", ws.Range("F14:F14")
-    AddButton ws, "이전 파일에서 가져오기", "ImportFromOldFile", ws.Range("F16:F16")
+    AddButton ws, "구역 일정 입력", "GoToLanes", ws.Range("F14:F14")
+    AddButton ws, "공종·색상 설정", "GoToTrades", ws.Range("F15:F15")
+    AddButton ws, "이전 파일에서 가져오기", "ImportFromOldFile", ws.Range("F17:F17")
 
     ws.Activate
     ActiveWindow.DisplayGridlines = False
@@ -3065,6 +3190,60 @@ Private Sub BuildEventSheet(ByVal ws As Worksheet)
     DeleteButtons ws
     AddButton ws, "이벤트 추가", "AddEvent", ws.Range("E2:F3")
     SetTabColor ws, RGB(255, 0, 0)
+End Sub
+
+Public Sub GoToLanes()
+    If SheetExists(SH_LANE) Then ThisWorkbook.Worksheets(SH_LANE).Activate
+End Sub
+
+' 구역일정 시트 : 구역별 기간 일정 (크레인 사용, LANCE 크레인, 전용선 …)
+Private Sub BuildLaneSheet(ByVal ws As Worksheet)
+    Dim data As Variant, i As Long, r As Long, hdr As Variant, wid As Variant
+    ws.Cells.Font.Name = "맑은 고딕"
+    ws.Cells.Font.Size = 10
+    SetText ws.Range("A1"), "구역 일정 - 같은 구역 이름끼리 한 줄로 모여 바차트 머리글 아래에 색 띠로 표시됩니다. (최대 " & MAX_LANES & "구역, 색상 비우면 구역별 기본색)"
+    ws.Range("A1").Font.Bold = True
+    hdr = Array("구역", "내용", "시작일", "기간", "종료일", "색상")
+    wid = Array(16, 28, 12, 6, 12, 8)
+    For i = 0 To 5
+        SetText ws.Cells(2, i + 1), hdr(i)
+        ws.Columns(i + 1).ColumnWidth = wid(i)
+    Next i
+    With ws.Range("A2:F2")
+        .Font.Bold = True
+        .Interior.Color = CLR_HDR_LEFT
+        .HorizontalAlignment = xlCenter
+    End With
+    ws.Range("A3:B300").NumberFormat = "@"
+    ws.Range("C3:C300").NumberFormat = "yyyy-mm-dd"
+    ws.Range("E3:E300").NumberFormat = "yyyy-mm-dd"
+    ws.Range("C3:F300").HorizontalAlignment = xlCenter
+    ws.Range("E3:E300").FormulaR1C1 = IN_END_FORMULA        ' 종료일 = 시작일(C) + 기간(D) - 1
+    ws.Range("E3:E300").Interior.Color = RGB(242, 242, 242)
+    ws.Range("F3:F300").NumberFormat = "@"
+    AddListValidation ws.Range("F3:F300"), "빨강,주황,노랑,초록,파랑,남색,보라,회색,검정"
+    data = Array( _
+        Array("크레인", "50t 크레인 사용", "2026-10-28", "6", ""), _
+        Array("크레인", "크레인 사용", "2026-11-09", "5", ""), _
+        Array("LANCE 크레인", "LANCE 크레인 사용", "2026-11-02", "10", ""), _
+        Array("전용선", "주간 전용선", "2026-11-09", "13", "노랑"), _
+        Array("조업", "3제강 정수", "2026-11-03", "1", "빨강"))
+    For i = LBound(data) To UBound(data)
+        r = 3 + i
+        SetText ws.Cells(r, 1), data(i)(0)
+        SetText ws.Cells(r, 2), data(i)(1)
+        ws.Cells(r, 3).Value = CDate(data(i)(2))
+        ws.Cells(r, 4).Value = CLng(data(i)(3))
+        If data(i)(4) <> "" Then SetText ws.Cells(r, 6), data(i)(4)
+    Next i
+    With ws.Range("A2:F60").Borders
+        .LineStyle = xlContinuous
+        .Color = CLR_GRID
+    End With
+    DeleteButtons ws
+    AddButton ws, "바차트 생성", "BuildChart", ws.Range("H2:I3")
+    AddButton ws, "메인으로", "GoToMain", ws.Range("H5:I5")
+    SetTabColor ws, RGB(255, 192, 0)
 End Sub
 
 Private Function RgbText(ByVal s As String) As Long

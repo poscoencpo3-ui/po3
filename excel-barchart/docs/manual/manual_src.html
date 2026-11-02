@@ -145,7 +145,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">바차트_자동작성.xlsm · v0.6.4</span>
+    <span class="ver">바차트_자동작성.xlsm · v0.7</span>
   </div>
 </header>
 
@@ -153,7 +153,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
   <ol>
     <li><b>D-3</b>메인 설정</li>
     <li><b>D-2</b>작업입력·공종으로 일정 조정</li>
-    <li><b>D-1</b>주요일정 입력</li>
+    <li><b>D-1</b>주요일정·구역일정 입력</li>
     <li><b>D+1</b>[바차트 생성] → 출력·보고</li>
   </ol>
 </div>
@@ -167,9 +167,10 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <li><a href="#input"><span class="n">3</span>작업입력</a></li>
       <li><a href="#trade"><span class="n">4</span>공종</a></li>
       <li><a href="#event"><span class="n">5</span>주요일정</a></li>
-      <li><a href="#chart"><span class="n">6</span>바차트 활용·출력</a></li>
-      <li><a href="#move"><span class="n">7</span>새 버전으로 옮기기</a></li>
-      <li><a href="#faq"><span class="n">8</span>문제가 생기면</a></li>
+      <li><a href="#lane"><span class="n">6</span>구역일정</a></li>
+      <li><a href="#chart"><span class="n">7</span>바차트 활용·출력</a></li>
+      <li><a href="#move"><span class="n">8</span>새 버전으로 옮기기</a></li>
+      <li><a href="#faq"><span class="n">9</span>문제가 생기면</a></li>
     </ol>
   </nav>
 
@@ -193,7 +194,8 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td class="k">메인</td><td>공사명, 표시 단위, D-DAY 같은 설정과 주요 버튼</td></tr>
             <tr><td class="k">작업입력</td><td>작업을 한 줄씩 입력하고, 오른쪽 공종색 간트를 보며 일정을 조정하는 작업 화면</td></tr>
             <tr><td class="k">공종</td><td>공종 이름과 색 (토목·기계·전기 …)</td></tr>
-            <tr><td class="k">주요일정</td><td>바차트 날짜 아래 <span class="tri">▼</span>로 표시할 이벤트 (SD 착수, 반입, 시운전 …)</td></tr>
+            <tr><td class="k">주요일정</td><td>바차트 날짜 아래 <span class="tri">▼</span>로 표시할 하루짜리 이벤트 (SD 착수, 기자재 납기, 시운전 …)</td></tr>
+            <tr><td class="k">구역일정</td><td>크레인 사용, LANCE 크레인 사용처럼 <b>기간이 있는 일정</b>을 구역별 색 띠로 표시 (최대 4구역)</td></tr>
             <tr><td class="k">공휴일</td><td>빨간 날짜로 표시할 공휴일 (2026~2027년 입력되어 있음)</td></tr>
             <tr><td class="k">바차트_일 / 주 / 10일 / 월</td><td>[바차트 생성]을 누르면 만들어지는 보고용 공정표. 단위별로 따로 생깁니다</td></tr>
           </tbody>
@@ -227,6 +229,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td class="k">D-DAY 기준일</td><td class="v">2026-10-28</td><td><b>SD 공사</b>라면 SD 착수일을 넣으세요. 날짜 위에 <span class="cellv">D-2 D-1 D+1 D+2 …</span> 줄이 생깁니다. 기준일이 D+1입니다.</td></tr>
             <tr><td class="k">바 색상</td><td class="v">검정 / 공종색</td><td>보고서는 보통 검정. 공종색이면 바와 원이 공종 색으로 바뀌고 제목 옆에 범례가 붙습니다.</td></tr>
             <tr><td class="k">주요 이벤트</td><td class="v">표시 / 숨김</td><td>주요일정의 <span class="tri">▼</span> 표시를 켜고 끕니다.</td></tr>
+            <tr><td class="k">구역 일정</td><td class="v">표시 / 숨김</td><td>구역일정의 색 띠(크레인 사용 등)를 켜고 끕니다.</td></tr>
           </tbody>
         </table>
       </div>
@@ -238,8 +241,9 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
         <div class="btnrow"><img src="{{img:btn_expand}}" alt="세부작업 펼치기 버튼"><p>숨긴 세부작업 행을 다시 보여줍니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_input}}" alt="작업입력 시트로 버튼"><p>작업입력 시트로 이동합니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_event}}" alt="주요 이벤트 추가 버튼"><p>날짜 → 내용 → 색상을 차례로 물어보고 <b>주요일정에 한 줄 추가</b>합니다. 바차트를 열면 <span class="tri">▼</span>로 나타납니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_lane}}" alt="구역 일정 입력 버튼"><p>구역일정 시트로 이동합니다. 크레인 사용 같은 기간 일정을 입력할 때. <a href="#lane">6장</a> 참고.</p></div>
         <div class="btnrow"><img src="{{img:btn_trade}}" alt="공종·색상 설정 버튼"><p>공종 시트로 이동합니다. 공종 이름과 색을 바꿀 때.</p></div>
-        <div class="btnrow"><img src="{{img:btn_import}}" alt="이전 파일에서 가져오기 버튼"><p>예전 버전 파일의 작업입력·설정·공종·주요일정·공휴일을 이 파일로 옮겨옵니다. <a href="#move">7장</a> 참고.</p></div>
+        <div class="btnrow"><img src="{{img:btn_import}}" alt="이전 파일에서 가져오기 버튼"><p>예전 버전 파일의 작업입력·설정·공종·주요일정·공휴일을 이 파일로 옮겨옵니다. <a href="#move">8장</a> 참고.</p></div>
       </div>
     </section>
 
@@ -342,12 +346,44 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
     </section>
 
     <!-- 6 -->
+    <section id="lane">
+      <h2><span class="n">6</span>구역일정</h2>
+      <p class="lead">크레인 사용, LANCE 크레인 사용, 전용선, 조업처럼 <b>기간이 있는 자원·구역 일정</b>을 바차트 머리글 아래에 구역별 색 띠로 보여줍니다. 하루짜리 납기·착수는 주요일정(<span class="tri">▼</span>)에 넣으세요.</p>
+      <figure>
+        <div class="shot"><img src="{{img:lane}}" alt="구역일정 시트: 구역, 내용, 시작일, 기간, 종료일, 색상과 버튼"></div>
+        <figcaption>구역 이름이 같은 일정끼리 한 줄로 모입니다. 종료일(회색)은 시작일 + 기간 - 1 로 자동 계산됩니다.</figcaption>
+      </figure>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_lane_build}}" alt="바차트 생성 버튼"><p>입력한 구역 일정을 바로 바차트에 반영합니다. (바차트 시트를 열어도 자동 반영)</p></div>
+        <div class="btnrow"><img src="{{img:btn_lane_main}}" alt="메인으로 버튼"><p>메인 시트로 이동합니다.</p></div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>구역</th><th>내용</th><th>시작일</th><th>기간</th><th>색상</th></tr></thead>
+          <tbody>
+            <tr><td class="k">크레인</td><td>50t 크레인 사용</td><td class="v"><span class="cellv">2026-10-28</span></td><td class="v"><span class="cellv">6</span></td><td>(비움 → 구역 기본색)</td></tr>
+            <tr><td class="k">크레인</td><td>크레인 사용</td><td class="v"><span class="cellv">2026-11-09</span></td><td class="v"><span class="cellv">5</span></td><td></td></tr>
+            <tr><td class="k">LANCE 크레인</td><td>LANCE 크레인 사용</td><td class="v"><span class="cellv">2026-11-02</span></td><td class="v"><span class="cellv">10</span></td><td></td></tr>
+            <tr><td class="k">전용선</td><td>주간 전용선</td><td class="v"><span class="cellv">2026-11-09</span></td><td class="v"><span class="cellv">13</span></td><td>노랑</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="plain">
+        <li><b>구역</b>: 한 줄로 묶을 이름. 같은 이름이면 같은 줄에 나란히 표시됩니다. 처음 나온 순서대로 <b>최대 4개</b> 구역이 표시됩니다.</li>
+        <li><b>내용</b>은 띠 가운데에 쓰이고, 기간이 짧으면 띠 오른쪽에 씁니다.</li>
+        <li><b>색상</b>: 빨강 / 주황 / 노랑 / 초록 / 파랑 / 남색 / 보라 / 회색 / 검정. 비우면 구역마다 기본색(주황·파랑·초록·보라)이 쓰입니다.</li>
+        <li>잠깐 숨기려면 메인의 <b>구역 일정</b>을 「숨김」으로 바꾸세요.</li>
+      </ul>
+      <div class="tip"><strong>활용</strong><p>크레인 1대를 여러 작업이 나눠 쓸 때, 크레인 구역에 사용 기간을 넣어 두면 작업 바와 겹치는 날을 바로 확인할 수 있습니다. 조업 정수일을 「조업」 구역에 넣어 두면 공정 회의 때 함께 보기 좋습니다.</p></div>
+    </section>
+
+    <!-- 7 -->
     <section id="chart">
-      <h2><span class="n">6</span>바차트 활용·출력</h2>
+      <h2><span class="n">7</span>바차트 활용·출력</h2>
       <p class="lead">[바차트 생성]을 누르면 손으로 그리던 보고용 공정표가 만들어집니다. 칸 아래선을 굵게 그린 바와 시작·종료 원으로 표시합니다.</p>
       <figure class="wide">
         <div class="shot"><img src="{{img:chart}}" alt="보고용 바차트: D-DAY 줄, 날짜 머리글, 주요 EVENT, 작업별 바"></div>
-        <figcaption>위에서부터 D-DAY 줄 · 월/일/요일 · 주요 EVENT · 대분류(○) / 작업항목(-) / 세부작업(·). 작업항목 줄에는 아래 세부작업 바가 모두 모여 보입니다.</figcaption>
+        <figcaption>위에서부터 D-DAY 줄 · 월/일/요일 · 주요 EVENT · 구역 일정(크레인 등) · 대분류(○) / 작업항목(-) / 세부작업(·). 작업항목 줄에는 아래 세부작업 바가 모두 모여 보입니다.</figcaption>
       </figure>
 
       <h3>세부작업 접기 (요약 보고)</h3>
@@ -378,26 +414,26 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <ol class="steps">
         <li>필요하면 세부작업을 접고, 메인에서 <b>시작·종료·기간 열</b>을 숨깁니다.</li>
         <li><kbd>Ctrl</kbd> + <kbd>P</kbd>. A3 가로, 한 페이지 너비로 맞춰져 있고 인쇄 영역은 표까지만 잡혀 있습니다(안내 줄은 인쇄 안 됨).</li>
-        <li>여러 장이 되면 머리글(D-DAY ~ 주요 EVENT)과 왼쪽 구분 열이 매 장 반복됩니다.</li>
+        <li>여러 장이 되면 머리글(D-DAY ~ 구역 일정)과 왼쪽 구분 열이 매 장 반복됩니다.</li>
       </ol>
       <div class="warn"><strong>알아 둘 점</strong><p>바차트는 누를 때마다 작업입력 기준으로 다시 그려집니다. 바 영역에 직접 그린 선·글자는 지워지고, 바차트에서 고친 뒤에는 <kbd>Ctrl</kbd>+<kbd>Z</kbd>(실행 취소)가 되지 않습니다. 원본은 항상 작업입력입니다.</p></div>
     </section>
 
-    <!-- 7 -->
+    <!-- 8 -->
     <section id="move">
-      <h2><span class="n">7</span>새 버전으로 옮기기</h2>
+      <h2><span class="n">8</span>새 버전으로 옮기기</h2>
       <p class="lead">새 버전 파일을 받으면 쓰던 내용을 버튼 하나로 옮길 수 있습니다.</p>
       <ol class="steps">
         <li>쓰던 파일의 <b>이름을 바꿉니다</b> (예: 바차트_이전.xlsm). 이름이 같은 두 파일은 엑셀에서 동시에 열 수 없습니다.</li>
         <li>새 파일을 열고 [콘텐츠 사용] → 메인의 <b>[이전 파일에서 가져오기]</b> → 쓰던 파일을 선택합니다.</li>
-        <li>작업입력·메인 설정·공종·주요일정·공휴일이 복사됩니다. 예전 3칸 양식(대분류/작업항목/세부작업)도 새 양식으로 자동 변환됩니다.</li>
+        <li>작업입력·메인 설정·공종·주요일정·구역일정·공휴일이 복사됩니다. 예전 3칸 양식(대분류/작업항목/세부작업)도 새 양식으로 자동 변환됩니다.</li>
         <li><b>[바차트 생성]</b>을 누릅니다. 예전 양식에서 가져왔다면 공종 칸이 비어 있으니 골라 주세요.</li>
       </ol>
     </section>
 
-    <!-- 8 -->
+    <!-- 9 -->
     <section id="faq">
-      <h2><span class="n">8</span>문제가 생기면</h2>
+      <h2><span class="n">9</span>문제가 생기면</h2>
       <div class="tablewrap">
         <table>
           <thead><tr><th>증상</th><th>해결</th></tr></thead>
@@ -408,6 +444,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td>작업입력을 고쳤는데 바차트가 그대로</td><td>바차트 시트를 다시 열면 자동으로 다시 그려집니다. 안 되면 [바차트 생성]을 누르세요.</td></tr>
             <tr><td>작업이 엉뚱한 작업항목 아래에 나옴</td><td>작업입력에서 그 행의 위치를 확인하세요. 세부작업은 바로 위 작업항목에 속합니다.</td></tr>
             <tr><td>바차트가 너무 길어 글자가 작게 인쇄됨</td><td>메인의 표시 단위를 주·10일·월로 바꾸거나, 차트 시작일·종료일로 기간을 줄이세요.</td></tr>
+            <tr><td>구역 일정이 일부만 나옴</td><td>구역은 처음 나온 순서대로 4개까지만 표시됩니다. 구역 이름을 합치거나 순서를 바꾸세요.</td></tr>
             <tr><td>공휴일이 빨간색으로 안 나옴</td><td>공휴일 시트에 날짜를 추가하세요. 2028년 이후는 직접 넣어야 합니다.</td></tr>
           </tbody>
         </table>
