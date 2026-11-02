@@ -81,6 +81,9 @@ Function FindRow(ByVal ws As Object, ByVal txt As String, Optional ByVal col As 
         If Trim(ws.Cells(q, col).Value) = txt Then FindRow = q: Exit Function
     Next q
 End Function
+Function LastRowIn(ByVal ws As Object) As Long
+    LastRowIn = ws.Cells(ws.Rows.Count, 3).End(-4162).Row
+End Function
 Function D2(ByVal v As Variant) As String
     If IsDate(v) Then D2 = Format(v, "mm-dd") Else D2 = "[" & v & "]"
 End Function

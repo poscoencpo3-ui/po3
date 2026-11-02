@@ -31,3 +31,29 @@
     BuildChart
     Dim wc As Worksheet: Set wc = Worksheets("바차트_일")
     WriteLog "S4 바차트 작업항목: " & wc.Cells(FindRow(wc, "- 기계정비창고"), 2).Value & " ~ " & wc.Cells(FindRow(wc, "- 기계정비창고"), 3).Value & " / 원 " & wc.Shapes.Count
+    ' 5) 표시 규칙 : 작업항목+세부작업 → 작업항목 자체 바 없이 세부작업 바만, 대분류 줄에는 아래 바 모음
+    Dim rItm As Long, rK As Long, qc As Long, sI As String, sK As String, mcol As Long
+    mcol = wc.Cells(3, 4).Value
+    rItm = FindRow(wc, "- 기계정비창고")
+    rK = FindRow(wc, "○ 분체설비")
+    For qc = 5 To mcol - 2
+        If wc.Cells(rItm, qc).Value <> "" Then sI = sI & "[" & wc.Cells(rItm, qc).Value & "]"
+        If wc.Cells(rK, qc).Value <> "" Then sK = sK & "[" & wc.Cells(rK, qc).Value & "]"
+    Next qc
+    WriteLog "S5 작업항목 줄: " & sI & " / 대분류 줄: " & sK
+    ' 6) 대분류만 있는 경우 : 대분류 자체 일정
+    Dim lr As Long
+    lr = LastRowIn(wi)
+    wi.Cells(lr + 1, 1).Value = "대분류"
+    wi.Cells(lr + 1, 3).Value = "조업 정비"
+    wi.Cells(lr + 1, 5).Value = CDate("2026-11-20")
+    wi.Cells(lr + 1, 6).Value = 3
+    OnSheetChange wi, wi.Range(wi.Cells(lr + 1, 1), wi.Cells(lr + 1, 6))
+    BuildChart
+    rK = FindRow(wc, "○ 조업 정비")
+    sK = ""
+    mcol = wc.Cells(3, 4).Value
+    For qc = 5 To mcol - 2
+        If wc.Cells(rK, qc).Value <> "" Then sK = sK & "[" & wc.Cells(rK, qc).Value & "]"
+    Next qc
+    WriteLog "S6 대분류만: " & wc.Cells(rK, 2).Value & " " & wc.Cells(rK, 4).Value & "일 바글자 " & sK & " / 입력 수식 " & wi.Cells(lr + 1, 5).HasFormula

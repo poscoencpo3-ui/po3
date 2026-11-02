@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.1 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.2 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -546,7 +546,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
             If ToDuration(wsIn.Cells(r, IN_DUR).Value, nDur) Then mDurV(mN) = nDur
 
             Select Case lvl
-                Case 1      ' 대분류 (자체 날짜는 바차트에 그리지 않음 : 아래 작업들의 범위를 표시)
+                Case 1      ' 대분류 : 아래 작업이 없을 때만 자체 날짜를 씀 (아래 작업이 있으면 요약 수식)
                     If vTxt = "" Then vTxt = "(대분류)"
                     curCat = vTxt
                     curItem = ""
@@ -556,6 +556,14 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
                     mItem(mN) = ""
                     mDet(mN) = ""
                     mHas(mN) = False
+                    If Not IsSummaryRow(wsIn, r) Then
+                        If ToDate(wsIn.Cells(r, IN_S).Value, dS) Then
+                            If Not ToDuration(wsIn.Cells(r, IN_DUR).Value, nDur) Then nDur = 1
+                            mStart(mN) = dS
+                            mEnd(mN) = dS + nDur - 1
+                            mHas(mN) = True
+                        End If
+                    End If
                 Case 2      ' 작업항목 (자체 날짜가 있으면 작업항목 줄에 직접 바, 요약 날짜면 바 없음)
                     If vTxt = "" Then vTxt = "(작업항목)"
                     If IsSummaryRow(wsIn, r) Then mHas(mN) = False: mDurV(mN) = 0
@@ -907,11 +915,16 @@ End Sub
 '   세부작업 : 2행   "· 세부작업"  → 작업항목 아래에 그룹(접기/펼치기)
 '===================================================================
 Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
+    ' 바 표시 규칙 : 한 줄에는 그 아래 가장 낮은 단계의 바만 (위 단계 자체 바는 겹치므로 그리지 않음)
+    '   대분류만        → 대분류 자체 일정
+    '   작업항목만      → 작업항목 자체 일정
+    '   작업항목+세부작업 → 세부작업 바들 (작업항목 자체 바 없음)
+    '   대분류 줄       → 아래 작업들의 바를 같은 규칙으로 모아서 (1단계로 접어도 내용이 보이게)
     Dim cats() As String, nCat As Long, items() As String, nItem As Long
-    Dim ci As Long, ii As Long, k As Long, r As Long, rItem As Long, rDetail As Long
+    Dim ci As Long, ii As Long, k As Long, r As Long, rItem As Long, rDetail As Long, rCat As Long
     Dim cMin As Date, cMax As Date, cHas As Boolean
-    Dim iMin As Date, iMax As Date, iHas As Boolean
-    Dim lbl As String, rCat As Long
+    Dim iMin As Date, iMax As Date, iHas As Boolean, hasDetBar As Boolean
+    Dim lbl As String
 
     nCat = 0
     ReDim cats(1 To mN)
@@ -921,12 +934,11 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
 
     r = CH_BODY
     For ci = 1 To nCat
-        ' --- 대분류 행 (2행) : 아래 작업 전체 기간 바 ---
+        ' --- 대분류 행 (2행) ---
         cHas = RangeOf(cats(ci), "", False, cMin, cMax)
         rCat = r
         WriteBlock ws, r, "○ " & cats(ci), cHas, cMin, cMax, False
         ws.Range(ws.Cells(r, COL_LABEL), ws.Cells(r + 1, COL_D)).Font.Bold = True
-        If cHas Then AddSegment r, cMin, cMax, cats(ci), "", CatColor(cats(ci))
         ws.Cells(r, mc).Value = "K|" & RowsOf(cats(ci), "", False) & "|" & cats(ci)
         ws.Cells(r + 1, mc).Value = "L"
         r = r + 2
@@ -937,6 +949,15 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
         For k = 1 To mN
             If mCat(k) = cats(ci) And mItem(k) <> "" Then AddUnique items, nItem, mItem(k)
         Next k
+
+        If nItem = 0 Then
+            ' 대분류만 있음 : 대분류 자체 일정
+            For k = 1 To mN
+                If mCat(k) = cats(ci) And mItem(k) = "" And mHas(k) Then
+                    AddSegment rCat, mStart(k), mEnd(k), cats(ci), mLow(k), SegColor(k)
+                End If
+            Next k
+        End If
 
         For ii = 1 To nItem
             rItem = r
@@ -955,6 +976,15 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
             r = r + 2
             rDetail = r
 
+            ' 날짜 있는 세부작업이 있으면 작업항목 자체 바는 그리지 않음
+            hasDetBar = False
+            For k = 1 To mN
+                If mCat(k) = cats(ci) And mItem(k) = items(ii) And mDet(k) <> "" And mHas(k) Then
+                    hasDetBar = True
+                    Exit For
+                End If
+            Next k
+
             For k = 1 To mN
                 If mCat(k) = cats(ci) And mItem(k) = items(ii) Then
                     If mDet(k) <> "" Then
@@ -966,12 +996,14 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
                         ws.Cells(r + 1, mc).Value = "L"
                         If mHas(k) Then
                             AddSegment r, mStart(k), mEnd(k), mDet(k), mLow(k), SegColor(k)      ' 세부작업 행
-                            AddSegment rItem, mStart(k), mEnd(k), mDet(k), mLow(k), SegColor(k)  ' 작업항목 요약 행
+                            AddSegment rItem, mStart(k), mEnd(k), mDet(k), mLow(k), SegColor(k)  ' 작업항목 줄
+                            AddSegment rCat, mStart(k), mEnd(k), mDet(k), mLow(k), SegColor(k)   ' 대분류 줄
                         End If
                         r = r + 2
-                    ElseIf mHas(k) Then
-                        ' 작업항목 자체 일정 : 작업항목 줄에 작업항목 이름으로 표시
+                    ElseIf mHas(k) And Not hasDetBar Then
+                        ' 작업항목만 있음 : 작업항목 자체 일정을 작업항목 이름으로
                         AddSegment rItem, mStart(k), mEnd(k), items(ii), mLow(k), SegColor(k)
+                        AddSegment rCat, mStart(k), mEnd(k), items(ii), mLow(k), SegColor(k)
                     End If
                 End If
             Next k
@@ -1037,15 +1069,6 @@ End Function
 ' 바 선/원 색 : 검정 또는 공종색
 Private Function SegColor(ByVal k As Long) As Long
     If mBarByTrade Then SegColor = TradeColor(mTrade(k)) Else SegColor = 0
-End Function
-
-' 대분류 바 색 : 공종색 모드면 대분류의 공종색
-Private Function CatColor(ByVal cat As String) As Long
-    Dim k As Long
-    If Not mBarByTrade Then Exit Function
-    For k = 1 To mN
-        If mCat(k) = cat And mItem(k) = "" And mDet(k) = "" Then CatColor = TradeColor(mTrade(k)): Exit Function
-    Next k
 End Function
 
 ' 대분류/작업항목에 속한 작업입력 행 번호 목록 "5,6,7"
@@ -2556,8 +2579,8 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
             rb = IN_FIRST_ROW + k - 2
             ' 우리가 넣은 요약인지 : 수식이거나 J열 "S" 이거나 비어 있음 (대분류는 항상 요약)
             eBlank = (Trim$(VarText(v(i, IN_S))) = "")
-            isOurs = (lv(i) = 1) Or (Left$(CStr(fm(i, 1)), 1) = "=") Or (VarText(fl(i, 1)) = "S") Or eBlank
-            If isOurs And rb >= ra Then
+            isOurs = (Left$(CStr(fm(i, 1)), 1) = "=") Or (VarText(fl(i, 1)) = "S") Or eBlank
+            If rb >= ra And (isOurs Or lv(i) = 1) Then        ' 대분류는 아래 작업이 있으면 항상 수식
                 fS = "=IF(COUNT(" & cS & ra & ":" & cS & rb & ")=0,"""",MIN(" & cS & ra & ":" & cS & rb & "))"
                 fD = "=IF(" & cS & r & "="""","""",MAX(" & cE & ra & ":" & cE & rb & ")-" & cS & r & "+1)"
                 If CStr(fm(i, 1)) <> fS Then wsIn.Cells(r, IN_S).Formula = fS
