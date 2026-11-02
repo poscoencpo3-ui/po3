@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.1 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -123,7 +123,6 @@ Private Const COL_E As Long = 3       ' C 종료일
 Private Const COL_D As Long = 4       ' D 기간
 Private Const COL_CHART0 As Long = 5  ' E~ 날짜 칸
 
-Private Const ROW_CAT_H As Single = 20     ' 대분류 행 높이
 Private Const ROW_UP_H As Single = 16.5    ' 바 윗줄(선 위) 행 높이
 Private Const ROW_LOW_H As Single = 12.75  ' 바 아랫줄(선 아래) 행 높이
 Private Const CIRCLE_D As Single = 8       ' 시작/종료 원 지름(pt)
@@ -197,7 +196,7 @@ Private mCircleN As Long
 Private mBarByTrade As Boolean        ' 바 선 색을 공종색으로
 Private mHdrFirst As Long             ' 보이는 머리글 첫 행 (D-DAY 있으면 4행)
 Private mHdrLast As Long              ' 보이는 머리글 마지막 행 (주요 이벤트 포함)
-Private Const LAYOUT_VER As String = "3"  ' 바차트 시트 배치 버전 (바뀌면 틀 고정/인쇄 설정 다시)
+Private Const LAYOUT_VER As String = "4"  ' 바차트 시트 배치 버전 (바뀌면 틀 고정/인쇄 설정 다시)
 
 
 '===================================================================
@@ -223,7 +222,7 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     Dim minD As Date, maxD As Date, anyDate As Boolean
     Dim nWarn As Long, i As Long, lastRow As Long, lastCol As Long
     Dim title As String, colW As Double, nm As String
-    Dim isNew As Boolean, wasActive As Boolean, collapsed As Boolean
+    Dim isNew As Boolean, wasActive As Boolean, showLv As Integer
     Dim scrRow As Long, scrCol As Long, selAddr As String
     Dim evOld As Boolean, hasDDay As Boolean, dDay As Date, needFinish As Boolean
 
@@ -307,14 +306,15 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
             selAddr = ActiveCell.Address
             On Error GoTo EH
         End If
-        collapsed = IsCollapsed(ws)
+        showLv = ShownLevel(ws)
+        If CStr(ws.Cells(META_ROW, 5).Value) <> LAYOUT_VER Then showLv = CfgLevel()
         needFinish = (CStr(ws.Cells(META_ROW, 5).Value) <> LAYOUT_VER)   ' 이전 버전 배치
         ClearChartSheet ws
     Else
         Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
         ws.Name = nm
         isNew = True
-        collapsed = (CfgText(CFG_DETAIL) = "접힘")
+        showLv = CfgLevel()
     End If
 
     mSegN = 0: mBlkN = 0: mCircleN = 0
@@ -377,7 +377,7 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
         ActiveWindow.ScrollColumn = scrCol
         On Error GoTo EH
     End If
-    If collapsed Then ShowLevel ws, 1
+    If showLv < 3 Then ShowLevel ws, showLv
 
     If interactive Then ws.Activate
     RenderChart = True
@@ -421,17 +421,27 @@ Private Sub ClearChartSheet(ByVal ws As Worksheet)
 End Sub
 
 ' 세부작업 행이 접혀 있는지 (첫 세부작업 행이 숨겨져 있으면 접힘)
-Private Function IsCollapsed(ByVal ws As Worksheet) As Boolean
-    Dim mc As Long, r As Long, lastRow As Long
+' 지금 보이는 단계 : 1 대분류만 / 2 작업항목까지 / 3 전체
+Private Function ShownLevel(ByVal ws As Worksheet) As Integer
+    Dim mc As Long, r As Long, lastRow As Long, m As String
+    ShownLevel = 3
     mc = MetaCol(ws)
     If mc = 0 Then Exit Function
     lastRow = ws.Cells(ws.Rows.Count, mc).End(xlUp).Row
     For r = CH_BODY To lastRow
-        If Left$(CStr(ws.Cells(r, mc).Value), 2) = "D|" Then
-            IsCollapsed = ws.Rows(r).Hidden
-            Exit Function
-        End If
+        m = Left$(CStr(ws.Cells(r, mc).Value), 2)
+        If m = "I|" And ws.Rows(r).Hidden Then ShownLevel = 1: Exit Function
+        If m = "D|" And ws.Rows(r).Hidden Then ShownLevel = 2
     Next r
+End Function
+
+' 메인 "세부작업 행" 설정 → 처음 보일 단계
+Private Function CfgLevel() As Integer
+    Select Case CfgText(CFG_DETAIL)
+        Case "접힘": CfgLevel = 2
+        Case "대분류만": CfgLevel = 1
+        Case Else: CfgLevel = 3
+    End Select
 End Function
 
 
@@ -439,11 +449,15 @@ End Function
 '  2. 세부작업 접기 / 펼치기
 '===================================================================
 Public Sub CollapseDetails()
-    SetDetailLevel 1
+    SetDetailLevel 2                 ' 세부작업만 숨김 (작업항목 줄에 바 모아 보기)
+End Sub
+
+Public Sub ShowCategoriesOnly()
+    SetDetailLevel 1                 ' 대분류만
 End Sub
 
 Public Sub ExpandDetails()
-    SetDetailLevel 2
+    SetDetailLevel 3                 ' 전체
 End Sub
 
 Private Sub SetDetailLevel(ByVal lv As Integer)
@@ -897,7 +911,7 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
     Dim ci As Long, ii As Long, k As Long, r As Long, rItem As Long, rDetail As Long
     Dim cMin As Date, cMax As Date, cHas As Boolean
     Dim iMin As Date, iMax As Date, iHas As Boolean
-    Dim lbl As String
+    Dim lbl As String, rCat As Long
 
     nCat = 0
     ReDim cats(1 To mN)
@@ -907,16 +921,15 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
 
     r = CH_BODY
     For ci = 1 To nCat
-        ' --- 대분류 행 ---
+        ' --- 대분류 행 (2행) : 아래 작업 전체 기간 바 ---
         cHas = RangeOf(cats(ci), "", False, cMin, cMax)
-        AddBlock r
-        SetText ws.Cells(r, COL_LABEL), "○ " & cats(ci)
-        ws.Range(ws.Cells(r, COL_LABEL), ws.Cells(r, COL_D)).Font.Bold = True
-        ws.Cells(r, COL_LABEL).Font.Size = 10
-        If cHas Then WriteDates ws, r, cMin, cMax
-        ws.Rows(r).RowHeight = ROW_CAT_H
+        rCat = r
+        WriteBlock ws, r, "○ " & cats(ci), cHas, cMin, cMax, False
+        ws.Range(ws.Cells(r, COL_LABEL), ws.Cells(r + 1, COL_D)).Font.Bold = True
+        If cHas Then AddSegment r, cMin, cMax, cats(ci), "", CatColor(cats(ci))
         ws.Cells(r, mc).Value = "K|" & RowsOf(cats(ci), "", False) & "|" & cats(ci)
-        r = r + 1
+        ws.Cells(r + 1, mc).Value = "L"
+        r = r + 2
 
         ' --- 작업항목 ---
         nItem = 0
@@ -957,20 +970,23 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
                         End If
                         r = r + 2
                     ElseIf mHas(k) Then
-                        ' 세부작업명 없이 날짜만 있으면 작업항목 줄에 직접 표시
-                        AddSegment rItem, mStart(k), mEnd(k), "", mLow(k), SegColor(k)
+                        ' 작업항목 자체 일정 : 작업항목 줄에 작업항목 이름으로 표시
+                        AddSegment rItem, mStart(k), mEnd(k), items(ii), mLow(k), SegColor(k)
                     End If
                 End If
             Next k
 
             If r > rDetail Then
-                ws.Rows(rDetail & ":" & (r - 1)).Group
+                ws.Rows(rDetail & ":" & (r - 1)).Group           ' 세부작업 (3단계)
             End If
         Next ii
+        If r > rCat + 2 Then
+            ws.Rows((rCat + 2) & ":" & (r - 1)).Group            ' 작업항목 + 세부작업 (2단계)
+        End If
     Next ci
 
     On Error Resume Next
-    ws.Outline.SummaryRow = xlSummaryAbove   ' [+]/[-] 버튼을 작업항목 줄에 표시
+    ws.Outline.SummaryRow = xlSummaryAbove   ' [+]/[-] 버튼을 대분류·작업항목 줄에 표시
     On Error GoTo 0
     LayoutBody = r - 1
 End Function
@@ -1021,6 +1037,15 @@ End Function
 ' 바 선/원 색 : 검정 또는 공종색
 Private Function SegColor(ByVal k As Long) As Long
     If mBarByTrade Then SegColor = TradeColor(mTrade(k)) Else SegColor = 0
+End Function
+
+' 대분류 바 색 : 공종색 모드면 대분류의 공종색
+Private Function CatColor(ByVal cat As String) As Long
+    Dim k As Long
+    If Not mBarByTrade Then Exit Function
+    For k = 1 To mN
+        If mCat(k) = cat And mItem(k) = "" And mDet(k) = "" Then CatColor = TradeColor(mTrade(k)): Exit Function
+    Next k
 End Function
 
 ' 대분류/작업항목에 속한 작업입력 행 번호 목록 "5,6,7"
@@ -2942,7 +2967,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     CfgRow ws, CFG_START, "차트 시작일", "", "비워 두면 작업 최초 시작일 기준 자동"
     CfgRow ws, CFG_END, "차트 종료일", "", "비워 두면 작업 최종 종료일 기준 자동"
     CfgRow ws, CFG_BASE, "기준일 (빨간 세로선)", "", "입력하면 해당 날짜에 빨간 세로선 표시 (비우면 없음)"
-    CfgRow ws, CFG_DETAIL, "세부작업 행", "펼침", "펼침 / 접힘 - 접힘이면 작업항목 줄에 바만 표시"
+    CfgRow ws, CFG_DETAIL, "세부작업 행", "펼침", "펼침 / 접힘 / 대분류만 - 바차트를 만들 때 처음 보일 단계 (엑셀 왼쪽 1·2·3 단추와 같음)"
     CfgRow ws, CFG_DATECOLS, "시작·종료·기간 열", "표시", "표시 / 숨김"
     CfgRow ws, CFG_COLWIDTH, "기간 칸 너비", "", "일/주/10일/월 한 칸의 너비. 비워 두면 자동 (일 3.6 / 주 6.3 / 10일 7 / 월 9)"
     CfgRow ws, CFG_LABELSIZE, "바 글자 크기", "9", "바 위/아래 글자 크기. 공간이 좁으면 자동으로 줄어듦 (최소 6)"
@@ -2957,7 +2982,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     AddListValidation ws.Cells(CFG_EVENTS, CFG_COL), "표시,숨김"
     AddListValidation ws.Cells(CFG_LANES, CFG_COL), "표시,숨김"
     AddListValidation ws.Cells(CFG_UNIT, CFG_COL), UNIT_DAY & "," & UNIT_WEEK & "," & UNIT_10D & "," & UNIT_MONTH
-    AddListValidation ws.Cells(CFG_DETAIL, CFG_COL), "펼침,접힘"
+    AddListValidation ws.Cells(CFG_DETAIL, CFG_COL), "펼침,접힘,대분류만"
     AddListValidation ws.Cells(CFG_DATECOLS, CFG_COL), "표시,숨김"
 
     With ws.Range(ws.Cells(4, 2), ws.Cells(CFG_LAST, 4))
@@ -2974,8 +2999,8 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
         "   - 종료일은 수식(시작일+기간-1)으로 자동 계산되고, 오른쪽 간트차트에 공종색으로 바로 표시됩니다.", _
         "   - 작업내용은 선 위에, 하단표기는 선 아래에 표시됩니다. 공종과 색은 [공종] 시트에서 바꿉니다.", _
         "2. 위 설정에서 표시 단위(일/주/10일/월)를 고르고 [바차트 생성]을 누르면 보고용 바차트가 만들어집니다.", _
-        "3. 바차트 시트 왼쪽의 [-]/[+] 또는 [세부작업 접기/펼치기] 버튼으로 세부작업 행을 숨기면", _
-        "   작업항목 줄에 세부작업 바만 가로로 남습니다.", _
+        "3. 바차트 시트 왼쪽 위 1·2·3 단추 : 1 대분류만 / 2 작업항목까지 (세부작업 바는 작업항목 줄에 모임) / 3 전체.", _
+        "   [대분류만 보기] / [세부작업 접기] / [세부작업 펼치기] 버튼도 같습니다.", _
         "4. 바차트 시트 왼쪽의 구분·시작일·종료일·기간을 고치면 작업입력에 반영되고 바로 다시 그려집니다.", _
         "   (작업입력을 고친 경우에는 바차트 시트를 열 때 자동으로 다시 그려짐 / 바 영역에 직접 그린 것은 지워짐)", _
         "5. 공휴일은 [공휴일] 시트에서 추가/삭제하세요 (빨간 날짜로 표시).", _
@@ -2991,6 +3016,7 @@ Private Sub BuildMainSheet(ByVal ws As Worksheet)
     AddButton ws, "바차트 생성", "BuildChart", ws.Range("F5:F6")
     AddButton ws, "세부작업 접기", "CollapseDetails", ws.Range("F8:F8")
     AddButton ws, "세부작업 펼치기", "ExpandDetails", ws.Range("F9:F9")
+    AddButton ws, "대분류만 보기", "ShowCategoriesOnly", ws.Range("F10:F10")
     AddButton ws, "작업입력 시트로", "GoToInput", ws.Range("F11:F11")
     AddButton ws, "주요 이벤트 추가", "AddEvent", ws.Range("F13:F13")
     AddButton ws, "구역 일정 입력", "GoToLanes", ws.Range("F14:F14")

@@ -145,7 +145,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">바차트_자동작성.xlsm · v0.7</span>
+    <span class="ver">바차트_자동작성.xlsm · v0.7.1</span>
   </div>
 </header>
 
@@ -222,7 +222,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td class="k">표시 단위</td><td class="v">일 / 주 / 10일 / 월</td><td>일간 작업 계획은 <b>일</b>, 주간 공정회의는 <b>주</b>, 장기 공정은 <b>10일</b>·<b>월</b>. 단위를 바꿔 생성하면 시트가 따로 생겨서 함께 둘 수 있습니다.</td></tr>
             <tr><td class="k">차트 시작일·종료일</td><td class="v">2026-11-01</td><td>보고 기간만 잘라서 보고 싶을 때. 비우면 작업 일정에 맞춰 자동입니다. <b>작업입력 간트도 같은 기간</b>으로 바로 바뀝니다.</td></tr>
             <tr><td class="k">기준일 (빨간 세로선)</td><td class="v">2026-11-05</td><td>「오늘까지 진행」이나 보고 기준일을 빨간 굵은 세로선으로 표시합니다.</td></tr>
-            <tr><td class="k">세부작업 행</td><td class="v">펼침 / 접힘</td><td>접힘이면 바차트를 만들 때 세부작업 행을 숨기고 작업항목 줄에 바만 모아 보여줍니다.</td></tr>
+            <tr><td class="k">세부작업 행</td><td class="v">펼침 / 접힘 / 대분류만</td><td>바차트를 만들 때 처음 보일 단계. 접힘이면 세부작업을 숨기고 작업항목 줄에 바를 모아 보여주고, 대분류만이면 대분류 전체 기간 바만 보여줍니다.</td></tr>
             <tr><td class="k">시작·종료·기간 열</td><td class="v">표시 / 숨김</td><td>보고서에 날짜 열이 필요 없으면 숨김.</td></tr>
             <tr><td class="k">기간 칸 너비</td><td class="v">(비움)</td><td>바차트가 너무 길거나 좁을 때만. 일 3.6 / 주 6.3 / 10일 7 / 월 9 가 기본입니다.</td></tr>
             <tr><td class="k">바 글자 크기</td><td class="v">9</td><td>바 위아래 글자 크기. 자리가 좁으면 6까지 자동으로 줄어듭니다.</td></tr>
@@ -238,7 +238,8 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <div class="buttons">
         <div class="btnrow"><img src="{{img:btn_build}}" alt="바차트 생성 버튼"><p><b>작업입력 내용으로 보고용 바차트를 만듭니다.</b> 설정을 바꾼 뒤에도 이 버튼을 누르면 새 설정으로 다시 그려집니다. 작업입력의 간트 색도 함께 정리됩니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_collapse}}" alt="세부작업 접기 버튼"><p>바차트의 세부작업 행을 숨겨 <b>작업항목 줄에 바만 모아</b> 보여줍니다. 요약 보고용.</p></div>
-        <div class="btnrow"><img src="{{img:btn_expand}}" alt="세부작업 펼치기 버튼"><p>숨긴 세부작업 행을 다시 보여줍니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_expand}}" alt="세부작업 펼치기 버튼"><p>숨긴 행을 모두 다시 보여줍니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_catonly}}" alt="대분류만 보기 버튼"><p><b>대분류 줄만</b> 남기고 숨깁니다. 대분류마다 전체 기간 바가 있어 큰 흐름만 보고할 때 씁니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_input}}" alt="작업입력 시트로 버튼"><p>작업입력 시트로 이동합니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_event}}" alt="주요 이벤트 추가 버튼"><p>날짜 → 내용 → 색상을 차례로 물어보고 <b>주요일정에 한 줄 추가</b>합니다. 바차트를 열면 <span class="tri">▼</span>로 나타납니다.</p></div>
         <div class="btnrow"><img src="{{img:btn_lane}}" alt="구역 일정 입력 버튼"><p>구역일정 시트로 이동합니다. 크레인 사용 같은 기간 일정을 입력할 때. <a href="#lane">6장</a> 참고.</p></div>
@@ -386,12 +387,12 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
         <figcaption>위에서부터 D-DAY 줄 · 월/일/요일 · 주요 EVENT · 구역 일정(크레인 등) · 대분류(○) / 작업항목(-) / 세부작업(·). 작업항목 줄에는 아래 세부작업 바가 모두 모여 보입니다.</figcaption>
       </figure>
 
-      <h3>세부작업 접기 (요약 보고)</h3>
+      <h3>단계별로 접어서 보기 (요약 보고)</h3>
       <figure>
         <div class="shot"><img src="{{img:excel_collapsed}}" alt="엑셀에서 세부작업을 접은 바차트. 왼쪽에 1, 2 단추와 + 단추가 보임"></div>
-        <figcaption>엑셀 왼쪽의 <kbd>1</kbd> 을 누르면 전체 접기, <kbd>2</kbd> 는 전체 펼치기, <kbd>+</kbd> / <kbd>-</kbd> 는 그 작업항목만 펼치기·접기입니다.</figcaption>
+        <figcaption>엑셀 왼쪽 위 <kbd>1</kbd> = 대분류만, <kbd>2</kbd> = 작업항목까지(세부작업 바는 작업항목 줄에 모임), <kbd>3</kbd> = 전체. 왼쪽의 <kbd>+</kbd> / <kbd>-</kbd> 는 그 대분류·작업항목만 펼치기·접기입니다. (그림은 이전 버전 화면입니다)</figcaption>
       </figure>
-      <p>메인의 [세부작업 접기]·[세부작업 펼치기] 버튼도 같은 일을 합니다. 접어도 표 맨 아래 굵은 선은 그대로라 바로 출력해도 깔끔합니다.</p>
+      <p>대분류 줄에는 아래 작업 전체 기간 바가 있어 <kbd>1</kbd> 로 접어도 일정이 보입니다. 메인의 [대분류만 보기]·[세부작업 접기]·[세부작업 펼치기] 버튼도 같은 일을 합니다. 접어도 표 맨 아래 굵은 선은 그대로라 바로 출력해도 깔끔합니다.</p>
 
       <h3>바차트에서 바로 고치기</h3>
       <p>왼쪽 <b>구분 · 시작일 · 종료일 · 기간</b> 칸을 고치면 작업입력에 반영되고 바로 다시 그려집니다.</p>
