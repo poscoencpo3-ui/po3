@@ -2,9 +2,12 @@
 
   python3 tools/build.py
 
-  download/바차트_자동작성.xlsm : 매크로 포함 엑셀 파일 (열고 '콘텐츠 사용' → 자동 초기 설정)
-  download/BarChart.bas      : 직접 가져오기용 모듈 (한국어 Windows 용 CP949 인코딩)
-  download/ThisWorkbook_코드.txt : 직접 가져오기 때 ThisWorkbook 에 붙여 넣을 이벤트 코드
+  파일 이름 = 바차트_v<버전>_<바뀐 내용>.xlsm  (이전 버전 파일도 함께 유지)
+  download/바차트_v0.7.3_대분류바제거.xlsm        : 바차트 기본판 (BarChart 모듈만)
+  download/바차트_v0.8_시간공정시트_산적표.xlsm   : 기본판 + 시간입력/시간공정표 시트 (TimeChart 모듈)
+  download/BarChart.bas, TimeChart.bas          : 직접 가져오기용 모듈 (한국어 Windows 용 CP949 인코딩)
+  download/ThisWorkbook_코드.txt                : 직접 가져오기 때 ThisWorkbook 에 붙여 넣을 이벤트 코드 (v0.7.3)
+  download/ThisWorkbook_코드_v0.8.txt           : 〃 (v0.8, 시간공정표 자동 다시 그리기 포함)
 """
 import io
 import os
@@ -19,10 +22,15 @@ sys.path.insert(0, HERE)
 from vba_bin import build_vba_project  # noqa: E402
 
 SRC = os.path.join(ROOT, "src", "BarChart.bas")
+SRC_TIME = os.path.join(ROOT, "src", "TimeChart.bas")
 DIST = os.path.join(ROOT, "download")
-XLSM = os.path.join(DIST, "바차트_자동작성.xlsm")
+XLSM_BASE = os.path.join(DIST, "바차트_v0.7.3_대분류바제거.xlsm")
+XLSM_TIME = os.path.join(DIST, "바차트_v0.8_시간공정시트_산적표.xlsm")
+OLD_FILES = ["바차트_자동작성.xlsm"]      # 예전 이름 (버전 붙은 이름으로 바뀜)
 BAS = os.path.join(DIST, "BarChart.bas")
+BAS_TIME = os.path.join(DIST, "TimeChart.bas")
 TWB = os.path.join(DIST, "ThisWorkbook_코드.txt")
+TWB_TIME = os.path.join(DIST, "ThisWorkbook_코드_v0.8.txt")
 
 THISWORKBOOK = """Option Explicit
 
@@ -44,8 +52,30 @@ End Sub
 """
 
 
-def module_source():
-    text = open(SRC, encoding="utf-8").read()
+THISWORKBOOK_TIME = """Option Explicit
+
+Private Sub Workbook_Open()
+    ' 처음 열었을 때(메인 시트가 없을 때) 초기 설정 자동 실행 (바차트 시트 + 시간 시트)
+    On Error Resume Next
+    TimeChart.AutoSetupAllIfNeeded
+End Sub
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
+    ' 바차트 시트 왼쪽 칸 수정 → 작업입력 반영 / 작업입력·시간입력 수정 → 변경 표시
+    BarChart.OnSheetChange Sh, Target
+    TimeChart.OnTimeSheetChange Sh, Target
+End Sub
+
+Private Sub Workbook_SheetActivate(ByVal Sh As Object)
+    ' 입력이 바뀐 뒤 바차트 / 시간공정표 시트를 열면 자동으로 다시 그림
+    BarChart.OnSheetActivate Sh
+    TimeChart.OnTimeSheetActivate Sh
+End Sub
+"""
+
+
+def module_source(path=SRC):
+    text = open(path, encoding="utf-8").read()
     lines = text.splitlines()
     assert lines[0].startswith("Attribute VB_Name")
     return "\r\n".join(lines[1:]) + "\r\n", text
@@ -79,8 +109,8 @@ def check_identifiers(text):
         sys.exit("VBA 예약어와 겹치는 이름: " + ", ".join(bad))
 
 
-def build_xlsm(vba_bin):
-    wb = xlsxwriter.Workbook(XLSM)
+def build_xlsm(path, vba_bin, with_time):
+    wb = xlsxwriter.Workbook(path)
     wb.set_vba_name("ThisWorkbook")
     wb.add_vba_project(io.BytesIO(vba_bin), is_stream=True)
     ws = wb.add_worksheet("시작")
@@ -93,7 +123,10 @@ def build_xlsm(vba_bin):
     body = wb.add_format({"font_size": 11, "font_name": "맑은 고딕"})
     warn = wb.add_format({"font_size": 11, "font_name": "맑은 고딕", "font_color": "#C00000", "bold": True})
     ws.set_row(1, 32)
-    ws.write("B2", "BAR CHART 공정표 자동 작성", title)
+    ws.write("B2", "BAR CHART 공정표 자동 작성" + ("  (v0.8 : 시간공정표 · 산적표 포함)" if with_time else ""), title)
+    done = "초기 설정이 끝나면 [메인] / [작업입력] / [공휴일] 시트가 만들어지고 이 시트는 사라집니다."
+    if with_time:
+        done = "초기 설정이 끝나면 [메인] / [작업입력] … 과 함께 [시간입력] / [시간공정표] 시트가 만들어지고 이 시트는 사라집니다."
     lines = [
         ("※ 화면 위 노란 줄의 [콘텐츠 사용](매크로 사용)을 누르면 초기 설정이 자동으로 실행됩니다.", warn),
         ("   자동으로 실행되지 않으면 아래 [초기 설정] 버튼을 누르세요.", body),
@@ -101,28 +134,38 @@ def build_xlsm(vba_bin):
         ("※ '이 파일의 원본을 신뢰할 수 없어 매크로를 차단했습니다' 라는 빨간 줄이 보이면", body),
         ("   파일을 닫고 → 파일 오른쪽 클릭 → 속성 → 아래쪽 [차단 해제] 체크 → 확인 후 다시 여세요.", body),
         ("", body),
-        ("초기 설정이 끝나면 [메인] / [작업입력] / [공휴일] 시트가 만들어지고 이 시트는 사라집니다.", body),
+        (done, body),
     ]
     for i, (text, fmt) in enumerate(lines):
         ws.write(3 + i, 1, text, fmt)
-    ws.insert_button("B12", {"macro": "SetupWorkbook", "caption": "초기 설정", "width": 160, "height": 40})
+    ws.insert_button("B12", {"macro": "SetupAll" if with_time else "SetupWorkbook",
+                             "caption": "초기 설정", "width": 160, "height": 40})
     wb.close()
+
+
+def cp949(text):
+    return text.replace("\r\n", "\n").replace("\n", "\r\n").encode("cp949")
 
 
 def main():
     os.makedirs(DIST, exist_ok=True)
+    for f in OLD_FILES:
+        if os.path.exists(os.path.join(DIST, f)):
+            os.remove(os.path.join(DIST, f))
     src, full = module_source()
+    tsrc, tfull = module_source(SRC_TIME)
     check_identifiers(full)
-    vba_bin = build_vba_project([("BarChart", src)],
-                                [("ThisWorkbook", "workbook", THISWORKBOOK), ("Sheet1", "sheet", "")])
-    build_xlsm(vba_bin)
-    with open(BAS, "wb") as f:
-        f.write(full.replace("\r\n", "\n").replace("\n", "\r\n").encode("cp949"))
-    with open(TWB, "wb") as f:
-        f.write(THISWORKBOOK.replace("\n", "\r\n").encode("cp949"))
-    print("생성:", XLSM)
-    print("생성:", BAS)
-    print("생성:", TWB)
+    check_identifiers(tfull)
+    docs = [("Sheet1", "sheet", "")]
+    build_xlsm(XLSM_BASE, build_vba_project([("BarChart", src)],
+                                            [("ThisWorkbook", "workbook", THISWORKBOOK)] + docs), False)
+    build_xlsm(XLSM_TIME, build_vba_project([("BarChart", src), ("TimeChart", tsrc)],
+                                            [("ThisWorkbook", "workbook", THISWORKBOOK_TIME)] + docs), True)
+    for path, text in ((BAS, full), (BAS_TIME, tfull), (TWB, THISWORKBOOK), (TWB_TIME, THISWORKBOOK_TIME)):
+        with open(path, "wb") as f:
+            f.write(cp949(text))
+    for path in (XLSM_BASE, XLSM_TIME, BAS, BAS_TIME, TWB, TWB_TIME):
+        print("생성:", path)
 
 
 if __name__ == "__main__":

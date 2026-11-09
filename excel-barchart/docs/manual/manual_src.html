@@ -145,7 +145,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">바차트_자동작성.xlsm · v0.7.3</span>
+    <span class="ver">v0.7.3 기본판 · v0.8 시간공정표판</span>
   </div>
 </header>
 
@@ -171,6 +171,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <li><a href="#chart"><span class="n">7</span>바차트 활용·출력</a></li>
       <li><a href="#move"><span class="n">8</span>새 버전으로 옮기기</a></li>
       <li><a href="#faq"><span class="n">9</span>문제가 생기면</a></li>
+      <li><a href="#time"><span class="n">10</span>시간공정표·산적표 (v0.8)</a></li>
     </ol>
   </nav>
 
@@ -180,7 +181,12 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h2><span class="n">1</span>처음 시작하기</h2>
       <p class="lead">파일을 받고 매크로를 켜면 필요한 시트가 자동으로 만들어집니다. 처음 한 번만 하면 됩니다.</p>
       <ol class="steps">
-        <li><strong>바차트_자동작성.xlsm</strong> 파일을 내려받습니다.</li>
+        <li>파일을 내려받습니다. 파일 이름에 <b>버전과 바뀐 내용</b>이 들어 있습니다.
+          <ul class="plain">
+            <li><strong>바차트_v0.7.3_대분류바제거.xlsm</strong> : 바차트 기본판 (일 단위)</li>
+            <li><strong>바차트_v0.8_시간공정시트_산적표.xlsm</strong> : 기본판 + 시간 단위 공정표·인원/장비 산적표 (<a href="#time">10장</a>). 기본판 기능은 똑같습니다.</li>
+          </ul>
+        </li>
         <li>인터넷에서 받은 파일은 Windows가 매크로를 막습니다. 파일을 <strong>오른쪽 클릭 → 속성 → 아래쪽 「차단 해제」 체크 → 확인</strong>.</li>
         <li>파일을 열고 화면 위 노란 줄의 <strong>[콘텐츠 사용]</strong>을 누릅니다.
           <div class="excelbar" style="margin-top:8px"><span class="x">보안 경고</span> 매크로를 사용할 수 없도록 설정했습니다. <span class="b">콘텐츠 사용</span></div>
@@ -460,6 +466,74 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
           </tbody>
         </table>
       </div>
+    </section>
+    <!-- 10 -->
+    <section id="time">
+      <h2><span class="n">10</span>시간공정표 · 인원/장비 산적표 (v0.8)</h2>
+      <p class="lead">SD·정비처럼 <b>시간 단위</b>로 짜는 공정을 별도 시트에서 그립니다. 같은 시간에 몰리는 인원·장비를 아래 산적표로 바로 확인할 수 있습니다. 기존 메인·작업입력·바차트는 그대로이고, 시트 두 개가 추가될 뿐입니다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>시트</th><th>하는 일</th></tr></thead>
+          <tbody>
+            <tr><td class="k">시간입력</td><td>설정(시간 칸, D-DAY, 산적표 항목) + 작업 목록 (시작일·시작시각·작업시간·인원·장비)</td></tr>
+            <tr><td class="k">시간공정표</td><td>D+n · 날짜 · 시각 머리글, 분 단위로 정확한 바, 아래쪽 인원·장비 산적표</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>시간입력</h3>
+      <figure class="wide">
+        <div class="shot"><img src="{{img:timeinput}}" alt="시간입력 시트: 위쪽 설정, 아래쪽 작업 목록"></div>
+        <figcaption>위쪽 노란 칸이 설정, 아래 표가 작업 목록입니다. 종료(자동)는 수식으로 계산됩니다.</figcaption>
+      </figure>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_time_build}}" alt="시간공정표 생성 버튼"><p>시간입력 내용으로 [시간공정표] 시트를 그립니다.</p></div>
+        <div class="btnrow"><img src="{{img:btn_time_main}}" alt="메인으로 버튼"><p>메인 시트로 이동합니다.</p></div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>설정</th><th>설명</th></tr></thead>
+          <tbody>
+            <tr><td class="k">시간 칸 (시간)</td><td>한 칸 = n시간. 1 · 2 · 3 · 4 · 6 · 12 중 선택 (기본 2). 기간이 길면 칸을 키우세요</td></tr>
+            <tr><td class="k">표시 시작일 / 종료일</td><td>비우면 첫 작업 ~ 마지막 작업 날짜로 자동</td></tr>
+            <tr><td class="k">D-DAY 기준일</td><td>이 날이 D+1. 비우면 메인 시트의 D-DAY, 그것도 없으면 첫날</td></tr>
+            <tr><td class="k">바 색상</td><td>검정 / 공종색 (공종 시트의 색)</td></tr>
+            <tr><td class="k">인원·장비1~3 이름</td><td>산적표 항목 이름. 바꾸면 작업 목록 머리글도 같이 바뀝니다 (예: 50t 크레인, 25t 크레인, 고소작업차)</td></tr>
+            <tr><td class="k">경고 기준</td><td>같은 시간에 이 수를 넘으면 산적표가 <b style="color:#c00">빨간색</b>. 비우면 경고 없음</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>작업 입력 방법</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>입력</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td>시작일 <span class="cellv">2026-11-14</span> · 시작시각 <span class="cellv">10:00</span> · 작업시간 <span class="cellv">20</span></td><td>11/14 10:00 ~ 11/15 06:00 (20h)</td></tr>
+            <tr><td>시작시각에 <span class="cellv">14</span> 만 입력</td><td>14:00 으로 자동 변환</td></tr>
+            <tr><td>시작시각 비움 · 작업시간 비움 · 일수 <span class="cellv">1</span></td><td>그날 00:00 ~ 다음날 00:00 (하루 단위 작업)</td></tr>
+            <tr><td>구분 <b>대분류</b></td><td>제목 줄 (바 없음). 그 외(작업/빈칸)는 모두 바로 그림</td></tr>
+            <tr><td>인원 <span class="cellv">8</span> · 50t 크레인 <span class="cellv">1</span></td><td>작업 기간 동안 산적표에 더해짐. 하단표기를 비우면 바 아래에 「8명 · 50t 크레인 1」 표시</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>시간공정표 · 산적표</h3>
+      <figure class="wide">
+        <div class="shot"><img src="{{img:timechart}}" alt="시간공정표: 시간 단위 바와 아래쪽 인원·장비 산적표"></div>
+        <figcaption>회색 칸은 야간(18~06시). 산적표는 시간 칸마다 <b>동시에</b> 투입되는 최대 수를 막대 높이와 숫자로 보여 주고, 경고 기준을 넘는 칸은 빨간색, 기준선은 빨간 점선입니다.</figcaption>
+      </figure>
+      <div class="buttons">
+        <div class="btnrow"><img src="{{img:btn_time_input}}" alt="시간입력으로 버튼"><p>시간입력 시트로 돌아갑니다.</p></div>
+      </div>
+      <div class="tip"><strong>자동 다시 그리기</strong><p>v0.8 파일에서는 시간입력을 고친 뒤 시간공정표 시트를 다시 열면 자동으로 다시 그려집니다. 산적표의 「최대 18 (11/15 00:00)」은 가장 많이 몰린 시각입니다. 이 시간대의 작업을 앞뒤로 옮겨 기준 아래로 맞추세요.</p></div>
+
+      <h3>쓰던 v0.7.x 파일에 시간 기능만 추가하기</h3>
+      <ol class="steps">
+        <li><b>TimeChart.bas</b> 를 내려받습니다.</li>
+        <li>쓰던 파일을 열고 <b>Alt + F11</b> → 파일 → 파일 가져오기 → TimeChart.bas.</li>
+        <li>엑셀로 돌아와 <b>Alt + F8</b> → <b>SetupTimeSheets</b> 실행 → [시간입력] / [시간공정표] 시트가 추가됩니다.</li>
+        <li>(선택) 자동 다시 그리기를 쓰려면 ThisWorkbook 코드를 <b>ThisWorkbook_코드_v0.8.txt</b> 내용으로 바꿉니다. 바꾸지 않아도 [시간공정표 생성] 버튼으로 그릴 수 있습니다.</li>
+      </ol>
     </section>
   </main>
 </div>

@@ -3,6 +3,7 @@
 사용: python3 lo_run.py <출력폴더> [--base=YYYY-MM-DD] [--script=파일.vba] [단위 ...]
   - --base=2026-11-05 : 메인 시트 기준일 지정
   - --script=파일.vba  : 바차트 생성 뒤 실행할 VBA 문장 (WriteLog "..." 로 결과 기록)
+  - --nosetup         : 초기 설정(SetupWorkbook)·바차트 생성 없이 스크립트만 실행 (SetupAll 시험용)
   - 단위별로 BuildChart 를 실행하고 <출력폴더>/result.xlsx, result.pdf, log.txt 를 만든다.
   - LibreOffice 의 VBA 호환 모드로 실행하므로 Excel 과 화면이 100% 같지는 않다.
 """
@@ -12,6 +13,7 @@ from com.sun.star.beans import PropertyValue
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "src", "BarChart.bas")
+SRC_TIME = os.path.join(HERE, "..", "src", "TimeChart.bas")
 
 
 def prop(name, value):
@@ -31,13 +33,16 @@ def main():
     args = sys.argv[2:]
     base = ""
     extra = ""
+    nosetup = False
     while args and args[0].startswith("--"):
         opt, _, val = args.pop(0).partition("=")
         if opt == "--base":
             base = val
+        elif opt == "--nosetup":
+            nosetup = True
         elif opt == "--script":
             extra = open(val, encoding="utf-8").read()
-    units = args or ["일"]
+    units = args or ([] if nosetup else ["일"])
     os.makedirs(out, exist_ok=True)
     log = os.path.join(out, "log.txt")
     if os.path.exists(log):
@@ -64,6 +69,8 @@ def main():
         libs.ProjectName = "VBAProject"
         lib = libs.createLibrary("VBAProject") if not libs.hasByName("VBAProject") else libs.getByName("VBAProject")
         lib.insertByName("BarChart", module_code(SRC))
+        if os.path.exists(SRC_TIME):
+            lib.insertByName("TimeChart", module_code(SRC_TIME))
         calls = "\n".join(
             f'    Worksheets("메인").Cells(6, 3).Value = "{u}"\n    BuildChart' for u in units)
         base_stmt = (f'    Worksheets("메인").Cells(9, 3).Value = CDate("{base}")' if base else "")
@@ -91,7 +98,7 @@ Sub RunTest()
     On Error GoTo EH
     gQuiet = True
     WriteLog "start"
-    SetupWorkbook
+{"" if nosetup else "    SetupWorkbook"}
     WriteLog "setup done: " & gLog
     gLog = ""
 {base_stmt}
