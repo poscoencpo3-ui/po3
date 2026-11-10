@@ -1,15 +1,17 @@
 Attribute VB_Name = "TimeChart"
 '===================================================================
-'  시간 단위 공정표 (SD·정비) + 인원·장비 산적표 모듈       v0.8 (초안)
+'  시간 단위 공정표 (SD·정비) + 인원·장비 산적표 모듈       v0.8.1 (초안)
 '-------------------------------------------------------------------
 '  기존 바차트(BarChart 모듈)와 따로 동작하는 추가 기능.
 '  기존 메인 / 작업입력 / 바차트 시트는 건드리지 않음.
 '
 '  [시트]
-'    시간입력   : 설정(시간 칸, D-DAY, 산적표 항목) + 작업 목록
+'    시간입력   : 설정(시간 칸, 기간, D-DAY, 바 색상, 공수 기준) + 작업 목록
 '                 구분 / 공종 / 작업내용 / 하단표기 / 시작일 / 시작시각 / 작업시간(h) / 일수(일)
-'                 / 종료(수식) / 인원 / 장비1~3 / 비고
-'    시간공정표 : D+n · 날짜 · 시각 머리글, 시간 단위 바, 아래쪽 인원·장비 산적표
+'                 / 종료(수식) / 인원 직종 5칸(관리·제관·비계·기계·배관) / 장비 3칸 / 비고
+'                 (직종·장비 이름 = 머리글 칸, 바꾸면 산적표 이름도 바뀜)
+'    시간공정표 : D+n · 날짜 · 시각 머리글, 시간 단위 바, 아래쪽 산적표
+'                 (직종별 쌓은 막대 / 장비별 막대 / 누적 공수 선그래프)
 '
 '  [매크로]
 '    SetupTimeSheets : 시간입력 / 시간공정표 시트 추가 (기존 파일에 모듈만 가져온 뒤 1회 실행)
@@ -37,11 +39,10 @@ Private Const TI_FROM As Long = 7
 Private Const TI_TO As Long = 8
 Private Const TI_DDAY As Long = 9
 Private Const TI_BARCLR As Long = 10
-Private Const TI_RES0 As Long = 12     ' 12 인원, 13~15 장비1~3 (C 이름, E 경고 기준)
-Private Const TI_RESMAX As Long = 5
-Private Const TI_NRES As Long = 4
-Private Const TI_HDR As Long = 17
-Private Const TI_FIRST As Long = 18
+Private Const TI_GONGSU As Long = 11   ' 1공수 = n시간 (누적 공수 그래프)
+Private Const TI_GRP As Long = 13      ' 머리글 위 묶음 줄 (인원 / 장비)
+Private Const TI_HDR As Long = 14
+Private Const TI_FIRST As Long = 15
 Private Const TI_ROWS As Long = 300
 Private Const TI_VER_COL As Long = 26  ' Z1 : 시간입력 변경 횟수 (시간공정표 자동 다시 그리기)
 
@@ -55,8 +56,12 @@ Private Const TC_TIME As Long = 6     ' F 시작시각 (비우면 0시)
 Private Const TC_HOURS As Long = 7    ' G 작업시간(h)
 Private Const TC_DAYS As Long = 8     ' H 일수(일) : 작업시간이 비었을 때
 Private Const TC_END As Long = 9      ' I 종료 (수식)
-Private Const TC_RES0 As Long = 10    ' J 인원, K~M 장비1~3
-Private Const TC_NOTE As Long = 14    ' N 비고
+Private Const TC_CREW0 As Long = 10   ' J~N 인원 직종 5칸 (관리 / 제관 / 비계 / 기계 / 배관)
+Private Const TC_EQ0 As Long = 15     ' O~Q 장비 3칸
+Private Const TC_NOTE As Long = 18    ' R 비고
+Private Const N_CREW As Long = 5
+Private Const N_EQ As Long = 3
+Private Const N_RES As Long = 8       ' 1~5 직종, 6~8 장비
 Private Const TC_END_FORMULA As String = _
     "=IF(OR(RC5="""",AND(RC7="""",RC8="""")),"""",INT(RC5)+IF(RC6="""",RC5-INT(RC5),IF(RC6>=1,RC6/24,RC6))+IF(RC7<>"""",RC7/24,RC8))"
 
@@ -73,7 +78,10 @@ Private Const TK_S As Long = 2        ' B 시작
 Private Const TK_E As Long = 3        ' C 종료
 Private Const TK_H As Long = 4        ' D 시간
 Private Const TK_CHART0 As Long = 5   ' E~ 시간 칸
-Private Const BAR_ROWS As Long = 6    ' 산적표 막대 높이(행 수)
+Private Const CREW_ROWS As Long = 10  ' 산적표 : 인원 막대 높이(행 수)
+Private Const EQ_ROWS As Long = 4     '          장비 막대 높이
+Private Const CUM_ROWS As Long = 12   '          누적 공수 그래프 높이
+Private Const LOAD_ROW_H As Single = 6
 Private Const MAX_SLOTS As Long = 2000
 Private Const DOT_D As Single = 7     ' 시작/종료 원 지름
 
@@ -89,8 +97,7 @@ Private Const C_INPUT_BG As Long = 13434879   ' RGB(255,255,204)
 Private Const C_CALC_BG As Long = 15921906    ' RGB(242,242,242)
 Private Const C_NIGHT_HDR As Long = 14277081  ' RGB(217,217,217)
 Private Const C_NIGHT_BODY As Long = 16250871 ' RGB(247,247,247)
-Private Const C_LOAD As Long = 14136213       ' RGB(149,179,215) 산적 막대
-Private Const C_OVER As Long = 5263615        ' RGB(255,80,80)   기준 초과
+Private Const C_LOAD_HDR As Long = 14083324   ' RGB(252,228,214)
 
 '--- 작업 데이터 ---
 Private tN As Long
@@ -101,11 +108,11 @@ Private tTrade() As String
 Private tHasBar() As Boolean
 Private tSD() As Double            ' 시작 일시
 Private tED() As Double            ' 종료 일시
-Private tRes() As Double           ' (작업, 1~4) 인원·장비 수
+Private tRes() As Double           ' (작업, 1~8) 직종별 인원·장비 수
 Private tOutRow() As Long          ' 시간공정표 행
 
-Private tResName(1 To 4) As String
-Private tResLim(1 To 4) As Double
+Private tResName(1 To 8) As String
+Private tGongsuH As Double         ' 1공수 시간
 
 Private tDay0 As Date
 Private tDays As Long
@@ -196,7 +203,7 @@ EH:
 End Function
 
 Private Sub TBuildInputSheet(ByVal ws As Worksheet)
-    Dim hdr As Variant, wid As Variant, i As Long, r As Long, lastFmt As Long, data As Variant
+    Dim hdr As Variant, wid As Variant, i As Long, k As Long, r As Long, lastFmt As Long, data As Variant
 
     ws.Cells.Font.Name = "맑은 고딕"
     ws.Cells.Font.Size = 10
@@ -205,7 +212,7 @@ Private Sub TBuildInputSheet(ByVal ws As Worksheet)
     ws.Range("A1").Font.Bold = True
     ws.Rows(1).RowHeight = 26
     TSetText ws.Range("A2"), "※ 시작일 + 시작시각 + 작업시간(h) → 종료 자동.  시작시각을 비우면 0시부터, 작업시간 대신 일수(일)로도 입력.  " & _
-                             "인원·장비 칸의 숫자는 시간공정표 아래 산적표로 집계됩니다."
+                             "직종별 인원·장비 칸의 숫자는 시간공정표 아래 산적표와 누적 공수 그래프로 집계됩니다."
     ws.Range("A2").Font.Color = C_GRID_DARK
     ws.Range("A2").Font.Size = 9
 
@@ -217,41 +224,21 @@ Private Sub TBuildInputSheet(ByVal ws As Worksheet)
     TCfgRow ws, TI_TO, "표시 종료일", "", "비우면 마지막 작업 날짜까지"
     TCfgRow ws, TI_DDAY, "D-DAY 기준일", "", "이 날 = D+1 (비우면 메인 시트의 D-DAY, 그것도 없으면 첫날)"
     TCfgRow ws, TI_BARCLR, "바 색상", "검정", "검정 / 공종색"
+    TCfgRow ws, TI_GONGSU, "공수 기준 (시간)", "8", "누적 공수 = 투입 인원 × 시간 ÷ 이 값 (8시간 = 1공수)"
     ws.Cells(TI_SLOT, TI_VAL).Value = 2
+    ws.Cells(TI_GONGSU, TI_VAL).Value = 8
     ws.Cells(TI_DDAY, TI_VAL).Value = DateSerial(2026, 11, 13)
     ws.Range(ws.Cells(TI_FROM, TI_VAL), ws.Cells(TI_DDAY, TI_VAL)).NumberFormat = "yyyy-mm-dd"
     TAddList ws.Cells(TI_SLOT, TI_VAL), "1,2,3,4,6,12"
     TAddList ws.Cells(TI_BARCLR, TI_VAL), "검정,공종색"
 
-    TSetText ws.Cells(TI_RES0 - 1, 1), "■ 산적표 항목 (이름 / 경고 기준 : 같은 시간에 이 수를 넘으면 빨간색, 비우면 경고 없음)"
-    ws.Cells(TI_RES0 - 1, 1).Font.Bold = True
-    data = Array(Array("인원", "인원", "12"), Array("장비1", "50t 크레인", "1"), _
-                 Array("장비2", "25t 크레인", "1"), Array("장비3", "고소작업차", ""))
-    For i = 0 To TI_NRES - 1
-        r = TI_RES0 + i
-        TCfgRow ws, r, CStr(data(i)(0)) & " 이름", CStr(data(i)(1)), ""
-        TSetText ws.Cells(r, 4), "경고 기준"
-        ws.Cells(r, 4).HorizontalAlignment = xlRight
-        ws.Cells(r, 4).Font.Color = C_GRID_DARK
-        If data(i)(2) <> "" Then ws.Cells(r, TI_RESMAX).Value = CLng(data(i)(2))
-        ws.Cells(r, TI_RESMAX).Interior.Color = C_INPUT_BG
-        ws.Cells(r, TI_RESMAX).HorizontalAlignment = xlCenter
-        With ws.Cells(r, TI_RESMAX).Borders
-            .LineStyle = xlContinuous
-            .Color = C_GRID
-        End With
-    Next i
-
-    ' 작업 목록 머리글
+    ' 작업 목록 머리글 (인원 직종·장비 이름은 머리글 칸을 바꾸면 됨)
     hdr = Array("구분", "공종", "작업내용 (선 위)", "하단표기", "시작일", "시작시각", "작업시간(h)", "일수(일)", _
-                "종료 (자동)", "", "", "", "", "비고")
-    wid = Array(8, 7, 30, 13, 10.5, 7.5, 8, 6.5, 11.5, 7, 9, 9, 9, 14)
-    For i = 0 To 13
-        If hdr(i) <> "" Then TSetText ws.Cells(TI_HDR, i + 1), CStr(hdr(i))
+                "종료 (자동)", "관리", "제관", "비계", "기계", "배관", "50t 크레인", "25t 크레인", "고소작업차", "비고")
+    wid = Array(8, 7, 28, 12, 10.5, 7.5, 8, 6.5, 11.5, 5.5, 5.5, 5.5, 5.5, 5.5, 8.5, 8.5, 8.5, 14)
+    For i = 0 To 17
+        TSetText ws.Cells(TI_HDR, i + 1), CStr(hdr(i))
         ws.Columns(i + 1).ColumnWidth = wid(i)
-    Next i
-    For i = 0 To TI_NRES - 1
-        ws.Cells(TI_HDR, TC_RES0 + i).Formula = "=$C$" & (TI_RES0 + i)
     Next i
     With ws.Range(ws.Cells(TI_HDR, 1), ws.Cells(TI_HDR, TC_NOTE))
         .Font.Bold = True
@@ -260,8 +247,33 @@ Private Sub TBuildInputSheet(ByVal ws As Worksheet)
         .VerticalAlignment = xlCenter
         .WrapText = True
     End With
-    ws.Range(ws.Cells(TI_HDR, TC_RES0), ws.Cells(TI_HDR, TC_RES0 + TI_NRES - 1)).Interior.Color = RGB(252, 228, 214)
+    ' 직종·장비 머리글 = 산적표 색
+    For i = 1 To N_RES
+        With ws.Cells(TI_HDR, TResCol(i))
+            .Interior.Color = TResColor(i)
+            .Font.Color = RGB(255, 255, 255)
+        End With
+    Next i
     ws.Rows(TI_HDR).RowHeight = 30
+    With ws.Range(ws.Cells(TI_GRP, TC_CREW0), ws.Cells(TI_GRP, TC_CREW0 + N_CREW - 1))
+        .Merge
+        .Interior.Color = C_LOAD_HDR
+    End With
+    TSetText ws.Cells(TI_GRP, TC_CREW0), "인원 (명)"
+    With ws.Range(ws.Cells(TI_GRP, TC_EQ0), ws.Cells(TI_GRP, TC_EQ0 + N_EQ - 1))
+        .Merge
+        .Interior.Color = C_LOAD_HDR
+    End With
+    TSetText ws.Cells(TI_GRP, TC_EQ0), "장비 (대)"
+    With ws.Range(ws.Cells(TI_GRP, TC_CREW0), ws.Cells(TI_GRP, TC_EQ0 + N_EQ - 1))
+        .Font.Bold = True
+        .HorizontalAlignment = xlCenter
+        .Borders.LineStyle = xlContinuous
+        .Borders.Color = C_GRID
+    End With
+    TSetText ws.Cells(TI_GRP - 1, TC_CREW0), "※ 직종·장비 이름은 아래 머리글 칸을 고치면 됩니다 (산적표 이름도 같이 바뀜)"
+    ws.Cells(TI_GRP - 1, TC_CREW0).Font.Size = 9
+    ws.Cells(TI_GRP - 1, TC_CREW0).Font.Color = C_GRID_DARK
 
     lastFmt = TI_FIRST + TI_ROWS - 1
     ws.Range(ws.Cells(TI_FIRST, TC_LVL), ws.Cells(lastFmt, TC_LOW)).NumberFormat = "@"
@@ -271,7 +283,7 @@ Private Sub TBuildInputSheet(ByVal ws As Worksheet)
     ws.Range(ws.Cells(TI_FIRST, TC_END), ws.Cells(lastFmt, TC_END)).FormulaR1C1 = TC_END_FORMULA
     ws.Range(ws.Cells(TI_FIRST, TC_END), ws.Cells(lastFmt, TC_END)).Interior.Color = C_CALC_BG
     ws.Range(ws.Cells(TI_FIRST, TC_LVL), ws.Cells(lastFmt, TC_TRADE)).HorizontalAlignment = xlCenter
-    ws.Range(ws.Cells(TI_FIRST, TC_DATE), ws.Cells(lastFmt, TC_RES0 + TI_NRES - 1)).HorizontalAlignment = xlCenter
+    ws.Range(ws.Cells(TI_FIRST, TC_DATE), ws.Cells(lastFmt, TC_EQ0 + N_EQ - 1)).HorizontalAlignment = xlCenter
     With ws.Range(ws.Cells(TI_HDR, 1), ws.Cells(lastFmt, TC_NOTE)).Borders
         .LineStyle = xlContinuous
         .Color = C_GRID
@@ -281,32 +293,31 @@ Private Sub TBuildInputSheet(ByVal ws As Worksheet)
         TAddList ws.Range(ws.Cells(TI_FIRST, TC_TRADE), ws.Cells(lastFmt, TC_TRADE)), "='" & TS_TRADE & "'!$A$3:$A$60"
     End If
 
-    ' 예시 (구분|공종|작업내용|하단표기|시작일|시작시각|작업시간|일수|인원|장비1|장비2|장비3)
+    ' 예시 (구분|공종|작업내용|시작일|시작시각|작업시간|일수|관리|제관|비계|기계|배관|장비1|장비2|장비3)
     data = Array( _
-        Array("대분류", "", "SD 준비", "", "", "", "", "", "", "", "", ""), _
-        Array("작업", "기계", "가설 비계 설치", "", "2026-11-13", "8:00", "10", "", "6", "", "", "1"), _
-        Array("작업", "전기", "전원 차단 · LOTO", "", "2026-11-13", "18:00", "2", "", "3", "", "", ""), _
-        Array("대분류", "", "본 작업", "", "", "", "", "", "", "", "", ""), _
-        Array("작업", "기계", "노체 냉각", "", "2026-11-13", "20:00", "14", "", "2", "", "", ""), _
-        Array("작업", "기계", "트러니언 베어링 교체", "", "2026-11-14", "10:00", "20", "", "8", "1", "1", ""), _
-        Array("작업", "기계", "랜스 교체", "", "2026-11-14", "14:00", "8", "", "5", "", "1", ""), _
-        Array("작업", "전기", "케이블 교체", "", "2026-11-14", "22:00", "12", "", "4", "", "", "1"), _
-        Array("작업", "토목", "기초 보수", "", "2026-11-15", "", "", "1", "6", "", "", ""), _
-        Array("대분류", "", "시운전", "", "", "", "", "", "", "", "", ""), _
-        Array("작업", "기계", "시운전 · 승온", "", "2026-11-15", "16:00", "18", "", "6", "", "", ""))
+        Array("대분류", "", "SD 준비", "", "", "", "", "", "", "", "", "", "", "", ""), _
+        Array("작업", "기계", "가설 비계 설치", "2026-11-13", "8:00", "10", "", "1", "", "6", "", "", "", "", "1"), _
+        Array("작업", "기계", "전원 차단 · LOTO", "2026-11-13", "18:00", "2", "", "1", "", "", "2", "", "", "", ""), _
+        Array("대분류", "", "본 작업", "", "", "", "", "", "", "", "", "", "", "", ""), _
+        Array("작업", "기계", "노체 냉각", "2026-11-13", "20:00", "14", "", "", "", "", "2", "", "", "", ""), _
+        Array("작업", "기계", "트러니언 베어링 교체", "2026-11-14", "10:00", "20", "", "1", "2", "", "5", "", "1", "1", ""), _
+        Array("작업", "기계", "랜스 교체", "2026-11-14", "14:00", "8", "", "", "", "", "3", "2", "", "1", ""), _
+        Array("작업", "배관", "냉각수 배관 교체", "2026-11-14", "22:00", "12", "", "", "", "", "", "4", "", "", "1"), _
+        Array("작업", "토목", "기초 보수", "2026-11-15", "", "", "1", "1", "3", "2", "", "", "", "", ""), _
+        Array("대분류", "", "시운전", "", "", "", "", "", "", "", "", "", "", "", ""), _
+        Array("작업", "기계", "시운전 · 승온", "2026-11-15", "16:00", "18", "", "1", "", "", "4", "1", "", "", ""))
     For i = LBound(data) To UBound(data)
         r = TI_FIRST + i
         ws.Cells(r, TC_LVL).Value = data(i)(0)
         If data(i)(1) <> "" Then ws.Cells(r, TC_TRADE).Value = data(i)(1)
         ws.Cells(r, TC_TEXT).Value = data(i)(2)
-        If data(i)(4) <> "" Then ws.Cells(r, TC_DATE).Value = CDate(data(i)(4))
-        If data(i)(5) <> "" Then ws.Cells(r, TC_TIME).Value = CDbl(TimeValue(data(i)(5)))
-        If data(i)(6) <> "" Then ws.Cells(r, TC_HOURS).Value = CDbl(data(i)(6))
-        If data(i)(7) <> "" Then ws.Cells(r, TC_DAYS).Value = CDbl(data(i)(7))
-        If data(i)(8) <> "" Then ws.Cells(r, TC_RES0).Value = CDbl(data(i)(8))
-        If data(i)(9) <> "" Then ws.Cells(r, TC_RES0 + 1).Value = CDbl(data(i)(9))
-        If data(i)(10) <> "" Then ws.Cells(r, TC_RES0 + 2).Value = CDbl(data(i)(10))
-        If data(i)(11) <> "" Then ws.Cells(r, TC_RES0 + 3).Value = CDbl(data(i)(11))
+        If data(i)(3) <> "" Then ws.Cells(r, TC_DATE).Value = CDate(data(i)(3))
+        If data(i)(4) <> "" Then ws.Cells(r, TC_TIME).Value = CDbl(TimeValue(data(i)(4)))
+        If data(i)(5) <> "" Then ws.Cells(r, TC_HOURS).Value = CDbl(data(i)(5))
+        If data(i)(6) <> "" Then ws.Cells(r, TC_DAYS).Value = CDbl(data(i)(6))
+        For k = 1 To N_RES
+            If data(i)(6 + k) <> "" Then ws.Cells(r, TResCol(k)).Value = CDbl(data(i)(6 + k))
+        Next k
         If data(i)(0) = "대분류" Then
             ws.Range(ws.Cells(r, TC_LVL), ws.Cells(r, TC_LOW)).Interior.Color = C_CAT_ROW
             ws.Cells(r, TC_TEXT).Font.Bold = True
@@ -394,6 +405,11 @@ Private Function TRender(ByVal ws As Worksheet, ByVal interactive As Boolean) As
     Dim title As String, dDay As Date, hasDDay As Boolean
 
     Set wsIn = ThisWorkbook.Worksheets(TS_INPUT)
+    If TCellText(wsIn.Cells(TI_HDR, TC_LVL)) <> "구분" Or TCellText(wsIn.Cells(TI_HDR, TC_NOTE)) <> "비고" Then
+        If interactive Then TNotify "[시간입력] 시트가 이전 양식(v0.8)입니다." & vbCrLf & _
+            "내용을 따로 적어 두고 Alt+F8 → SetupTimeSheets 로 시간 시트를 새로 만든 뒤 다시 입력하세요."
+        Exit Function
+    End If
     TLoadHolidays
     TLoadTrades
     TReadSettings wsIn
@@ -793,20 +809,20 @@ End Sub
 '  3. 인원·장비 산적표 : 시간 칸마다 '동시에' 투입되는 최대 수
 '===================================================================
 Private Function TDrawLoad(ByVal ws As Worksheet, ByVal r0 As Long) As Long
-    Dim pk() As Double, k As Long, j As Long, i As Long, anyRes As Boolean, peak As Double, peakJ As Long
-    Dim r As Long, rb As Long, rn As Long, scl As Double, v As Double, hgt As Long, hl As Long
-    Dim c As Long, over As Boolean, info As String
+    Dim pk() As Double, mh() As Double, j As Long, k As Long, r As Long, tot As Double
+    Dim crewPk As Double, crewPkJ As Long, anyRes As Boolean, peak As Double, peakJ As Long
 
-    ReDim pk(1 To TI_NRES, 0 To tSlots - 1)
+    ReDim pk(0 To N_RES, 0 To tSlots - 1)     ' 0 = 인원 합계
+    ReDim mh(0 To tSlots - 1)                 ' 칸별 투입 인·시
     For j = 0 To tSlots - 1
-        TSlotPeak j, pk
+        TSlotLoad j, pk, mh
     Next j
 
     ws.Rows(r0 - 1).RowHeight = 9
     r = r0
     TSetText ws.Cells(r, TK_LABEL), "인원·장비 투입 산적표"
     With ws.Range(ws.Cells(r, TK_LABEL), ws.Cells(r, tLastCol))
-        .Interior.Color = RGB(252, 228, 214)
+        .Interior.Color = C_LOAD_HDR
         .Font.Bold = True
         .VerticalAlignment = xlCenter
         .Borders(xlEdgeTop).LineStyle = xlContinuous
@@ -814,111 +830,318 @@ Private Function TDrawLoad(ByVal ws As Worksheet, ByVal r0 As Long) As Long
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
         .Borders(xlEdgeBottom).Color = C_GRID_DARK
     End With
-    TSetText ws.Cells(r, TK_S), "(시간 칸별 동시 투입 최대 · 빨강 = 경고 기준 초과)"
+    TSetText ws.Cells(r, TK_S), "같은 시간에 투입되는 인원·장비 (막대 위 숫자 = 바뀌는 시점의 투입 수)"
     ws.Cells(r, TK_S).Font.Bold = False
     ws.Cells(r, TK_S).Font.Size = 8
     ws.Cells(r, TK_S).Font.Color = C_GRID_DARK
     ws.Rows(r).RowHeight = 18
     r = r + 1
 
-    For k = 1 To TI_NRES
+    ' 1) 인원 : 직종별 쌓은 막대
+    crewPk = 0: crewPkJ = -1
+    For j = 0 To tSlots - 1
+        If pk(0, j) > crewPk Then crewPk = pk(0, j): crewPkJ = j
+    Next j
+    If crewPk > 0 Then
+        anyRes = True
+        r = TDrawCrew(ws, r, pk, crewPk, crewPkJ) + 1
+    End If
+
+    ' 2) 장비별 막대
+    For k = N_CREW + 1 To N_RES
         peak = 0: peakJ = -1
         For j = 0 To tSlots - 1
             If pk(k, j) > peak Then peak = pk(k, j): peakJ = j
         Next j
         If tResName(k) <> "" And peak > 0 Then
             anyRes = True
-            rb = r
-            rn = rb + BAR_ROWS
-            ws.Range(ws.Rows(rb), ws.Rows(rn - 1)).RowHeight = 5.5
-            ws.Rows(rn).RowHeight = 13
-            With ws.Range(ws.Cells(rb, TK_LABEL), ws.Cells(rn, TK_LABEL))
-                .Merge
-                .VerticalAlignment = xlCenter
-                .HorizontalAlignment = xlLeft
-                .IndentLevel = 1
-                .Font.Bold = True
-            End With
-            TSetText ws.Cells(rb, TK_LABEL), tResName(k)
-            info = "최대 " & TNumText(peak)
-            If peakJ >= 0 Then info = info & "  (" & TDateTimeText(CDbl(tDay0) + peakJ * tSlotMin / 1440#) & ")"
-            If tResLim(k) > 0 Then info = info & vbLf & "경고 기준 " & TNumText(tResLim(k))
-            With ws.Range(ws.Cells(rb, TK_S), ws.Cells(rn, TK_H))
-                .Merge
-                .VerticalAlignment = xlCenter
-                .HorizontalAlignment = xlLeft
-                .WrapText = True
-                .Font.Size = 8
-            End With
-            TSetText ws.Cells(rb, TK_S), info
-            If tResLim(k) > 0 And peak > tResLim(k) Then ws.Cells(rb, TK_S).Font.Color = C_SUN
-
-            scl = peak
-            If tResLim(k) > scl Then scl = tResLim(k)
-            For j = 0 To tSlots - 1
-                v = pk(k, j)
-                c = TK_CHART0 + j
-                If v > 0 Then
-                    over = (tResLim(k) > 0 And v > tResLim(k))
-                    hgt = CLng(v / scl * BAR_ROWS + 0.4999)
-                    If hgt < 1 Then hgt = 1
-                    If hgt > BAR_ROWS Then hgt = BAR_ROWS
-                    If over Then
-                        ws.Range(ws.Cells(rn - hgt, c), ws.Cells(rn - 1, c)).Interior.Color = C_OVER
-                    Else
-                        ws.Range(ws.Cells(rn - hgt, c), ws.Cells(rn - 1, c)).Interior.Color = C_LOAD
-                    End If
-                    ws.Cells(rn, c).Value = v
-                    If over Then
-                        ws.Cells(rn, c).Font.Color = C_SUN
-                        ws.Cells(rn, c).Font.Bold = True
-                    End If
-                End If
-            Next j
-            With ws.Range(ws.Cells(rn, TK_CHART0), ws.Cells(rn, tLastCol))
-                .HorizontalAlignment = xlCenter
-                .Font.Size = 7
-                .NumberFormat = "General"
-                .ShrinkToFit = True
-                .Borders(xlEdgeTop).LineStyle = xlContinuous
-                .Borders(xlEdgeTop).Color = C_GRID
-                .Borders(xlInsideVertical).LineStyle = xlDot
-                .Borders(xlInsideVertical).Color = C_GRID
-            End With
-            ' 경고 기준선 (빨간 점선)
-            If tResLim(k) > 0 Then
-                hl = CLng(tResLim(k) / scl * BAR_ROWS + 0.4999)
-                If hl >= 1 And hl <= BAR_ROWS Then
-                    With ws.Range(ws.Cells(rn - hl, TK_CHART0), ws.Cells(rn - hl, tLastCol)).Borders(xlEdgeTop)
-                        .LineStyle = xlDash
-                        .Color = C_SUN
-                    End With
-                End If
-            End If
-            With ws.Range(ws.Cells(rn, TK_LABEL), ws.Cells(rn, tLastCol)).Borders(xlEdgeBottom)
-                .LineStyle = xlContinuous
-                .Color = C_GRID_DARK
-            End With
-            With ws.Range(ws.Cells(rb, TK_LABEL), ws.Cells(rn, TK_H)).Borders
-                .LineStyle = xlContinuous
-                .Color = C_GRID
-            End With
-            r = rn + 1
+            r = TDrawEquip(ws, r, k, pk, peak, peakJ) + 1
         End If
     Next k
 
+    ' 3) 누적 공수 선그래프
+    tot = 0
+    For j = 0 To tSlots - 1
+        tot = tot + mh(j)
+    Next j
+    If tot > 0 Then r = TDrawCumulative(ws, r, mh, tot) + 1
+
     If Not anyRes Then
-        TSetText ws.Cells(r, TK_LABEL), "※ [시간입력]의 인원·장비 칸에 숫자를 넣으면 시간 칸별 투입 산적표가 그려집니다."
+        TSetText ws.Cells(r, TK_LABEL), "※ [시간입력]의 직종별 인원·장비 칸에 숫자를 넣으면 산적표가 그려집니다."
         ws.Cells(r, TK_LABEL).Font.Color = C_GRID_DARK
         r = r + 1
     End If
     TDrawLoad = r - 1
 End Function
 
+' 왼쪽 제목 칸 (A) 과 설명 칸 (B~D)
+Private Sub TLoadLeft(ByVal ws As Worksheet, ByVal r1 As Long, ByVal r2 As Long, ByVal title As String, _
+                      ByVal info As String)
+    With ws.Range(ws.Cells(r1, TK_LABEL), ws.Cells(r2, TK_LABEL))
+        .Merge
+        .VerticalAlignment = xlCenter
+        .HorizontalAlignment = xlLeft
+        .IndentLevel = 1
+        .WrapText = True
+        .Font.Bold = True
+        .Font.Size = 10
+    End With
+    TSetText ws.Cells(r1, TK_LABEL), title
+    If info <> "" Then
+        With ws.Range(ws.Cells(r1, TK_S), ws.Cells(r2, TK_H))
+            .Merge
+            .VerticalAlignment = xlCenter
+            .HorizontalAlignment = xlLeft
+            .WrapText = True
+            .Font.Size = 8
+        End With
+        TSetText ws.Cells(r1, TK_S), info
+    End If
+End Sub
+
+' 블록 아래 기준선 + 왼쪽 칸 테두리
+Private Sub TLoadFrame(ByVal ws As Worksheet, ByVal r1 As Long, ByVal r2 As Long)
+    With ws.Range(ws.Cells(r2, TK_CHART0), ws.Cells(r2, tLastCol)).Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Color = C_GRID_DARK
+    End With
+    With ws.Range(ws.Cells(r1, TK_LABEL), ws.Cells(r2, TK_H)).Borders
+        .LineStyle = xlContinuous
+        .Color = C_GRID
+    End With
+End Sub
+
+' 막대 위 숫자 : 막대 위 빈칸을 세로로 합쳐 아래쪽에 표시
+Private Sub TBarLabel(ByVal ws As Worksheet, ByVal rTop As Long, ByVal rBarTop As Long, ByVal c As Long, _
+                      ByVal v As Double)
+    Dim rr As Long
+    rr = rBarTop - 1
+    If rr < rTop Then rr = rTop
+    If rr > rTop Then ws.Range(ws.Cells(rTop, c), ws.Cells(rr, c)).Merge
+    ws.Cells(rTop, c).Value = v
+    With ws.Range(ws.Cells(rTop, c), ws.Cells(rr, c))
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlBottom
+        .Font.Size = 7
+        .Font.Bold = True
+        .NumberFormat = "General"
+    End With
+End Sub
+
+Private Function TDrawCrew(ByVal ws As Worksheet, ByVal rb As Long, ByRef pk() As Double, _
+                           ByVal crewPk As Double, ByVal crewPkJ As Long) As Long
+    Dim rEnd As Long, j As Long, k As Long, c As Long, acc As Double, hPrev As Long, hNow As Long
+    Dim used() As Boolean, nUsed As Long, idx As Long, rl As Long, kPk As Double, prevTot As Double
+
+    rEnd = rb + CREW_ROWS                     ' rb = 숫자 줄, rb+1 ~ rEnd = 막대
+    ws.Rows(rb).RowHeight = 12
+    ws.Range(ws.Rows(rb + 1), ws.Rows(rEnd)).RowHeight = LOAD_ROW_H
+    TLoadLeft ws, rb, rEnd, "인원 (명)" & vbLf & "최대 " & TNumText(crewPk) & "명" & vbLf & _
+              "(" & TDateTimeText(CDbl(tDay0) + crewPkJ * tSlotMin / 1440#) & ")", ""
+
+    ' 범례 : 직종 색 칸 + 최대
+    ReDim used(1 To N_CREW)
+    For k = 1 To N_CREW
+        For j = 0 To tSlots - 1
+            If tTypeUsed(k, pk, j) Then used(k) = True: Exit For
+        Next j
+    Next k
+    With ws.Range(ws.Cells(rb, TK_S), ws.Cells(rb, TK_H))
+        .Merge
+        .HorizontalAlignment = xlLeft
+        .Font.Size = 8
+        .Font.Color = C_GRID_DARK
+    End With
+    TSetText ws.Cells(rb, TK_S), "직종 (칸별 최대)"
+    idx = 0
+    For k = 1 To N_CREW
+        If used(k) Then
+            rl = rb + 1 + idx * 2
+            If rl + 1 <= rEnd Then
+                kPk = 0
+                For j = 0 To tSlots - 1
+                    If pk(k, j) > kPk Then kPk = pk(k, j)
+                Next j
+                With ws.Range(ws.Cells(rl, TK_S), ws.Cells(rl + 1, TK_S))
+                    .Merge
+                    .Interior.Color = TResColor(k)
+                    .Font.Color = RGB(255, 255, 255)
+                    .Font.Bold = True
+                    .Font.Size = 8
+                    .HorizontalAlignment = xlCenter
+                    .VerticalAlignment = xlCenter
+                End With
+                TSetText ws.Cells(rl, TK_S), tResName(k)
+                With ws.Range(ws.Cells(rl, TK_E), ws.Cells(rl + 1, TK_H))
+                    .Merge
+                    .Font.Size = 8
+                    .HorizontalAlignment = xlLeft
+                    .VerticalAlignment = xlCenter
+                End With
+                TSetText ws.Cells(rl, TK_E), " " & TNumText(kPk) & "명"
+            End If
+            idx = idx + 1
+        End If
+    Next k
+
+    ' 쌓은 막대 (아래부터 관리 → 제관 → 비계 → 기계 → 배관)
+    prevTot = -1
+    For j = 0 To tSlots - 1
+        c = TK_CHART0 + j
+        If pk(0, j) > 0 Then
+            acc = 0: hPrev = 0
+            For k = 1 To N_CREW
+                If pk(k, j) > 0 Then
+                    acc = acc + pk(k, j)
+                    hNow = CLng(acc / crewPk * CREW_ROWS + 0.4999)
+                    If hNow <= hPrev Then hNow = hPrev + 1
+                    If hNow > CREW_ROWS Then hNow = CREW_ROWS
+                    If hNow > hPrev Then
+                        ws.Range(ws.Cells(rEnd - hNow + 1, c), ws.Cells(rEnd - hPrev, c)).Interior.Color = TResColor(k)
+                        hPrev = hNow
+                    End If
+                End If
+            Next k
+            If pk(0, j) <> prevTot Then TBarLabel ws, rb, rEnd - hPrev + 1, c, pk(0, j)
+        End If
+        prevTot = pk(0, j)
+    Next j
+    TLoadFrame ws, rb, rEnd
+    TDrawCrew = rEnd
+End Function
+
+Private Function tTypeUsed(ByVal k As Long, ByRef pk() As Double, ByVal j As Long) As Boolean
+    tTypeUsed = (pk(k, j) > 0)
+End Function
+
+Private Function TDrawEquip(ByVal ws As Worksheet, ByVal rb As Long, ByVal k As Long, ByRef pk() As Double, _
+                            ByVal peak As Double, ByVal peakJ As Long) As Long
+    Dim rEnd As Long, j As Long, c As Long, h As Long, prevV As Double
+    rEnd = rb + EQ_ROWS
+    ws.Rows(rb).RowHeight = 12
+    ws.Range(ws.Rows(rb + 1), ws.Rows(rEnd)).RowHeight = LOAD_ROW_H
+    TLoadLeft ws, rb, rEnd, tResName(k) & " (대)", _
+              "최대 " & TNumText(peak) & "대" & vbLf & "(" & TDateTimeText(CDbl(tDay0) + peakJ * tSlotMin / 1440#) & ")"
+    ws.Cells(rb, TK_LABEL).Font.Color = TResColor(k)
+    prevV = -1
+    For j = 0 To tSlots - 1
+        c = TK_CHART0 + j
+        If pk(k, j) > 0 Then
+            h = CLng(pk(k, j) / peak * EQ_ROWS + 0.4999)
+            If h < 1 Then h = 1
+            ws.Range(ws.Cells(rEnd - h + 1, c), ws.Cells(rEnd, c)).Interior.Color = TResColor(k)
+            If pk(k, j) <> prevV Then TBarLabel ws, rb, rEnd - h + 1, c, pk(k, j)
+        End If
+        prevV = pk(k, j)
+    Next j
+    TLoadFrame ws, rb, rEnd
+    TDrawEquip = rEnd
+End Function
+
+' 누적 공수 선그래프 : 칸 끝마다 누적값, 하루 끝마다 점 + 숫자
+Private Function TDrawCumulative(ByVal ws As Worksheet, ByVal rb As Long, ByRef mh() As Double, _
+                                 ByVal tot As Double) As Long
+    Dim rEnd As Long, rAx As Long, j As Long, c As Long, cum As Double, totG As Double
+    Dim yTop As Double, yBot As Double, x0 As Double, y0 As Double, x1 As Double, y1 As Double
+    Dim px() As Double, py() As Double, nP As Long, i As Long, shp As Shape, clr As Long, slope0 As Double, slope1 As Double
+
+    rEnd = rb + CUM_ROWS
+    rAx = rEnd + 1
+    totG = tot / tGongsuH
+    clr = RGB(192, 0, 0)
+    ws.Rows(rb).RowHeight = 8
+    ws.Range(ws.Rows(rb + 1), ws.Rows(rEnd)).RowHeight = LOAD_ROW_H
+    ws.Rows(rAx).RowHeight = 13
+    TLoadLeft ws, rb, rAx, "누적 공수", "총 " & TNumText(Round(totG, 1)) & "공수" & vbLf & _
+              "(" & TNumText(Round(tot, 1)) & " 인·시 ÷ " & TNumText(tGongsuH) & "h)"
+    ws.Cells(rb, TK_LABEL).Font.Color = clr
+    ' 50% / 100% 보조선
+    With ws.Range(ws.Cells(rb + 1, TK_CHART0), ws.Cells(rb + 1, tLastCol)).Borders(xlEdgeTop)
+        .LineStyle = xlDot
+        .Color = C_GRID
+    End With
+    With ws.Range(ws.Cells(rb + 1 + CUM_ROWS \ 2, TK_CHART0), ws.Cells(rb + 1 + CUM_ROWS \ 2, tLastCol)).Borders(xlEdgeTop)
+        .LineStyle = xlDot
+        .Color = C_GRID
+    End With
+    With ws.Range(ws.Cells(rAx, TK_CHART0), ws.Cells(rAx, tLastCol))
+        .Font.Size = 7
+        .Font.Color = clr
+        .Font.Bold = True
+    End With
+
+    yTop = ws.Cells(rb + 1, TK_CHART0).Top
+    yBot = ws.Cells(rAx, TK_CHART0).Top
+    ' 점 목록 (기울기가 같은 구간은 합침)
+    ReDim px(0 To tSlots): ReDim py(0 To tSlots)
+    nP = 0
+    px(0) = ws.Cells(rb, TK_CHART0).Left: py(0) = yBot
+    cum = 0
+    slope0 = -1
+    For j = 0 To tSlots - 1
+        c = TK_CHART0 + j
+        cum = cum + mh(j)
+        slope1 = mh(j)
+        x1 = ws.Cells(rb, c).Left + ws.Cells(rb, c).Width
+        y1 = yBot - (cum / tot) * (yBot - yTop)
+        If slope1 = slope0 And nP > 0 Then
+            px(nP) = x1: py(nP) = y1
+        Else
+            nP = nP + 1
+            px(nP) = x1: py(nP) = y1
+        End If
+        slope0 = slope1
+        ' 하루 끝 : 점 + 누적 공수
+        If (j + 1) Mod tSpd = 0 And cum > 0 Then
+            TSetText ws.Cells(rAx, c), TNumText(Round(cum / tGongsuH, 1))
+            ws.Cells(rAx, c).HorizontalAlignment = xlRight
+            TAddMark ws, x1, y1, clr
+            ' 다음 칸부터 다시 시작 (점 위치를 꺾임점으로 남김)
+            slope0 = -1
+        End If
+    Next j
+    For i = 1 To nP
+        On Error Resume Next
+        Set shp = Nothing
+        Set shp = ws.Shapes.AddLine(px(i - 1), py(i - 1), px(i), py(i))
+        If Not shp Is Nothing Then
+            tShapeN = tShapeN + 1
+            shp.Name = "TC_C" & tShapeN
+            shp.Line.ForeColor.RGB = clr
+            shp.Line.Weight = 2
+            shp.Placement = xlMoveAndSize
+        End If
+        On Error GoTo 0
+    Next i
+    TLoadFrame ws, rb, rEnd
+    With ws.Range(ws.Cells(rb, TK_LABEL), ws.Cells(rAx, TK_H)).Borders
+        .LineStyle = xlContinuous
+        .Color = C_GRID
+    End With
+    TDrawCumulative = rAx
+End Function
+
+Private Sub TAddMark(ByVal ws As Worksheet, ByVal x As Double, ByVal y As Double, ByVal clr As Long)
+    Dim shp As Shape
+    On Error Resume Next
+    Set shp = ws.Shapes.AddShape(9, x - 2.5, y - 2.5, 5, 5)
+    If shp Is Nothing Then Exit Sub
+    tShapeN = tShapeN + 1
+    shp.Name = "TC_M" & tShapeN
+    shp.Fill.Visible = -1
+    shp.Fill.Solid
+    shp.Fill.ForeColor.RGB = clr
+    shp.Line.Visible = 0
+    shp.Placement = xlMoveAndSize
+    shp.Shadow.Visible = 0
+    On Error GoTo 0
+End Sub
+
 ' 한 시간 칸 안에서 동시에 투입되는 최대 수 (칸 시작 + 칸 안에서 시작하는 작업 시점마다 합계)
-Private Sub TSlotPeak(ByVal j As Long, ByRef pk() As Double)
+' 시간 칸 하나 : 인원(직종별)은 합계가 가장 많은 시점의 구성, 장비는 각각 최대, 투입 인·시
+Private Sub TSlotLoad(ByVal j As Long, ByRef pk() As Double, ByRef mh() As Double)
     Dim a As Double, b As Double, i As Long, p As Long, k As Long, nP As Long
-    Dim pts() As Double, s As Double, sm(1 To 4) As Double
+    Dim pts() As Double, s As Double, sm(0 To 8) As Double, ov As Double, crew As Double
     a = CDbl(tDay0) + j * tSlotMin / 1440#
     b = a + tSlotMin / 1440#
     ReDim pts(1 To tN + 1)
@@ -930,27 +1153,52 @@ Private Sub TSlotPeak(ByVal j As Long, ByRef pk() As Double)
                 nP = nP + 1
                 pts(nP) = tSD(i)
             End If
+            ' 칸 안에서 겹치는 시간 × 인원 = 인·시
+            ov = TMinD(tED(i), b) - TMaxD(tSD(i), a)
+            If ov > 0 Then
+                crew = 0
+                For k = 1 To N_CREW
+                    crew = crew + tRes(i, k)
+                Next k
+                mh(j) = mh(j) + crew * ov * 24#
+            End If
         End If
     Next i
     For p = 1 To nP
-        For k = 1 To TI_NRES
+        For k = 0 To N_RES
             sm(k) = 0
         Next k
+        s = pts(p)
         For i = 1 To tN
             If tLvl(i) = 2 And tHasBar(i) Then
-                s = pts(p)
                 If tSD(i) <= s + 0.0000001 And tED(i) > s + 0.0000001 Then
-                    For k = 1 To TI_NRES
+                    For k = 1 To N_RES
                         sm(k) = sm(k) + tRes(i, k)
                     Next k
                 End If
             End If
         Next i
-        For k = 1 To TI_NRES
+        For k = 1 To N_CREW
+            sm(0) = sm(0) + sm(k)
+        Next k
+        If sm(0) > pk(0, j) Then
+            For k = 0 To N_CREW
+                pk(k, j) = sm(k)
+            Next k
+        End If
+        For k = N_CREW + 1 To N_RES
             If sm(k) > pk(k, j) Then pk(k, j) = sm(k)
         Next k
     Next p
 End Sub
+
+Private Function TMinD(ByVal x As Double, ByVal y As Double) As Double
+    If x < y Then TMinD = x Else TMinD = y
+End Function
+
+Private Function TMaxD(ByVal x As Double, ByVal y As Double) As Double
+    If x > y Then TMaxD = x Else TMaxD = y
+End Function
 
 Private Sub TFinish(ByVal ws As Worksheet, ByVal lastRow As Long)
     ws.Activate
@@ -987,7 +1235,7 @@ End Sub
 '  4. 시간입력 읽기
 '===================================================================
 Private Sub TReadSettings(ByVal wsIn As Worksheet)
-    Dim k As Long, v As Variant
+    Dim k As Long
     tSlotH = CLng(Val(TCellText(wsIn.Cells(TI_SLOT, TI_VAL))))
     Select Case tSlotH
         Case 1, 2, 3, 4, 6, 8, 12
@@ -995,15 +1243,30 @@ Private Sub TReadSettings(ByVal wsIn As Worksheet)
     End Select
     tSlotMin = tSlotH * 60
     tSpd = 24 \ tSlotH
-    For k = 1 To TI_NRES
-        tResName(k) = Trim$(TCellText(wsIn.Cells(TI_RES0 + k - 1, TI_VAL)))
-        v = wsIn.Cells(TI_RES0 + k - 1, TI_RESMAX).Value
-        tResLim(k) = 0
-        If Not IsError(v) And Not IsEmpty(v) Then
-            If IsNumeric(v) Then tResLim(k) = CDbl(v)
-        End If
+    For k = 1 To N_RES
+        tResName(k) = Trim$(TCellText(wsIn.Cells(TI_HDR, TResCol(k))))
     Next k
+    If Not TToNum(wsIn.Cells(TI_GONGSU, TI_VAL).Value, tGongsuH) Then tGongsuH = 8
 End Sub
+
+' 인원·장비 k (1~5 직종, 6~8 장비) 의 시간입력 열
+Private Function TResCol(ByVal k As Long) As Long
+    If k <= N_CREW Then TResCol = TC_CREW0 + k - 1 Else TResCol = TC_EQ0 + k - N_CREW - 1
+End Function
+
+' 산적표 색 : 관리 회색 / 제관 주황 / 비계 초록 / 기계 파랑 / 배관 보라 / 장비 노랑·청록·갈색
+Private Function TResColor(ByVal k As Long) As Long
+    Select Case k
+        Case 1: TResColor = RGB(127, 127, 127)
+        Case 2: TResColor = RGB(237, 125, 49)
+        Case 3: TResColor = RGB(112, 173, 71)
+        Case 4: TResColor = RGB(68, 114, 196)
+        Case 5: TResColor = RGB(153, 102, 204)
+        Case 6: TResColor = RGB(214, 160, 0)
+        Case 7: TResColor = RGB(0, 150, 170)
+        Case Else: TResColor = RGB(166, 90, 50)
+    End Select
+End Function
 
 Private Sub TReadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long)
     Dim lastRow As Long, r As Long, cap As Long, lv As String, txt As String, k As Long
@@ -1016,7 +1279,7 @@ Private Sub TReadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long)
     tN = 0
     ReDim tLvl(1 To cap): ReDim tText(1 To cap): ReDim tLow(1 To cap): ReDim tTrade(1 To cap)
     ReDim tHasBar(1 To cap): ReDim tSD(1 To cap): ReDim tED(1 To cap)
-    ReDim tRes(1 To cap, 1 To TI_NRES): ReDim tOutRow(1 To cap)
+    ReDim tRes(1 To cap, 1 To N_RES): ReDim tOutRow(1 To cap)
     nWarn = 0
 
     For r = TI_FIRST To lastRow
@@ -1033,8 +1296,8 @@ Private Sub TReadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long)
         End If
         tLvl(tN) = 2
         tLow(tN) = Trim$(TCellText(wsIn.Cells(r, TC_LOW)))
-        For k = 1 To TI_NRES
-            If TToNum(wsIn.Cells(r, TC_RES0 + k - 1).Value, v) Then tRes(tN, k) = v
+        For k = 1 To N_RES
+            If TToNum(wsIn.Cells(r, TResCol(k)).Value, v) Then tRes(tN, k) = v
         Next k
         If tLow(tN) = "" Then tLow(tN) = TResText(tN)
 
@@ -1062,16 +1325,17 @@ NextRow:
 End Sub
 
 ' 하단표기가 비었을 때 : "6명 · 50t 크레인 1"
+' 하단표기가 비었을 때 : "7명 · 고소작업차 1"
 Private Function TResText(ByVal i As Long) As String
-    Dim k As Long, s As String
-    For k = 1 To TI_NRES
+    Dim k As Long, s As String, crew As Double
+    For k = 1 To N_CREW
+        crew = crew + tRes(i, k)
+    Next k
+    If crew > 0 Then s = TNumText(crew) & "명"
+    For k = N_CREW + 1 To N_RES
         If tRes(i, k) > 0 And tResName(k) <> "" Then
             If s <> "" Then s = s & " · "
-            If k = 1 Then
-                s = s & TNumText(tRes(i, k)) & "명"
-            Else
-                s = s & tResName(k) & " " & TNumText(tRes(i, k))
-            End If
+            s = s & tResName(k) & " " & TNumText(tRes(i, k))
         End If
     Next k
     TResText = s

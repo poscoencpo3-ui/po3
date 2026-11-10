@@ -1,43 +1,48 @@
-    ' 시간공정표 + 산적표 (lo_run.py --script)
-    Dim wt As Worksheet, wc As Worksheet, q As Long, s As String, c As Long, rr As Long
+    ' 시간공정표 + 직종별 산적표 + 누적 공수 (lo_run.py --script)
+    Dim wt As Worksheet, wc As Worksheet, q As Long, s As String, c As Long, rr As Long, k As Long
     SetupTimeSheets
-    WriteLog "T0 setup: " & gLog
+    WriteLog "T0 setup: " & Left(gLog, 0)
     gLog = ""
     Set wt = Worksheets("시간입력")
-    WriteLog "T1 종료 수식: " & Format(wt.Cells(19, 9).Value, "yyyy-mm-dd hh:mm") & " / 일수행: " & Format(wt.Cells(26, 9).Value, "yyyy-mm-dd hh:mm") & " / 머리글 " & wt.Cells(17, 11).Value
+    WriteLog "T1 종료 수식: " & Format(wt.Cells(16, 9).Value, "yyyy-mm-dd hh:mm") & " / 일수행: " & Format(wt.Cells(23, 9).Value, "yyyy-mm-dd hh:mm") & " / 머리글 " & wt.Cells(14, 10).Value & "," & wt.Cells(14, 14).Value & "," & wt.Cells(14, 15).Value
     BuildTimeChart
     Set wc = Worksheets("시간공정표")
     WriteLog "T2 build: " & gLog & " / shapes " & wc.Shapes.Count
-    WriteLog "T3 머리글: " & wc.Cells(4, 5).Value & " | " & wc.Cells(5, 5).Value & " | " & wc.Cells(6, 5).Value & "," & wc.Cells(6, 6).Value & " | 마지막열 " & wc.Cells(6, 5 + 36 - 1).Value & " / 다음열 [" & wc.Cells(6, 5 + 36).Value & "]"
+    WriteLog "T3 머리글: " & wc.Cells(4, 5).Value & " | " & wc.Cells(5, 5).Value & " | " & wc.Cells(6, 5).Value & "," & wc.Cells(6, 6).Value
     s = ""
-    For q = 7 To 30
-        s = s & q & ":" & wc.Cells(q, 1).Value & "/" & wc.Cells(q, 2).Value & "/" & wc.Cells(q, 4).Value & " ; "
+    For q = 7 To 60
+        If wc.Cells(q, 1).Value <> "" Then s = s & q & ":" & Replace(wc.Cells(q, 1).Value, vbLf, "/") & " ; "
     Next q
-    WriteLog "T4 본문: " & s
-    rr = FindRow(wc, "인원")
+    WriteLog "T4 왼쪽: " & s
+    ' 인원 블록 : 숫자 줄 = 블록 첫 행
+    For q = 7 To 80
+        If Left(wc.Cells(q, 1).Value, 4) = "인원 (" Then rr = q: Exit For
+    Next q
     s = ""
-    For c = 5 To 40
-        If wc.Cells(rr + 6, c).Value <> "" Then s = s & wc.Cells(6, c).Value & "h=" & wc.Cells(rr + 6, c).Value & " "
+    For c = 5 To 52
+        If wc.Cells(rr, c).Value <> "" Then s = s & (c - 5) & "=" & wc.Cells(rr, c).Value & " "
     Next c
-    WriteLog "T5 인원 산적(" & rr & "): " & s & " / " & wc.Cells(rr, 2).Value
-    rr = FindRow(wc, "25t 크레인")
+    WriteLog "T5 인원 숫자(" & rr & "): " & s
     s = ""
-    For c = 5 To 40
-        If wc.Cells(rr + 6, c).Value <> "" Then s = s & (c - 5) & "=" & wc.Cells(rr + 6, c).Value & IIf(wc.Cells(rr + 6, c).Font.Color = 255, "!", "") & " "
+    For k = rr + 1 To rr + 10
+        s = s & wc.Cells(k, 2).Value & "|"
+    Next k
+    WriteLog "T6 범례: " & s & " 색(슬롯24 맨아래) " & wc.Cells(rr + 10, 5 + 24).Interior.Color
+    For q = rr To 120
+        If wc.Cells(q, 1).Value = "누적 공수" Then rr = q: Exit For
+    Next q
+    s = ""
+    For c = 5 To 52
+        If wc.Cells(rr + 13, c).Value <> "" Then s = s & (c - 5) & "=" & wc.Cells(rr + 13, c).Value & " "
     Next c
-    WriteLog "T6 25t 산적: " & s
-    ' 1시간 칸
+    WriteLog "T7 누적(" & rr & "): " & s & " / " & Replace(wc.Cells(rr, 2).Value, vbLf, " ")
+    wt.Cells(16, 6).Value = 14
+    wt.Cells(16, 7).ClearContents
+    wt.Cells(16, 8).Value = 1
+    OnTimeSheetChange wt, wt.Range("F16:H16")
+    wt.Calculate
+    WriteLog "T8 시각칸 " & Format(wt.Cells(16, 6).Value, "hh:mm") & " → 종료 " & Format(wt.Cells(16, 9).Value, "yyyy-mm-dd hh:mm")
     wt.Cells(6, 3).Value = 1
     BuildTimeChart
-    WriteLog "T7 1h: 마지막 시각 " & wc.Cells(6, 5 + 72 - 1).Value & " / 칸 수 " & (wc.Cells(6, 5).End(-4161).Column - 4)
-    ' 시각 숫자 입력 "14" → 14시, 작업시간 비우고 일수
-    wt.Cells(19, 6).Value = 14
-    wt.Cells(19, 7).ClearContents
-    wt.Cells(19, 8).Value = 1
-    OnTimeSheetChange wt, wt.Range("F19:H19")
-    wt.Calculate
-    WriteLog "T8a 시각칸 값 " & Format(wt.Cells(19, 6).Value, "hh:mm")
-    WriteLog "T8 14 입력 → 종료 " & Format(wt.Cells(19, 9).Value, "yyyy-mm-dd hh:mm")
-    BuildTimeChart
     q = FindRow(wc, "가설 비계 설치")
-    WriteLog "T9 비계: " & wc.Cells(q, 2).Value & " ~ " & wc.Cells(q, 3).Value & " (" & wc.Cells(q, 4).Value & ")"
+    WriteLog "T9 1h 비계: " & wc.Cells(q, 2).Value & " ~ " & wc.Cells(q, 3).Value & " (" & wc.Cells(q, 4).Value & ") / 칸 " & (wc.Cells(6, 5).End(-4161).Column - 4)

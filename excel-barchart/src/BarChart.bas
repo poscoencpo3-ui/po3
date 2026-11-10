@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.3 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.4 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -197,6 +197,7 @@ Private mCircleN As Long
 Private mBarByTrade As Boolean        ' 바 선 색을 공종색으로
 Private mHdrFirst As Long             ' 보이는 머리글 첫 행 (D-DAY 있으면 4행)
 Private mHdrLast As Long              ' 보이는 머리글 마지막 행 (주요 이벤트 포함)
+Private mSolidCols As String          ' 왼쪽에 세로 실선이 있는 날짜 칸 (",12,43,") : 월 경계·기준일선
 Private Const LAYOUT_VER As String = "5"  ' 바차트 시트 배치 버전 (바뀌면 틀 고정/인쇄 설정 다시)
 
 
@@ -337,6 +338,7 @@ Private Function RenderChart(ByVal unit As String, ByVal interactive As Boolean)
     WriteTitle ws, title, hasBase, baseD
     WriteHeader ws, lastCol
     WriteDDay ws, hasDDay, dDay
+    mSolidCols = SolidLineCols(hasBase, baseD)
     DrawEvents ws, lastCol, (CfgText(CFG_EVENTS) <> "숨김")
     DrawLanes ws, lastCol, (CfgText(CFG_LANES) <> "숨김")
     If mBarByTrade Then WriteLegend ws
@@ -1316,14 +1318,15 @@ Private Sub PutLabel(ByVal ws As Worksheet, ByVal r As Long, ByVal c1 As Long, B
     wBar = ColsWidth(ws, cStart, c2)
     wAvail = ColsWidth(ws, cStart, cLim) - LABEL_PAD
 
-    SetText ws.Cells(r, cStart), txt
     If TextWidthPt(txt, fontSize) <= wBar - CIRCLE_D Then
-        ws.Cells(r, cStart).Font.Size = fontSize
+        ' 바 안에 월 경계 실선이 있으면 가운데 칸에 가운데 정렬 (실선이 지워지지 않게)
+        CenterText ws, r, cStart, c2, txt, HasSolidInside(cStart, c2)
         With ws.Range(ws.Cells(r, cStart), ws.Cells(r, c2))
-            .HorizontalAlignment = xlCenterAcrossSelection
+            .Font.Size = fontSize
             .VerticalAlignment = vAlign
         End With
     Else
+        SetText ws.Cells(r, cStart), txt
         sz = fontSize
         Do While sz > MIN_LABEL_FONT And TextWidthPt(txt, sz) > wAvail
             sz = sz - 0.5
@@ -1336,6 +1339,53 @@ Private Sub PutLabel(ByVal ws As Worksheet, ByVal r As Long, ByVal c1 As Long, B
         End With
     End If
 End Sub
+
+' 글자를 c1~c2 가운데에 : 사이에 세로 실선이 있으면 '선택 영역의 가운데로' 대신
+' 가운데 칸에 가운데 정렬 (Excel 은 '선택 영역의 가운데로' 범위 안의 세로 테두리를 그리지 않음)
+Private Sub CenterText(ByVal ws As Worksheet, ByVal r As Long, ByVal c1 As Long, ByVal c2 As Long, _
+                       ByVal txt As String, ByVal hasLine As Boolean)
+    Dim c As Long
+    If hasLine Then
+        c = (c1 + c2) \ 2
+        SetText ws.Cells(r, c), txt
+        ws.Cells(r, c).HorizontalAlignment = xlCenter
+    Else
+        SetText ws.Cells(r, c1), txt
+        ws.Range(ws.Cells(r, c1), ws.Cells(r, c2)).HorizontalAlignment = xlCenterAcrossSelection
+    End If
+End Sub
+
+' 작업입력 간트 : 날짜 칸 i1+1 ~ i2 (0 = 첫날) 중에 1일(월 경계 실선)이 있으면 True
+Private Function MonthStartInside(ByVal d0 As Date, ByVal i1 As Long, ByVal i2 As Long) As Boolean
+    Dim i As Long
+    For i = i1 + 1 To i2
+        If Day(d0 + i) = 1 Then MonthStartInside = True: Exit Function
+    Next i
+End Function
+
+' 세로 실선(월 경계, 기준일선)이 있는 날짜 칸 목록
+Private Function SolidLineCols(ByVal hasBase As Boolean, ByVal baseD As Date) As String
+    Dim i As Long, key As Long, prevKey As Long, s As String
+    s = ","
+    prevKey = -1
+    For i = 1 To mPN
+        key = GroupKey(mPS(i))
+        If key <> prevKey And prevKey <> -1 Then s = s & DateToCol(mPS(i)) & ","
+        prevKey = key
+    Next i
+    If hasBase Then
+        If baseD >= mPS(1) And baseD <= mPE(mPN) Then s = s & (DateToCol(baseD) + 1) & ","
+    End If
+    SolidLineCols = s
+End Function
+
+' c1+1 ~ c2 칸 왼쪽에 세로 실선이 있으면 True
+Private Function HasSolidInside(ByVal c1 As Long, ByVal c2 As Long) As Boolean
+    Dim c As Long
+    For c = c1 + 1 To c2
+        If InStr(mSolidCols, "," & c & ",") > 0 Then HasSolidInside = True: Exit Function
+    Next c
+End Function
 
 ' 열 c1~c2 의 폭(pt)
 Private Function ColsWidth(ByVal ws As Worksheet, ByVal c1 As Long, ByVal c2 As Long) As Double
@@ -1635,9 +1685,8 @@ Private Sub DrawLanes(ByVal ws As Worksheet, ByVal lastCol As Long, ByVal show A
                     ws.Range(ws.Cells(row, c1), ws.Cells(row, c2)).Interior.Color = clr
                     If txt <> "" Then
                         If TextWidthPt(txt, 8) <= ColsWidth(ws, c1, c2) - 2 Then
-                            SetText ws.Cells(row, c1), txt
-                            ws.Range(ws.Cells(row, c1), ws.Cells(row, c2)).HorizontalAlignment = xlCenterAcrossSelection
-                            ws.Cells(row, c1).Font.Color = IIf(IsDarkColor(clr), RGB(255, 255, 255), 0)
+                            CenterText ws, row, c1, c2, txt, HasSolidInside(c1, c2)
+                            ws.Range(ws.Cells(row, c1), ws.Cells(row, c2)).Font.Color = IIf(IsDarkColor(clr), RGB(255, 255, 255), 0)
                         ElseIf c2 < lastCol Then
                             If IsEmpty(ws.Cells(row, c2 + 1).Value) Then
                                 SetText ws.Cells(row, c2 + 1), txt     ' 기간이 짧으면 띠 오른쪽에
@@ -2764,8 +2813,7 @@ Private Sub WriteGanttLabel(ByVal wsIn As Worksheet, ByVal r As Long, ByVal d0 A
     If c1 < g1 Then c1 = g1
     If c2 > g2 Then c2 = g2
     If TextWidthPt(txt, 8) <= ColsWidth(wsIn, c1, c2) - 2 Then
-        SetText wsIn.Cells(r, c1), txt
-        wsIn.Range(wsIn.Cells(r, c1), wsIn.Cells(r, c2)).HorizontalAlignment = xlCenterAcrossSelection
+        CenterText wsIn, r, c1, c2, txt, MonthStartInside(d0, c1 - g1, c2 - g1)
     ElseIf c2 < g2 Then
         SetText wsIn.Cells(r, c2 + 1), txt          ' 막대가 짧으면 오른쪽에
         wsIn.Cells(r, c2 + 1).HorizontalAlignment = xlLeft

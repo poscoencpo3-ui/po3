@@ -145,7 +145,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">v0.7.3 기본판 · v0.8 시간공정표판</span>
+    <span class="ver">v0.7.4 기본판 · v0.8.1 시간공정표판</span>
   </div>
 </header>
 
@@ -171,7 +171,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <li><a href="#chart"><span class="n">7</span>바차트 활용·출력</a></li>
       <li><a href="#move"><span class="n">8</span>새 버전으로 옮기기</a></li>
       <li><a href="#faq"><span class="n">9</span>문제가 생기면</a></li>
-      <li><a href="#time"><span class="n">10</span>시간공정표·산적표 (v0.8)</a></li>
+      <li><a href="#time"><span class="n">10</span>시간공정표·산적표 (v0.8.1)</a></li>
     </ol>
   </nav>
 
@@ -183,8 +183,9 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <ol class="steps">
         <li>파일을 내려받습니다. 파일 이름에 <b>버전과 바뀐 내용</b>이 들어 있습니다.
           <ul class="plain">
-            <li><strong>바차트_v0.7.3_대분류바제거.xlsm</strong> : 바차트 기본판 (일 단위)</li>
-            <li><strong>바차트_v0.8_시간공정시트_산적표.xlsm</strong> : 기본판 + 시간 단위 공정표·인원/장비 산적표 (<a href="#time">10장</a>). 기본판 기능은 똑같습니다.</li>
+            <li><strong>바차트_v0.7.4_세로실선수정.xlsm</strong> : 바차트 기본판 (일 단위)</li>
+            <li><strong>바차트_v0.8.1_직종별산적표_누적공수.xlsm</strong> : 기본판 + 시간 단위 공정표·직종별 인원/장비 산적표·누적 공수 (<a href="#time">10장</a>). 기본판 기능은 똑같습니다.</li>
+            <li>이전 버전 파일(v0.7.3, v0.8)도 download 폴더에 그대로 남겨 두었습니다.</li>
           </ul>
         </li>
         <li>인터넷에서 받은 파일은 Windows가 매크로를 막습니다. 파일을 <strong>오른쪽 클릭 → 속성 → 아래쪽 「차단 해제」 체크 → 확인</strong>.</li>
@@ -462,6 +463,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td>작업이 엉뚱한 작업항목 아래에 나옴</td><td>작업입력에서 그 행의 위치를 확인하세요. 세부작업은 바로 위 작업항목에 속합니다.</td></tr>
             <tr><td>바차트가 너무 길어 글자가 작게 인쇄됨</td><td>메인의 표시 단위를 주·10일·월로 바꾸거나, 차트 시작일·종료일로 기간을 줄이세요.</td></tr>
             <tr><td>구역 일정이 일부만 나옴</td><td>구역은 처음 나온 순서대로 4개까지만 표시됩니다. 구역 이름을 합치거나 순서를 바꾸세요.</td></tr>
+            <tr><td>월이 바뀌는 날의 세로 실선이 바 글자 줄에서 끊김</td><td>v0.7.4 에서 고쳤습니다. 새 파일로 [바차트 생성]을 다시 누르세요.</td></tr>
             <tr><td>공휴일이 빨간색으로 안 나옴</td><td>공휴일 시트에 날짜를 추가하세요. 2028년 이후는 직접 넣어야 합니다.</td></tr>
           </tbody>
         </table>
@@ -469,14 +471,14 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
     </section>
     <!-- 10 -->
     <section id="time">
-      <h2><span class="n">10</span>시간공정표 · 인원/장비 산적표 (v0.8)</h2>
+      <h2><span class="n">10</span>시간공정표 · 인원/장비 산적표 (v0.8.1)</h2>
       <p class="lead">SD·정비처럼 <b>시간 단위</b>로 짜는 공정을 별도 시트에서 그립니다. 같은 시간에 몰리는 인원·장비를 아래 산적표로 바로 확인할 수 있습니다. 기존 메인·작업입력·바차트는 그대로이고, 시트 두 개가 추가될 뿐입니다.</p>
       <div class="tablewrap">
         <table>
           <thead><tr><th>시트</th><th>하는 일</th></tr></thead>
           <tbody>
-            <tr><td class="k">시간입력</td><td>설정(시간 칸, D-DAY, 산적표 항목) + 작업 목록 (시작일·시작시각·작업시간·인원·장비)</td></tr>
-            <tr><td class="k">시간공정표</td><td>D+n · 날짜 · 시각 머리글, 분 단위로 정확한 바, 아래쪽 인원·장비 산적표</td></tr>
+            <tr><td class="k">시간입력</td><td>설정(시간 칸, 기간, D-DAY, 공수 기준) + 작업 목록 (시작일·시작시각·작업시간·직종별 인원·장비)</td></tr>
+            <tr><td class="k">시간공정표</td><td>D+n · 날짜 · 시각 머리글, 분 단위로 정확한 바, 아래쪽 직종별 인원·장비 산적표와 누적 공수 선그래프</td></tr>
           </tbody>
         </table>
       </div>
@@ -484,7 +486,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h3>시간입력</h3>
       <figure class="wide">
         <div class="shot"><img src="{{img:timeinput}}" alt="시간입력 시트: 위쪽 설정, 아래쪽 작업 목록"></div>
-        <figcaption>위쪽 노란 칸이 설정, 아래 표가 작업 목록입니다. 종료(자동)는 수식으로 계산됩니다.</figcaption>
+        <figcaption>위쪽 노란 칸이 설정, 아래 표가 작업 목록입니다. 종료(자동)는 수식으로 계산됩니다. 색 머리글(관리·제관·비계·기계·배관 / 장비 3종)은 산적표 색과 같습니다.</figcaption>
       </figure>
       <div class="buttons">
         <div class="btnrow"><img src="{{img:btn_time_build}}" alt="시간공정표 생성 버튼"><p>시간입력 내용으로 [시간공정표] 시트를 그립니다.</p></div>
@@ -498,8 +500,8 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td class="k">표시 시작일 / 종료일</td><td>비우면 첫 작업 ~ 마지막 작업 날짜로 자동</td></tr>
             <tr><td class="k">D-DAY 기준일</td><td>이 날이 D+1. 비우면 메인 시트의 D-DAY, 그것도 없으면 첫날</td></tr>
             <tr><td class="k">바 색상</td><td>검정 / 공종색 (공종 시트의 색)</td></tr>
-            <tr><td class="k">인원·장비1~3 이름</td><td>산적표 항목 이름. 바꾸면 작업 목록 머리글도 같이 바뀝니다 (예: 50t 크레인, 25t 크레인, 고소작업차)</td></tr>
-            <tr><td class="k">경고 기준</td><td>같은 시간에 이 수를 넘으면 산적표가 <b style="color:#c00">빨간색</b>. 비우면 경고 없음</td></tr>
+            <tr><td class="k">공수 기준 (시간)</td><td>누적 공수 = 투입 인원 × 시간 ÷ 이 값. 기본 8시간 = 1공수</td></tr>
+            <tr><td class="k">직종·장비 이름</td><td>작업 목록의 색 머리글 칸(관리·제관·비계·기계·배관, 50t 크레인 …)을 직접 고치면 산적표 이름도 같이 바뀝니다</td></tr>
           </tbody>
         </table>
       </div>
@@ -512,7 +514,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
             <tr><td>시작시각에 <span class="cellv">14</span> 만 입력</td><td>14:00 으로 자동 변환</td></tr>
             <tr><td>시작시각 비움 · 작업시간 비움 · 일수 <span class="cellv">1</span></td><td>그날 00:00 ~ 다음날 00:00 (하루 단위 작업)</td></tr>
             <tr><td>구분 <b>대분류</b></td><td>제목 줄 (바 없음). 그 외(작업/빈칸)는 모두 바로 그림</td></tr>
-            <tr><td>인원 <span class="cellv">8</span> · 50t 크레인 <span class="cellv">1</span></td><td>작업 기간 동안 산적표에 더해짐. 하단표기를 비우면 바 아래에 「8명 · 50t 크레인 1」 표시</td></tr>
+            <tr><td>관리 <span class="cellv">1</span> · 제관 <span class="cellv">2</span> · 기계 <span class="cellv">5</span> · 50t 크레인 <span class="cellv">1</span></td><td>작업 기간 동안 직종별로 산적표에 더해짐. 하단표기를 비우면 바 아래에 「8명 · 50t 크레인 1」 표시</td></tr>
           </tbody>
         </table>
       </div>
@@ -520,16 +522,28 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h3>시간공정표 · 산적표</h3>
       <figure class="wide">
         <div class="shot"><img src="{{img:timechart}}" alt="시간공정표: 시간 단위 바와 아래쪽 인원·장비 산적표"></div>
-        <figcaption>회색 칸은 야간(18~06시). 산적표는 시간 칸마다 <b>동시에</b> 투입되는 최대 수를 막대 높이와 숫자로 보여 주고, 경고 기준을 넘는 칸은 빨간색, 기준선은 빨간 점선입니다.</figcaption>
+        <figcaption>회색 칸은 야간(18~06시). 인원은 직종별 색으로 <b>쌓은 막대</b>, 장비는 장비별 막대, 맨 아래는 <b>누적 공수 선그래프</b>입니다. 막대 위 숫자는 투입 수가 바뀌는 시점에만 표시합니다.</figcaption>
       </figure>
       <div class="buttons">
         <div class="btnrow"><img src="{{img:btn_time_input}}" alt="시간입력으로 버튼"><p>시간입력 시트로 돌아갑니다.</p></div>
       </div>
-      <div class="tip"><strong>자동 다시 그리기</strong><p>v0.8 파일에서는 시간입력을 고친 뒤 시간공정표 시트를 다시 열면 자동으로 다시 그려집니다. 산적표의 「최대 18 (11/15 00:00)」은 가장 많이 몰린 시각입니다. 이 시간대의 작업을 앞뒤로 옮겨 기준 아래로 맞추세요.</p></div>
+      <div class="tip"><strong>자동 다시 그리기</strong><p>v0.8 이후 파일에서는 시간입력을 고친 뒤 시간공정표 시트를 다시 열면 자동으로 다시 그려집니다.</p></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>산적표 읽는 법</th><th>뜻</th></tr></thead>
+          <tbody>
+            <tr><td class="k">인원 (명) · 최대 18명 (11/15 00:00)</td><td>같은 시간에 가장 많이 몰린 인원과 그 시각. 오른쪽 범례에 직종별 최대 인원</td></tr>
+            <tr><td class="k">쌓은 막대</td><td>아래부터 관리 → 제관 → 비계 → 기계 → 배관. 막대 높이 = 그 시간의 총 인원</td></tr>
+            <tr><td class="k">장비 막대</td><td>장비별 동시 투입 대수. 크레인 두 대가 겹치는 시간을 바로 확인</td></tr>
+            <tr><td class="k">누적 공수 (빨간 선)</td><td>시작부터 투입된 인원 × 시간의 누계 ÷ 공수 기준. 하루 끝마다 점과 누적값, 왼쪽에 총 공수</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tip"><strong>v0.8 에서 쓰던 시간입력</strong><p>v0.8.1 은 인원 칸이 직종별 5칸으로 바뀌어 v0.8 시간입력과 양식이 다릅니다. 내용을 따로 적어 두고 새 파일에서 다시 입력하세요 (기존 작업입력·바차트는 [이전 파일에서 가져오기]로 옮겨집니다).</p></div>
 
       <h3>쓰던 v0.7.x 파일에 시간 기능만 추가하기</h3>
       <ol class="steps">
-        <li><b>TimeChart.bas</b> 를 내려받습니다.</li>
+        <li><b>TimeChart.bas</b> 를 내려받습니다. (이미 v0.8 모듈이 있으면 VBA 편집기에서 TimeChart 모듈을 먼저 제거)</li>
         <li>쓰던 파일을 열고 <b>Alt + F11</b> → 파일 → 파일 가져오기 → TimeChart.bas.</li>
         <li>엑셀로 돌아와 <b>Alt + F8</b> → <b>SetupTimeSheets</b> 실행 → [시간입력] / [시간공정표] 시트가 추가됩니다.</li>
         <li>(선택) 자동 다시 그리기를 쓰려면 ThisWorkbook 코드를 <b>ThisWorkbook_코드_v0.8.txt</b> 내용으로 바꿉니다. 바꾸지 않아도 [시간공정표 생성] 버튼으로 그릴 수 있습니다.</li>

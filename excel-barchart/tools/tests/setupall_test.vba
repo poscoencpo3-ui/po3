@@ -8,8 +8,8 @@
     WriteLog "S1 sheets: " & s
     WriteLog "S2 log: " & Replace(Left(gLog, 60), vbCrLf, " ")
     WriteLog "S3 chart A1: " & Worksheets("시간공정표").Cells(1, 1).Value & " / meta " & Worksheets("시간공정표").Cells(3, 1).Value & " " & Worksheets("시간공정표").Cells(3, 2).Value
-    Worksheets("시간입력").Cells(19, 7).Value = 4
-    OnTimeSheetChange Worksheets("시간입력"), Worksheets("시간입력").Range("G19")
+    Worksheets("시간입력").Cells(16, 7).Value = 4
+    OnTimeSheetChange Worksheets("시간입력"), Worksheets("시간입력").Range("G16")
     OnTimeSheetActivate Worksheets("시간공정표")
     q = FindRow(Worksheets("시간공정표"), "가설 비계 설치")
     WriteLog "S4 비계 시간: " & Worksheets("시간공정표").Cells(q, 4).Value & " / ver " & Worksheets("시간공정표").Cells(3, 2).Value

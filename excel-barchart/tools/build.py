@@ -3,8 +3,9 @@
   python3 tools/build.py
 
   파일 이름 = 바차트_v<버전>_<바뀐 내용>.xlsm  (이전 버전 파일도 함께 유지)
-  download/바차트_v0.7.3_대분류바제거.xlsm        : 바차트 기본판 (BarChart 모듈만)
-  download/바차트_v0.8_시간공정시트_산적표.xlsm   : 기본판 + 시간입력/시간공정표 시트 (TimeChart 모듈)
+  download/바차트_v0.7.4_세로실선수정.xlsm          : 바차트 기본판 (BarChart 모듈만)
+  download/바차트_v0.8.1_직종별산적표_누적공수.xlsm  : 기본판 + 시간입력/시간공정표 시트 (TimeChart 모듈)
+  (이전 버전 xlsm 은 지우지 않고 download/ 에 그대로 둔다)
   download/BarChart.bas, TimeChart.bas          : 직접 가져오기용 모듈 (한국어 Windows 용 CP949 인코딩)
   download/ThisWorkbook_코드.txt                : 직접 가져오기 때 ThisWorkbook 에 붙여 넣을 이벤트 코드 (v0.7.3)
   download/ThisWorkbook_코드_v0.8.txt           : 〃 (v0.8, 시간공정표 자동 다시 그리기 포함)
@@ -24,8 +25,8 @@ from vba_bin import build_vba_project  # noqa: E402
 SRC = os.path.join(ROOT, "src", "BarChart.bas")
 SRC_TIME = os.path.join(ROOT, "src", "TimeChart.bas")
 DIST = os.path.join(ROOT, "download")
-XLSM_BASE = os.path.join(DIST, "바차트_v0.7.3_대분류바제거.xlsm")
-XLSM_TIME = os.path.join(DIST, "바차트_v0.8_시간공정시트_산적표.xlsm")
+XLSM_BASE = os.path.join(DIST, "바차트_v0.7.4_세로실선수정.xlsm")
+XLSM_TIME = os.path.join(DIST, "바차트_v0.8.1_직종별산적표_누적공수.xlsm")
 OLD_FILES = ["바차트_자동작성.xlsm"]      # 예전 이름 (버전 붙은 이름으로 바뀜)
 BAS = os.path.join(DIST, "BarChart.bas")
 BAS_TIME = os.path.join(DIST, "TimeChart.bas")
@@ -123,7 +124,7 @@ def build_xlsm(path, vba_bin, with_time):
     body = wb.add_format({"font_size": 11, "font_name": "맑은 고딕"})
     warn = wb.add_format({"font_size": 11, "font_name": "맑은 고딕", "font_color": "#C00000", "bold": True})
     ws.set_row(1, 32)
-    ws.write("B2", "BAR CHART 공정표 자동 작성" + ("  (v0.8 : 시간공정표 · 산적표 포함)" if with_time else ""), title)
+    ws.write("B2", "BAR CHART 공정표 자동 작성" + ("  (v0.8.1 : 시간공정표 · 산적표 포함)" if with_time else ""), title)
     done = "초기 설정이 끝나면 [메인] / [작업입력] / [공휴일] 시트가 만들어지고 이 시트는 사라집니다."
     if with_time:
         done = "초기 설정이 끝나면 [메인] / [작업입력] … 과 함께 [시간입력] / [시간공정표] 시트가 만들어지고 이 시트는 사라집니다."
