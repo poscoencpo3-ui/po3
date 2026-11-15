@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.4 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.5 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -2590,6 +2590,17 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
         If lv(i) > 0 Then
             r = IN_FIRST_ROW + i - 1
             If indentFrom = 0 Or (r >= indentFrom And r <= indentTo) Then wsIn.Cells(r, IN_TEXT).IndentLevel = lv(i) - 1
+        End If
+        ' 예전에 요약 행이던 자리에 세부작업(또는 빈 줄)이 들어온 경우 (다른 줄 위에 붙여넣기 등)
+        '   → 남아 있는 요약 표시를 지워야 그 줄의 날짜가 쓰임
+        If lv(i) <> 1 And lv(i) <> 2 And VarText(fl(i, 1)) = "S" Then
+            r = IN_FIRST_ROW + i - 1
+            If Left$(CStr(fm(i, 1)), 1) = "=" Then
+                wsIn.Cells(r, IN_S).ClearContents
+                wsIn.Cells(r, IN_DUR).ClearContents
+            End If
+            wsIn.Cells(r, IN_SUMFLAG).ClearContents
+            mLblDirty = mLblDirty & "," & r
         End If
     Next i
     wsIn.Range(wsIn.Cells(IN_FIRST_ROW, IN_TRADE_EFF), wsIn.Cells(lastRow, IN_TRADE_EFF)).Value = outv
