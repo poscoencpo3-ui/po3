@@ -21,6 +21,7 @@
   --sat: #1b6cc2;
   --sun: #cf3d2e;
   --weekend: #fbf5dd;
+  --night: #f0f2f5;
   --cat: #e3edf8;
   --bar: #17212c;
   --head: #dce8f4;
@@ -35,7 +36,7 @@
   :root:not([data-theme="light"]) {
     --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
     --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
-    --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a;
+    --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830;
     --cat: #1e2a39; --bar: #e5eaf0;
     --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
     color-scheme: dark;
@@ -44,7 +45,7 @@
 :root[data-theme="dark"] {
   --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
   --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
-  --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a;
+  --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830;
   --cat: #1e2a39; --bar: #e5eaf0;
   --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
   color-scheme: dark;
@@ -122,6 +123,10 @@ button { cursor: pointer; }
 .seg button { border: 0; background: var(--surface); padding: 5px 10px; font-size: 12.5px; color: var(--ink-2); }
 .seg button + button { border-left: 1px solid var(--rule); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.tabs { display: inline-flex; gap: 2px; align-self: stretch; margin: -10px 0 -10px -6px; }
+.tabs button { border: 0; background: none; padding: 0 12px; font-size: 15px; font-weight: 600; color: var(--ink-3); border-bottom: 3px solid transparent; border-top: 3px solid transparent; min-height: 46px; }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .sample { margin: 0; padding: 8px 14px; background: var(--accent-soft); font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
 .sheet { overflow-x: auto; position: relative; -webkit-overflow-scrolling: touch; }
@@ -143,7 +148,12 @@ button { cursor: pointer; }
 .months, .days { display: flex; height: 23px; }
 .months span { flex: none; font-size: 12px; font-weight: 600; padding-left: 6px; line-height: 23px; border-left: 1px solid var(--rule); white-space: nowrap; overflow: hidden; }
 .days span { flex: none; width: var(--dw); text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 23px; color: var(--ink-2); }
-.days span.sat { color: var(--sat); } .days span.sun { color: var(--sun); }
+.days span.sat, .months span.sat { color: var(--sat); } .days span.sun, .months span.sun { color: var(--sun); }
+/* 시간 단위 탭 : 시작 칸이 날짜+시각이라 넓음, 머리글 윗줄은 날짜 */
+.tm { --cellw: 800px; }
+.tm .c-start { width: 208px; } .tm .c-dur { width: 58px; } .tm .c-end { width: 96px; }
+.tm .months span { text-align: center; padding-left: 0; }
+.tm .cols i { background: var(--night); }
 .days span.today { background: var(--rec); color: #fff; border-radius: 3px; }
 
 .row { height: var(--rowh); border-bottom: 1px solid var(--rule-2); }
@@ -263,6 +273,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 
 @media (max-width: 900px) {
   :root { --cellw: 600px; }
+  .tm { --cellw: 740px; }
   .c-name { min-width: 150px; }
   .cells { position: static; }
   .c-trade { width: 62px; } .c-lvl { width: 76px; } .c-start { width: 122px; }
@@ -278,7 +289,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.5</span>
+    <span class="ver">v0.6</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -298,13 +309,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <button class="linkbtn" type="button" id="unsel" hidden>선택 해제</button>
     </div>
     <div class="say-foot">
-      <div class="eg" id="eg">
-        <span>이렇게 말해 보세요</span>
-        <button type="button">불기어 기초작업 11월 28일부터 30일</button>
-        <button type="button">이어서 패딩작업 이틀</button>
-        <button type="button">대분류 분체설비</button>
-        <button type="button">취소</button>
-      </div>
+      <div class="eg" id="eg"></div>
       <label>월을 말하지 않으면 <input type="month" id="baseMonth" aria-label="기준 월"> 로 봅니다</label>
       <button class="ghost" type="button" id="dictBtn">용어 사전</button>
     </div>
@@ -312,11 +317,17 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 
   <section class="sheet-card" aria-label="공정 시트">
     <div class="sheet-bar">
-      <h2>공정 초안</h2>
+      <div class="tabs" role="tablist" aria-label="공정표 단위">
+        <button type="button" role="tab" id="tabDay" data-tab="day" aria-selected="true">일 단위 공정표</button>
+        <button type="button" role="tab" id="tabTime" data-tab="time" aria-selected="false">시간 단위 공정표</button>
+      </div>
       <span class="sum" id="sum"></span>
       <span class="sp"></span>
       <div class="seg" id="fold" role="group" aria-label="보이는 단계">
-        <button type="button" data-f="0" aria-pressed="true">전체</button><button type="button" data-f="1">작업항목까지</button>
+        <button type="button" data-f="0" aria-pressed="true">전체</button><button type="button" data-f="1" id="foldBtn">작업항목까지</button>
+      </div>
+      <div class="seg" id="slot" role="group" aria-label="시간 칸" hidden>
+        <button type="button" data-h="1">1시간</button><button type="button" data-h="2" aria-pressed="true">2시간</button><button type="button" data-h="4">4시간</button><button type="button" data-h="6">6시간</button>
       </div>
       <div class="seg" id="zoom" role="group" aria-label="날짜 칸 너비">
         <button type="button" data-z="16">좁게</button><button type="button" data-z="26" aria-pressed="true">보통</button><button type="button" data-z="38">넓게</button>
@@ -333,7 +344,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
         <div class="hrow">
           <div class="cells">
             <span class="c-grip"></span><span class="c-lvl">구분</span><span class="c-trade">공종</span><span class="c-name">작업내용</span>
-            <span class="c-start">시작일</span><span class="c-dur">기간</span><span class="c-end">종료</span><span class="c-del"></span>
+            <span class="c-start" id="hStart">시작일</span><span class="c-dur" id="hDur">기간</span><span class="c-end">종료</span><span class="c-del"></span>
           </div>
           <div class="track" id="htrack"><div class="months" id="months"></div><div class="days" id="days"></div></div>
         </div>
@@ -356,7 +367,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     <button class="ghost" type="button" id="savePng">그림으로 저장 (.png)</button>
     <input type="file" id="openInput" accept=".xlsx,.xlsm" hidden aria-label="저장한 파일">
     <span class="saved" id="saved"></span>
-    <p class="keep-note">저장한 .xlsx 는 이 프로그램에서 다시 열 수 있고, 엑셀 바차트 파일의 메인 → [이전 파일에서 가져오기]로도 읽을 수 있습니다. 그림은 지금 보이는 공정 초안을 그대로 담습니다.</p>
+    <p class="keep-note">파일 하나에 일 단위·시간 단위 초안이 함께 저장됩니다. 이 프로그램에서 다시 열 수 있고, 일 단위는 엑셀 바차트 파일의 메인 → [이전 파일에서 가져오기]로도 읽을 수 있습니다. 그림은 지금 보이는 탭의 초안을 그대로 담습니다.</p>
   </section>
 
   <section class="out" aria-label="엑셀로 보내기">
@@ -365,10 +376,10 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <span id="copyLabel">엑셀용 복사</span>
     </button>
     <ol class="steps">
-      <li><b>1</b>엑셀 바차트 파일의 [작업입력] 시트를 엽니다</li>
-      <li><b>2</b>구분 칸의 첫 줄 A5(또는 비어 있는 줄)를 누릅니다</li>
-      <li><b>3</b><kbd>Ctrl</kbd>+<kbd>V</kbd> → 종료일과 간트가 자동으로 채워집니다</li>
-      <li><b>4</b>붙인 줄 아래에 예전 줄이 남아 있으면 지우고 [바차트 생성]</li>
+      <li><b>1</b><span id="st1">엑셀 바차트 파일의 [작업입력] 시트를 엽니다</span></li>
+      <li><b>2</b><span id="st2">구분 칸의 첫 줄 A5(또는 비어 있는 줄)를 누릅니다</span></li>
+      <li><b>3</b><kbd>Ctrl</kbd>+<kbd>V</kbd> → <span id="st3">종료일과 간트가 자동으로 채워집니다</span></li>
+      <li><b>4</b><span id="st4">붙인 줄 아래에 예전 줄이 남아 있으면 지우고 [바차트 생성]</span></li>
     </ol>
     <div class="tsv" id="tsvBox" hidden>
       <p style="margin:0 0 6px;color:var(--ink-2);font-size:13px">자동 복사가 막혀 있습니다. 아래 내용을 모두 선택해(Ctrl+A) 복사하세요.</p>
@@ -390,7 +401,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 <dialog id="imp">
   <div class="dlg">
     <h3>엑셀에서 가져오기</h3>
-    <p>엑셀 바차트 파일의 [작업입력] 내용을 이 화면으로 불러옵니다. 불러온 뒤 말이나 끌기로 고치고 다시 [엑셀용 복사]로 보낼 수 있습니다.</p>
+    <p>엑셀 바차트 파일의 <b id="impSheet1">[작업입력]</b> 내용을 지금 보고 있는 탭으로 불러옵니다. 불러온 뒤 말이나 끌기로 고치고 다시 [엑셀용 복사]로 보낼 수 있습니다.</p>
     <div class="opt" role="radiogroup" aria-label="가져오는 방법">
       <label><input type="radio" name="impMode" id="impReplace" value="replace" checked> 지금 초안을 바꾸기</label>
       <label><input type="radio" name="impMode" id="impAppend" value="append"> 지금 초안 아래에 붙이기</label>
@@ -401,7 +412,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     </div>
     <p>.xlsm / .xlsx 파일을 고르면 바로 읽습니다. 파일은 이 컴퓨터에서만 읽고 어디에도 보내지 않습니다. (공정 초안 표 위로 파일을 끌어다 놓아도 됩니다)</p>
     <h4>방법 2 · 복사해서 붙여넣기</h4>
-    <p>엑셀 [작업입력]에서 구분~기간 칸(A~F열)의 줄을 복사해 아래 칸에 붙여 넣고 [가져오기]를 누르세요.</p>
+    <p>엑셀 <span id="impSheet2">[작업입력]에서 구분~기간 칸(A~F열)</span>의 줄을 복사해 아래 칸에 붙여 넣고 [가져오기]를 누르세요.</p>
     <textarea id="impText" aria-label="엑셀에서 복사한 내용" spellcheck="false"></textarea>
     <div class="msg" id="impMsg" role="alert"></div>
     <div class="acts"><button class="ghost" type="button" id="impClose">닫기</button><button class="primary" type="button" id="impGo" style="font-size:14px;padding:7px 16px">가져오기</button></div>
@@ -412,7 +423,8 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 <script>
 (() => {
 'use strict';
-/* ───────── 날짜 ───────── */
+/* ───────── 날짜 · 시각 ─────────
+   일 단위 탭 : s = 날짜 번호(일), d = 일수.  시간 단위 탭 : s = 분(1970-01-01 0시부터), d = 분. */
 const DAY = 864e5;
 const pad = n => String(n).padStart(2, '0');
 const toDay = (y, m, d) => Math.round(Date.UTC(y, m - 1, d) / DAY);
@@ -421,10 +433,16 @@ const iso = n => { const o = fromDay(n); return `${o.y}-${pad(o.m)}-${pad(o.d)}`
 const parseIso = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? toDay(+m[1], +m[2], +m[3]) : null; };
 const WD = ['일', '월', '화', '수', '목', '금', '토'];
 const md = n => { const o = fromDay(n); return `${o.m}/${o.d}`; };
+const dayOf = v => Math.floor(v / 1440);
+const hm = v => { const m = ((v % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+const mdhm = v => md(dayOf(v)) + ' ' + hm(v);
 const todayDay = (() => { const t = new Date(); return toDay(t.getFullYear(), t.getMonth() + 1, t.getDate()); })();
+const nowMin = () => { const t = new Date(); return todayDay * 1440 + t.getHours() * 60 + t.getMinutes(); };
+const numTxt = x => String(Math.round(x * 100) / 100);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ───────── 상태 ───────── */
-const LV = { cat: '대분류', item: '작업항목', det: '세부작업' };
 const TRADES = { '': '', '공사': '#3b5b92', '조업': '#df4439', '토목': '#1f9d55', '건축': '#b3860e', '기계': '#2b7fd0', '전기': '#d9a300', '배관': '#8a4fc0', '철골': '#e07b2c', '기타': '#8b949e' };
 const DEFAULT_TERMS = ['불기어', '트러니언', '그라우팅', '컨베이어', '감속기', '커플링', '센터링', '내화물', '시운전', '거푸집', '터파기', '되메우기', '라이닝'];
 const store = {
@@ -434,28 +452,34 @@ const store = {
 let seq = 1;
 const newId = () => 'r' + (seq++) + Math.random().toString(36).slice(2, 6);
 const state = {
-  rows: [], sample: false, dw: 26, barMode: 'ink', fold: false,
-  terms: store.get('terms', DEFAULT_TERMS), fixes: store.get('fixes', {}),
-  base: store.get('base', null)
+  tab: 'day',
+  tabs: { day: { rows: [], sample: false }, time: { rows: [], sample: false } },
+  dw: 26, slotH: 2, barMode: 'ink', fold: { day: false, time: false },
+  terms: store.get('terms', DEFAULT_TERMS), fixes: store.get('fixes', {}), base: store.get('base', null)
 };
+Object.defineProperty(state, 'rows', { get() { return state.tabs[state.tab].rows; }, set(v) { state.tabs[state.tab].rows = v; } });
+Object.defineProperty(state, 'sample', { get() { return state.tabs[state.tab].sample; }, set(v) { state.tabs[state.tab].sample = v; } });
+const folded = () => state.fold[state.tab];
+let M = null;                                             // 지금 탭의 방식 (DAYM / TIMEM)
 const undo = [];
-const snap = () => JSON.stringify({ rows: state.rows, sample: state.sample });
+const snap = () => JSON.stringify({ tabs: state.tabs, tab: state.tab });
 function pushUndo() { undo.push(snap()); if (undo.length > 60) undo.shift(); $('undoBtn').disabled = false; }
 function doUndo() {
   if (!undo.length) return false;
-  const s = JSON.parse(undo.pop()); state.rows = s.rows; state.sample = s.sample;
-  $('undoBtn').disabled = !undo.length; renderAll(true); save(); showMode(); return true;
+  const s = JSON.parse(undo.pop()); state.tabs = s.tabs;
+  $('undoBtn').disabled = !undo.length;
+  if (s.tab !== state.tab) setTab(s.tab, true); else { renderAll(true); showMode(); }
+  save(); return true;
 }
 function save() {
-  const ok = store.set('rows', state.rows); store.set('sample', state.sample);
-  const el = document.getElementById('saved'); if (!el) return;
+  const ok = store.set('tabs', state.tabs);
+  const el = $('saved'); if (!el) return;
   const t = new Date();
   el.classList.toggle('warn', !ok);
   el.textContent = ok ? `이 브라우저에 자동 저장됨 · ${pad(t.getHours())}:${pad(t.getMinutes())}` : '이 화면에서는 자동 저장이 안 됩니다. [파일로 저장]을 눌러 두세요.';
 }
-const $ = id => document.getElementById(id);
 
-/* ───────── 문장 → 작업 ───────── */
+/* ───────── 문장 → 작업 (공통) ───────── */
 const KO = { 일: 1, 이: 2, 삼: 3, 사: 4, 오: 5, 육: 6, 칠: 7, 팔: 8, 구: 9 };
 function koNum(s) {
   if (/^\d+$/.test(s)) return +s;
@@ -479,7 +503,33 @@ function normalize(t) {
   });
   return t;
 }
+const RE_UNDO = /^(취소|되돌려|되돌리기|실행\s*취소|방금\s*(거|것)?\s*(취소|삭제|지워))\s*$/;
 const DATE_ALT = '(\\d{1,2})\\s*월\\s*(\\d{1,2})\\s*일?|(\\d{1,2})\\s*[\\/.]\\s*(\\d{1,2})(?!\\d)\\s*일?';
+const CONN = '부터|그리고\\s*나서|그리고|그\\s*다음(?:에|은|엔)?|다음(?:에|은|엔)?|그\\s*후(?:에)?|이어서|이어|끝나고|끝나면|후에|및|또|까지|동안|에는|에|은|는|하고|이고';
+const RE_LEAD = new RegExp('^(?:[,.·]|(?:' + CONN + ')(?=\\s|$))\\s*');
+const RE_TRAIL = new RegExp('(?:\\s+(?:' + CONN + ')|[,.·])$');
+function cleanName(s) {
+  s = (s || '').trim();
+  for (let i = 0; i < 6; i++) { const b = s; s = s.replace(RE_LEAD, '').replace(RE_TRAIL, '').trim(); if (s === b) break; }
+  s = s.replace(/(?<=[가-힣]{2})(?:은|는|을|를)$/, '');
+  return s.trim();
+}
+/* 날짜 표현 사이의 글을 작업 이름으로 (날짜를 먼저 말하면 뒤 글) */
+function assignNames(body, ex, res) {
+  const gaps = []; let pos = 0;
+  ex.forEach(e => { gaps.push(body.slice(pos, e.p)); pos = e.q; });
+  gaps.push(body.slice(pos));
+  const names = gaps.map(cleanName);
+  const dateFirst = !names[0] && names.slice(1).some(Boolean);
+  ex.forEach((e, i) => {
+    let nm = dateFirst ? names[i + 1] : names[i];
+    if (!dateFirst && i === ex.length - 1 && !nm && names[i + 1]) nm = names[i + 1];
+    res.tasks.push({ name: nm || '', s: e.s, d: e.d, kind: e.kind, until: e.until });
+  });
+  res.rest = names.filter(Boolean).join(' ');
+}
+
+/* ───────── 일 단위 문장 ───────── */
 const RE_START = new RegExp(
   '(?<!\\d)(?:(\\d{4})\\s*년\\s*)?(?:' + DATE_ALT + '|(\\d{1,2})\\s*일(?!\\s*(?:간|동안)))' +   // 1 년, 2·3 월일, 4·5 슬래시, 6 일
   '|(?<!\\d)(\\d{1,3})\\s*일\\s*(?:간|동안)' +                                                 // 7 n일간
@@ -490,17 +540,15 @@ const RE_DUR_Y = new RegExp('\\s*(?:부터|에서)?\\s*(?:(\\d{1,3})\\s*일\\s*(
 const RE_TO_Y = new RegExp('\\s*(?:부터|에서|~|-)\\s*(?:' + DATE_ALT + '|(\\d{1,2})(?!\\d)\\s*일?)(?:\\s*까지)?', 'y');
 const RE_TO2_Y = new RegExp('\\s+(?:' + DATE_ALT + '|(\\d{1,2})\\s*일)\\s*까지', 'y');
 const RE_UNTIL_Y = /\s*까지/y;
-
 function parseText(raw, ctx) {
   // ctx : { y, m, last } — 월을 말하지 않으면 직전 날짜의 달
   const t = normalize(raw);
   const res = { text: t, tasks: [], header: null, cmd: null, level: null };
   if (!t) return res;
-  if (/^(취소|되돌려|되돌리기|실행\s*취소|방금\s*(거|것)?\s*(취소|삭제|지워))\s*$/.test(t)) { res.cmd = 'undo'; return res; }
+  if (RE_UNDO.test(t)) { res.cmd = 'undo'; return res; }
   let body = t;
   const mk = /^(대분류|작업\s*항목|항목|세부\s*작업)\s+(.+)$/.exec(t);
   if (mk) { res.level = mk[1][0] === '대' ? 'cat' : (mk[1][0] === '세' ? 'det' : 'item'); body = mk[2]; }
-
   const ex = [];
   const setCtx = day => { const o = fromDay(day); ctx.y = o.y; ctx.m = o.m; ctx.last = day; };
   const mkDate = (yy, mm, dd) => {
@@ -508,13 +556,13 @@ function parseText(raw, ctx) {
     if (!yy && ctx.last != null && toDay(y, mm, dd) < ctx.last - 180) y += 1;
     return toDay(y, mm, dd);
   };
+  const mkDateFrom = (so, mm, dd) => { let e = toDay(so.y, mm, dd); if (e < toDay(so.y, so.m, so.d) - 180) e = toDay(so.y + 1, mm, dd); return e; };
   const durOf = k => k[1] ? +k[1] : k[2] ? DUR_WORD[k[2]] : (+k[3]) * 7;
   RE_START.lastIndex = 0;
   let m;
   while ((m = RE_START.exec(body))) {
     let q = RE_START.lastIndex, s = null, d = null, kind = 'date', until = null;
-    const isDate = m[2] || m[4] || m[6] || m[10];
-    if (isDate) {
+    if (m[2] || m[4] || m[6] || m[10]) {
       if (m[10]) s = todayDay + ({ 오늘: 0, 내일: 1, 모레: 2 })[m[10]];
       else if (m[2]) s = mkDate(m[1], +m[2], +m[3]);
       else if (m[4]) s = mkDate(m[1], +m[4], +m[5]);
@@ -551,39 +599,106 @@ function parseText(raw, ctx) {
     ex.push({ p: m.index, q, s, d, kind, until });
     RE_START.lastIndex = q;
   }
-  function mkDateFrom(so, mm, dd) { let e = toDay(so.y, mm, dd); if (e < toDay(so.y, so.m, so.d) - 180) e = toDay(so.y + 1, mm, dd); return e; }
-
-  if (!ex.length) {
-    if (res.level === 'cat' || res.level === 'item') res.header = cleanName(body);
-    return res;
-  }
-  // 이름 : 날짜 앞 글 (날짜를 먼저 말하면 뒤 글)
-  const gaps = [];
-  let pos = 0;
-  ex.forEach(e => { gaps.push(body.slice(pos, e.p)); pos = e.q; });
-  gaps.push(body.slice(pos));
-  const names = gaps.map(cleanName);
-  const dateFirst = !names[0] && names.slice(1).some(Boolean);
-  ex.forEach((e, i) => {
-    let nm = dateFirst ? names[i + 1] : names[i];
-    if (!dateFirst && i === ex.length - 1 && !nm && names[i + 1]) nm = names[i + 1];
-    res.tasks.push({ name: nm || '', s: e.s, d: e.d, kind: e.kind, until: e.until });
-  });
-  res.rest = names.filter(Boolean).join(' ');
-  if (!dateFirst && names[ex.length] && res.tasks.length && res.tasks[res.tasks.length - 1].name) res.tail = names[ex.length];
+  if (!ex.length) { if (res.level === 'cat' || res.level === 'item') res.header = cleanName(body); return res; }
+  assignNames(body, ex, res);
   return res;
 }
-const CONN = '부터|그리고\\s*나서|그리고|그\\s*다음(?:에|은|엔)?|다음(?:에|은|엔)?|그\\s*후(?:에)?|이어서|이어|끝나고|끝나면|후에|및|또|까지|동안|에는|에|은|는|하고|이고';
-const RE_LEAD = new RegExp('^(?:[,.·]|(?:' + CONN + ')(?=\\s|$))\\s*');
-const RE_TRAIL = new RegExp('(?:\\s+(?:' + CONN + ')|[,.·])$');
-function cleanName(s) {
-  s = (s || '').trim();
-  for (let i = 0; i < 6; i++) { const b = s; s = s.replace(RE_LEAD, '').replace(RE_TRAIL, '').trim(); if (s === b) break; }
-  s = s.replace(/(?<=[가-힣]{2})(?:은|는|을|를)$/, '');
-  return s.trim();
+
+/* ───────── 시간 단위 문장 ─────────
+   "11월 28일 8시부터 10시간", "14시부터 18시까지", "오후 2시부터 4시간 반", "이어서 랜스 교체 8시간", "22시부터 6시까지" */
+const HW = { 한: 1, 두: 2, 세: 3, 네: 4, 다섯: 5, 여섯: 6, 일곱: 7, 여덟: 8, 아홉: 9, 열: 10, 열한: 11, 열두: 12 };
+function normalizeT(t) {
+  return normalize(t).replace(/(?<![가-힣])(열한|열두|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*(시간|시)(?![가-힣]*적)/g, (m, a, b) => HW[a] + b);
+}
+const Y = src => new RegExp(src, 'y');
+const RX_DATE = Y('(?:(\\d{4})\\s*년\\s*)?(?:' + DATE_ALT + '|(\\d{1,2})\\s*일(?!\\s*(?:간|동안)))|(오늘|내일|모레|다음\\s*날|익일)');   // 1 년, 2~5, 6 일, 7 낱말
+const RX_TIME = Y('\\s*(?:(오전|오후|아침|낮|저녁|밤|새벽)\\s*)?(\\d{1,2})\\s*시(?!간)(?:\\s*(\\d{1,2})\\s*분|\\s*(반))?|\\s*(\\d{1,2}):(\\d{2})|\\s*(정오|자정)');
+const TDUR = '(?:(\\d+(?:\\.\\d+)?)\\s*시간(?:\\s*(\\d{1,2})\\s*분|\\s*(반))?|(\\d{1,3})\\s*분|(\\d{1,3})\\s*일\\s*(?:간|동안)|(' + DW + '))(?:\\s*(?:간|동안))?';
+const RX_TDUR = Y(TDUR), RX_TDUR_P = Y('\\s*(?:부터|에서)?\\s*' + TDUR), RX_TO = Y('\\s*(?:부터|에서|~|-)\\s*'), RX_TUNTIL = Y('\\s*까지');
+const durT = k => k[1] != null ? Math.round(+k[1] * 60) + (k[2] ? +k[2] : k[3] ? 30 : 0) : k[4] != null ? +k[4] : k[5] != null ? +k[5] * 1440 : DUR_WORD[k[6]] * 1440;
+function tod(k) {                                         // 하루 안의 분
+  if (k[7]) return k[7] === '정오' ? 720 : 1440;
+  let h, m;
+  if (k[5] != null) { h = +k[5]; m = +k[6]; }
+  else {
+    h = +k[2]; m = k[3] ? +k[3] : k[4] ? 30 : 0;
+    const p = k[1];
+    if (p === '오후' || p === '저녁' || p === '낮') { if (h < 12) h += 12; }
+    else if (p === '밤') { if (h >= 5 && h < 12) h += 12; else if (h === 12) h = 24; }
+    else if ((p === '오전' || p === '새벽' || p === '아침') && h === 12) h = 0;
+  }
+  return (h > 24 || m > 59) ? null : h * 60 + m;
+}
+function parseTimeText(raw, ctx) {
+  // ctx : { y, m, day, last } — 날짜를 말하지 않으면 직전 작업이 끝난 날
+  const t = normalizeT(raw);
+  const res = { text: t, tasks: [], header: null, cmd: null, level: null };
+  if (!t) return res;
+  if (RE_UNDO.test(t)) { res.cmd = 'undo'; return res; }
+  let body = t;
+  const mk = /^(대분류)\s+(.+)$/.exec(t);
+  if (mk) { res.level = 'cat'; body = mk[2]; }
+  const ex = [];
+  const mk2 = (yy, mm, dd) => { let y = yy ? +yy : ctx.y; if (!yy && ctx.last != null && toDay(y, mm, dd) * 1440 < ctx.last - 180 * 1440) y += 1; return toDay(y, mm, dd); };
+  const dateAt = pos => {
+    RX_DATE.lastIndex = pos; const k = RX_DATE.exec(body); if (!k) return null;
+    let day, only = null;
+    if (k[7]) { const w = k[7].replace(/\s/g, ''); day = w === '오늘' ? todayDay : w === '내일' ? todayDay + 1 : w === '모레' ? todayDay + 2 : ctx.day + 1; }
+    else if (k[2]) day = mk2(k[1], +k[2], +k[3]);
+    else if (k[4]) day = mk2(k[1], +k[4], +k[5]);
+    else { only = +k[6]; day = toDay(ctx.y, ctx.m, only); }
+    return { day, only, end: RX_DATE.lastIndex };
+  };
+  const timeAt = pos => { RX_TIME.lastIndex = pos; const k = RX_TIME.exec(body); if (!k) return null; const v = tod(k); return v == null ? null : { min: v, end: RX_TIME.lastIndex }; };
+  const durAt = (pos, pre) => { const re = pre ? RX_TDUR_P : RX_TDUR; re.lastIndex = pos; const k = re.exec(body); return k ? { d: durT(k), end: re.lastIndex } : null; };
+  let pos = 0;
+  while (pos < body.length) {
+    if (pos && /\d/.test(body[pos - 1]) && /[\d.]/.test(body[pos])) { pos++; continue; }       // 숫자 중간에서는 시작하지 않음
+    let s, d, kind, until = null, q;
+    const du = durAt(pos, false);
+    if (du) { kind = 'dur'; d = du.d; q = du.end; s = ctx.last != null ? ctx.last : ctx.day * 1440 + 480; }
+    else {
+      const dt = dateAt(pos);
+      let tm = timeAt(dt ? dt.end : pos);
+      if (!dt && !tm) { pos++; continue; }
+      if (dt) { const o = fromDay(dt.day); ctx.y = o.y; ctx.m = o.m; ctx.day = dt.day; }
+      s = ctx.day * 1440 + (tm ? tm.min : 0); q = tm ? tm.end : dt.end;
+      const du2 = durAt(q, true);
+      if (du2) { d = du2.d; q = du2.end; kind = 'dateDur'; }
+      else {
+        let e = null;
+        RX_TO.lastIndex = q;
+        if (RX_TO.exec(body)) {
+          const p2 = RX_TO.lastIndex, d2 = dateAt(p2), t2 = timeAt(d2 ? d2.end : p2);
+          if (d2) {
+            let day2 = d2.day;
+            if (d2.only != null && day2 < dayOf(s)) day2 = toDay(ctx.y, ctx.m + 1, d2.only);
+            e = t2 ? day2 * 1440 + t2.min : (day2 + 1) * 1440; q = t2 ? t2.end : d2.end;
+          } else if (t2) { e = dayOf(s) * 1440 + t2.min; if (e <= s) e += 1440; q = t2.end; }
+        }
+        if (e != null && e > s) {
+          d = e - s; kind = 'range';
+          RX_TUNTIL.lastIndex = q; if (RX_TUNTIL.exec(body)) q = RX_TUNTIL.lastIndex;
+        } else {
+          RX_TUNTIL.lastIndex = q;
+          if (RX_TUNTIL.exec(body)) {                         // "18시까지" : 앞 작업이 끝난 때부터 그때까지
+            q = RX_TUNTIL.lastIndex; until = dt && !tm ? s + 1440 : s;
+            s = (ctx.last != null && ctx.last < until) ? ctx.last : until - 60; d = until - s; kind = 'until';
+          } else { d = dt && !tm ? 1440 : 60; kind = 'date'; }
+        }
+      }
+    }
+    d = Math.max(1, Math.min(d, 1440 * 400));
+    ctx.last = s + d; ctx.day = dayOf(s + d); { const o = fromDay(ctx.day); ctx.y = o.y; ctx.m = o.m; }
+    ex.push({ p: pos, q, s, d, kind, until });
+    pos = q;
+  }
+  if (!ex.length) { if (res.level === 'cat') res.header = cleanName(body); return res; }
+  assignNames(body, ex, res);
+  return res;
 }
 
-/* 용어 사전 : 자모 단위로 비슷한 말을 바로잡음 */
+/* ───────── 용어 사전 : 자모 단위로 비슷한 말을 바로잡음 ───────── */
 function jamo(s) {
   let o = '';
   for (const ch of s) {
@@ -645,32 +760,252 @@ function guessTrade(n) {
   return '';
 }
 
-/* 문맥 : 마지막 날짜가 있는 줄의 달, 없으면 기준 월 */
-function contextNow() {
-  const b = /^(\d{4})-(\d{2})$/.exec($('baseMonth').value) || [];
-  const t = fromDay(todayDay);
-  const ctx = { y: +b[1] || t.y, m: +b[2] || t.m, last: null };
-  for (let i = state.rows.length - 1; i >= 0; i--) {
-    const r = state.rows[i];
-    if (r.s != null && r.d) { const e = r.s + r.d - 1, o = fromDay(e); ctx.y = o.y; ctx.m = o.m; ctx.last = e; break; }
+/* ───────── 줄 사이의 관계 (두 탭 공통) ───────── */
+const RANK = { cat: 0, item: 1, det: 2 };
+function blockEnd(i) {                                   // i 줄에 딸린 아래 줄의 끝 (끝 번호 + 1)
+  const me = RANK[state.rows[i].lvl]; let j = i + 1;
+  while (j < state.rows.length && RANK[state.rows[j].lvl] > me) j++;
+  return j;
+}
+function spanOf(i) {                                     // 아래 줄들의 전체 기간 { a 시작, b 끝 }
+  let a = null, b = null;
+  for (let j = i + 1, e = blockEnd(i); j < e; j++) {
+    const r = state.rows[j];
+    if (r.s != null && r.d) { const en = r.s + r.d - M.inc; a = a == null ? r.s : Math.min(a, r.s); b = b == null ? en : Math.max(b, en); }
   }
-  return ctx;
+  return a == null ? null : { a, b };
 }
-function nextLevel() {
-  const last = state.rows[state.rows.length - 1];
-  if (!last) return 'item';
-  if (last.lvl === 'cat') return 'item';
-  if (last.lvl === 'det') return 'det';
-  return last.s == null ? 'det' : 'item';
+const isAuto = i => M.auto(state.rows[i], i);
+function effTrade(i) {                                    // 공종이 비면 위 단계 공종
+  let lv = RANK[state.rows[i].lvl];
+  if (state.rows[i].trade) return state.rows[i].trade;
+  for (let j = i - 1; j >= 0; j--) { const r = state.rows[j]; if (RANK[r.lvl] < lv) { if (r.trade) return r.trade; lv = RANK[r.lvl]; } }
+  return '';
 }
-/* 문장 하나 처리. 여러 인식 후보 중 작업이 가장 잘 잡히는 것을 씀 */
+const baseYM = () => { const b = /^(\d{4})-(\d{2})$/.exec($('baseMonth').value) || [], t = fromDay(todayDay); return { y: +b[1] || t.y, m: +b[2] || t.m }; };
+const lastDated = upTo => { for (let i = (upTo == null ? state.rows.length : upTo) - 1; i >= 0; i--) { const r = state.rows[i]; if (r.s != null && r.d) return r; } return null; };
+
+/* ───────── 탭별 방식 ───────── */
+const DAYM = {
+  key: 'day', inc: 1, LV: { cat: '대분류', item: '작업항목', det: '세부작업' }, leaf: 'det', parent: 'item', foldLabel: '작업항목까지',
+  FIELD: { name: '작업내용', start: '시작일', dur: '기간' }, hStart: '시작일', hDur: '기간',
+  sheet: '작업입력', firstRow: 5, cols: 'A~F열', colsTxt: '구분~기간',
+  eg: ['불기어 기초작업 11월 28일부터 30일', '이어서 패딩작업 이틀', '대분류 분체설비', '취소'],
+  phAdd: '말하는 대신 여기에 적고 Enter · 예) 불기어 기초작업 11월 28일부터 30일, 이어서 패딩작업 이틀',
+  phEdit: '이 줄을 고칠 말 · 예) 하루 뒤로 / 12월 3일부터 이틀 / 기간 5일 / 이름 그라우팅 / 삭제',
+  phField: { name: '새 작업내용', start: '새 시작일 · 예) 12월 3일', dur: '새 기간 · 예) 3일, 이틀' },
+  editHint: '하루 뒤로 · 12월 3일부터 이틀 · 기간 5일 · 이름 ○○ · 삭제',
+  steps: ['엑셀 바차트 파일의 [작업입력] 시트를 엽니다', '구분 칸의 첫 줄 A5(또는 비어 있는 줄)를 누릅니다', '종료일과 간트가 자동으로 채워집니다', '붙인 줄 아래에 예전 줄이 남아 있으면 지우고 [바차트 생성]'],
+  auto: (r, i) => r.lvl === 'cat' || (r.lvl === 'item' && !!spanOf(i)),
+  ppu: () => state.dw, snap: () => 1, defDur: 1,
+  fmt: v => md(v), fmtW: v => md(v) + ' ' + WD[fromDay(v).w],
+  endOf: r => r.s + r.d - 1,
+  durTxt: d => d + '일', durNum: d => String(d),
+  spanTxt: (s, d) => `${md(s)}~${md(s + d - 1)}`,
+  live: r => `${md(r.s)}~${md(r.s + r.d - 1)} · ${r.d}일`,
+  parse: parseText,
+  ctx() {
+    const c = Object.assign(baseYM(), { last: null }), r = lastDated();
+    if (r) { const e = r.s + r.d - 1, o = fromDay(e); c.y = o.y; c.m = o.m; c.last = e; }
+    return c;
+  },
+  rowCtx(i) {                                             // 그 줄의 달, 앞 줄의 끝
+    const c = Object.assign(baseYM(), { last: null }), r = state.rows[i], p = lastDated(i);
+    if (p) { c.last = p.s + p.d - 1; const o = fromDay(c.last); c.y = o.y; c.m = o.m; }
+    if (r.s != null) { const o = fromDay(r.s); c.y = o.y; c.m = o.m; }
+    return c;
+  },
+  defStart(i) { const c = this.rowCtx(i); return c.last != null ? c.last + 1 : todayDay; },
+  nextLevel() {
+    const last = state.rows[state.rows.length - 1];
+    if (!last) return 'item';
+    if (last.lvl === 'cat') return 'item';
+    if (last.lvl === 'det') return 'det';
+    return last.s == null ? 'det' : 'item';
+  },
+  startInput: r => `<input class="start" id="st_${r.id}" type="date" value="${r.s != null ? iso(r.s) : ''}" aria-label="시작일">`,
+  durInput: r => `<input class="dur" id="du_${r.id}" type="number" min="1" max="999" value="${r.d || ''}" aria-label="기간(일)">`,
+  startVal: r => iso(r.s), durVal: r => r.d,
+  readStart: v => parseIso(v), readDur: v => { const n = parseInt(v, 10); return n > 0 ? n : null; },
+  range() {
+    let a = null, b = null;
+    state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); } });
+    if (a == null) { a = todayDay; b = todayDay + 20; }
+    return { a: a - 3, len: Math.max(b - a + 1 + 10, 24) };
+  },
+  head() {
+    const dw = state.dw; let mh = '', dh = '', ch = '', run = 0, cur = null;
+    const monthSpan = (key, n) => { const [y, m] = key.split('-'); return `<span style="width:${n * dw}px">${n * dw > 70 ? y + '년 ' : ''}${m}월</span>`; };
+    for (let i = 0; i < range.len; i++) {
+      const day = range.a + i, o = fromDay(day), key = o.y + '-' + o.m;
+      if (key !== cur) { if (cur) mh += monthSpan(cur, run); cur = key; run = 0; if (i) ch += `<b style="left:${i * dw}px"></b>`; }
+      run++;
+      const cls = (o.w === 6 ? 'sat' : o.w === 0 ? 'sun' : '') + (day === todayDay ? ' today' : '');
+      dh += `<span class="${cls}" title="${o.m}/${o.d} (${WD[o.w]})">${dw >= 22 || o.d === 1 || o.w === 1 ? o.d : ''}</span>`;
+      if (o.w === 0 || o.w === 6) ch += `<i style="left:${i * dw}px"></i>`;
+    }
+    mh += monthSpan(cur, run);
+    if (todayDay >= range.a && todayDay < range.a + range.len) ch += `<u style="left:${(todayDay - range.a + .5) * dw}px"></u>`;
+    return { mh, dh, ch };
+  },
+  sumTxt: (a, b) => `${md(a)} ~ ${md(b)} · ${b - a + 1}일`,
+  tsvRow(r, auto) {
+    return [this.LV[r.lvl], r.trade, r.name.replace(/[\t\r\n]/g, ' '), r.low || '', (!auto && r.s != null) ? iso(r.s) : '', (!auto && r.d) ? r.d : ''];
+  },
+  /* 줄 목록 [구분, 공종, 작업내용, 하단표기, 시작일, 기간, 종료일] → 작업 줄 */
+  fromCells(list) {
+    const out = [];
+    list.forEach(c => {
+      const lvT = String(c[0] || '').trim().replace(/\s/g, ''), name = String(c[2] || '').trim();
+      if (!name || !/^(대분류|작업항목|세부작업|)$/.test(lvT)) return;      // 머리글 · 다른 표의 줄은 건너뜀
+      const lvl = lvT === '대분류' ? 'cat' : lvT === '작업항목' ? 'item' : 'det';
+      let s = cellDay(c[4]), d = parseInt(c[5], 10); const e = cellDay(c[6]);
+      if (!(d > 0)) d = (s != null && e != null && e >= s) ? e - s + 1 : null;
+      if (lvl === 'cat') { s = null; d = null; }
+      if (s == null) d = null; else if (!d) d = 1;
+      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+    });
+    // 세부작업에 날짜가 있는 작업항목의 날짜는 엑셀이 계산해 넣은 요약 값 → 비워 두고 자동으로
+    out.forEach((r, i) => {
+      if (r.lvl !== 'item') return;
+      for (let j = i + 1; j < out.length && out[j].lvl === 'det'; j++) if (out[j].s != null) { r.s = null; r.d = null; break; }
+    });
+    return out;
+  },
+  looks: t => /(^|\n)\s*(대분류|작업항목|세부작업)\t/.test(t),
+  sample() {
+    const d = off => todayDay + off;
+    return [
+      { lvl: 'cat', trade: '공사', name: '불기어 교체', s: null, d: null },
+      { lvl: 'item', trade: '토목', name: '불기어 기초작업', s: d(3), d: 3 },
+      { lvl: 'item', trade: '기계', name: '패딩작업', s: d(5), d: 2 },
+      { lvl: 'item', trade: '기계', name: '불기어 설치', s: null, d: null },
+      { lvl: 'det', trade: '', name: '인양 · 가조립', s: d(7), d: 2 },
+      { lvl: 'det', trade: '', name: '센터링', s: d(9), d: 3 },
+      { lvl: 'item', trade: '기계', name: '시운전', s: d(12), d: 2 }
+    ].map(r => Object.assign({ id: newId(), low: '' }, r));
+  }
+};
+const TIMEM = {
+  key: 'time', inc: 0, LV: { cat: '대분류', item: '작업' }, leaf: 'item', parent: 'cat', foldLabel: '대분류까지',
+  FIELD: { name: '작업내용', start: '시작', dur: '작업시간' }, hStart: '시작 (날짜 · 시각)', hDur: '시간(h)',
+  sheet: '시간입력', firstRow: 15, cols: 'A~H열', colsTxt: '구분~일수',
+  eg: ['가설 비계 설치 11월 28일 8시부터 10시간', '이어서 전원 차단 2시간', '랜스 교체 14시부터 22시까지', '대분류 본 작업', '취소'],
+  phAdd: '말하는 대신 여기에 적고 Enter · 예) 가설 비계 설치 11월 28일 8시부터 10시간, 이어서 전원 차단 2시간',
+  phEdit: '이 줄을 고칠 말 · 예) 2시간 뒤로 / 14시부터 6시간 / 작업시간 8시간 / 이름 랜스 교체 / 삭제',
+  phField: { name: '새 작업내용', start: '새 시작 · 예) 12월 3일 8시, 14시 30분', dur: '새 작업시간 · 예) 6시간, 1시간 반' },
+  editHint: '2시간 뒤로 · 14시부터 6시간 · 작업시간 8시간 · 이름 ○○ · 삭제',
+  steps: ['엑셀 바차트 파일(v0.8 이상)의 [시간입력] 시트를 엽니다', '구분 칸의 첫 줄 A15(또는 비어 있는 줄)를 누릅니다', '종료가 자동으로 채워집니다', '예전 줄이 남아 있으면 지우고, 인원·장비 수를 넣은 뒤 [시간공정표 생성]'],
+  auto: r => r.lvl === 'cat',
+  ppu: () => state.dw / (state.slotH * 60), snap: () => (state.slotH <= 2 ? 30 : 60), defDur: 60,
+  fmt: v => mdhm(v), fmtW: v => mdhm(v),
+  endOf: r => r.s + r.d,
+  durTxt: d => (d >= 1440 && d % 1440 === 0) ? (d / 1440) + '일' : numTxt(d / 60) + 'h', durNum: d => numTxt(d / 60),
+  spanTxt: (s, d) => `${mdhm(s)}~${dayOf(s) === dayOf(s + d) ? hm(s + d) : mdhm(s + d)}`,
+  live(r) { return `${this.spanTxt(r.s, r.d)} · ${this.durTxt(r.d)}`; },
+  parse: parseTimeText,
+  ctx() {
+    const c = Object.assign(baseYM(), { last: null, day: null }), r = lastDated(), t = fromDay(todayDay);
+    c.day = (c.y === t.y && c.m === t.m) ? todayDay : toDay(c.y, c.m, 1);
+    if (r) { c.last = r.s + r.d; c.day = dayOf(c.last); const o = fromDay(c.day); c.y = o.y; c.m = o.m; }
+    return c;
+  },
+  rowCtx(i) {
+    const c = this.ctx(), r = state.rows[i], p = lastDated(i);
+    c.last = p ? p.s + p.d : null;
+    if (r.s != null) c.day = dayOf(r.s); else if (p) c.day = dayOf(c.last);
+    const o = fromDay(c.day); c.y = o.y; c.m = o.m;
+    return c;
+  },
+  defStart(i) { const c = this.rowCtx(i); return c.last != null ? c.last : Math.ceil(nowMin() / 60) * 60; },
+  nextLevel: () => 'item',
+  startInput: r => `<input class="start" id="st_${r.id}" type="datetime-local" step="60" value="${r.s != null ? iso(dayOf(r.s)) + 'T' + hm(r.s) : ''}" aria-label="시작 날짜와 시각">`,
+  durInput: r => `<input class="dur" id="du_${r.id}" type="number" min="0.5" step="0.5" max="9999" value="${r.d ? numTxt(r.d / 60) : ''}" aria-label="작업시간(시간)">`,
+  startVal: r => iso(dayOf(r.s)) + 'T' + hm(r.s), durVal: r => numTxt(r.d / 60),
+  readStart(v) { const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v || ''); return m ? toDay(+m[1], +m[2], +m[3]) * 1440 + (+m[4]) * 60 + (+m[5]) : null; },
+  readDur: v => { const n = Math.round(parseFloat(v) * 60); return n > 0 ? n : null; },
+  range() {
+    let a = null, b = null;
+    state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d : Math.max(b, r.s + r.d); } });
+    if (a == null) { a = todayDay * 1440; b = a + 2880; }
+    a = dayOf(a) * 1440; b = Math.ceil(b / 1440) * 1440;
+    return { a, len: Math.max(b - a, 2880) };
+  },
+  head() {
+    const dw = state.dw, sm = state.slotH * 60, p = this.ppu(), days = Math.round(range.len / 1440), per = 1440 / sm, now = nowMin();
+    let mh = '', dh = '', ch = '';
+    for (let k = 0; k < days; k++) {
+      const day = dayOf(range.a) + k, o = fromDay(day), x = k * 1440 * p, w = 1440 * p;
+      mh += `<span class="${o.w === 6 ? 'sat' : o.w === 0 ? 'sun' : ''}" style="width:${w}px">${w > 96 ? `${o.m}/${o.d} (${WD[o.w]})` : w > 44 ? `${o.m}/${o.d}` : o.d}</span>`;
+      for (let j = 0; j < per; j++) { const h = j * state.slotH; dh += `<span>${dw >= 20 || h % (state.slotH * 2) === 0 ? pad(h) : ''}</span>`; }
+      ch += `<i style="left:${x}px;width:${360 * p}px"></i><i style="left:${x + 1080 * p}px;width:${360 * p}px"></i>`;   // 야간 18~06시
+      if (k) ch += `<b style="left:${x}px"></b>`;
+    }
+    if (now >= range.a && now < range.a + range.len) ch += `<u style="left:${(now - range.a) * p}px"></u>`;
+    return { mh, dh, ch };
+  },
+  sumTxt: (a, b) => `${mdhm(a)} ~ ${mdhm(b)} · ${numTxt((b - a) / 60)}h`,
+  tsvRow(r, auto) {                                        // 구분 / 공종 / 작업내용 / 하단표기 / 시작일 / 시작시각 / 작업시간(h) / 일수
+    const has = !auto && r.s != null && r.d;
+    return [this.LV[r.lvl], r.trade, r.name.replace(/[\t\r\n]/g, ' '), r.low || '', has ? iso(dayOf(r.s)) : '', has ? hm(r.s) : '', has ? numTxt(r.d / 60) : '', ''];
+  },
+  fromCells(list) {
+    const out = [];
+    list.forEach(c => {
+      const lvT = String(c[0] || '').trim().replace(/\s/g, ''), name = String(c[2] || '').trim();
+      if (!name || !/^(대분류|작업|)$/.test(lvT)) return;                 // 머리글 · 설정 줄은 건너뜀
+      const lvl = lvT === '대분류' ? 'cat' : 'item';
+      const day = cellDay(c[4]); let t = cellTime(c[5]); const hrs = parseFloat(c[6]), dys = parseFloat(c[7]);
+      if (t == null && /^\d+\.\d+$/.test(String(c[4] || '').trim())) t = Math.round((+c[4] % 1) * 1440);
+      let s = day != null ? day * 1440 + (t || 0) : null, d = hrs > 0 ? Math.round(hrs * 60) : dys > 0 ? Math.round(dys * 1440) : null;
+      if (lvl === 'cat') { s = null; d = null; }
+      if (s == null) d = null; else if (!d) d = 60;
+      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+    });
+    return out;
+  },
+  looks: t => /(^|\n)\s*(대분류|작업)\t/.test(t),
+  sample() {
+    const at = (off, h) => (todayDay + 2 + off) * 1440 + h * 60;
+    return [
+      { lvl: 'cat', trade: '공사', name: 'SD 준비', s: null, d: null },
+      { lvl: 'item', trade: '기계', name: '가설 비계 설치', s: at(0, 8), d: 600 },
+      { lvl: 'item', trade: '전기', name: '전원 차단 · LOTO', s: at(0, 18), d: 120 },
+      { lvl: 'cat', trade: '공사', name: '본 작업', s: null, d: null },
+      { lvl: 'item', trade: '기계', name: '노체 냉각', s: at(0, 20), d: 840 },
+      { lvl: 'item', trade: '기계', name: '트러니언 베어링 교체', s: at(1, 10), d: 1200 },
+      { lvl: 'item', trade: '기계', name: '랜스 교체', s: at(1, 14), d: 480 },
+      { lvl: 'cat', trade: '공사', name: '시운전', s: null, d: null },
+      { lvl: 'item', trade: '기계', name: '시운전 · 승온', s: at(2, 16), d: 1080 }
+    ].map(r => Object.assign({ id: newId(), low: '' }, r));
+  }
+};
+function cellDay(v) {                                     // 날짜 칸 : 2026-11-28 / 2026.11.28 / 11/28/2026 / 일련번호
+  v = String(v == null ? '' : v).trim(); if (!v) return null;
+  let m = /(\d{4})\D+(\d{1,2})\D+(\d{1,2})/.exec(v); if (m) return toDay(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); if (m) return toDay(+m[3], +m[1], +m[2]);
+  if (/^\d+(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000) return Math.floor(+v) - 25569;
+  return null;
+}
+function cellTime(v) {                                    // 시각 칸 : 08:00 / 0.3333(엑셀 시간 값) / 14(시)
+  v = String(v == null ? '' : v).trim(); if (!v) return null;
+  let m = /(오전|오후)?\s*(\d{1,2}):(\d{2})/.exec(v);
+  if (m) { let h = +m[2]; if (m[1] === '오후' && h < 12) h += 12; if (m[1] === '오전' && h === 12) h = 0; return h * 60 + (+m[3]); }
+  if (/^\d+(\.\d+)?$/.test(v)) { const x = +v; return x < 1 ? Math.round(x * 1440) : x <= 24 ? Math.round(x * 60) : null; }
+  return null;
+}
+
+/* ───────── 문장 하나 처리 ───────── */
+function say(html, on) { $('liveText').innerHTML = html; if (on !== undefined) $('live').classList.toggle('on', on); }
+function dropSample() { if (state.sample) { state.sample = false; $('sample').hidden = true; } }
+const UNDO_BTN = ' <button class="linkbtn" type="button" data-undo>되돌리기</button>';
 function handleSentence(alts, fromVoice) {
   const tg = target();
   if (tg && tg.field) { applyField(tg, alts, fromVoice); return; }
-  if (tg) { applyEdit(tg, alts, fromVoice); return; }
-  let best = null;
+  if (tg) { applyEdit(tg, alts); return; }
+  let best = null;                                        // 여러 인식 후보 중 작업이 가장 잘 잡히는 것
   for (const a of alts) {
-    const r = parseText(a, contextNow());
+    const r = M.parse(a, M.ctx());
     const score = r.cmd ? 100 : r.tasks.filter(x => x.name).length * 10 + r.tasks.length + (r.header ? 5 : 0);
     if (!best || score > best.score) best = { r, score };
   }
@@ -681,30 +1016,28 @@ function handleSentence(alts, fromVoice) {
     pushUndo(); dropSample();
     const row = { id: newId(), lvl: r.level, trade: r.level === 'cat' ? '공사' : '', name: fixName(r.header), low: '', s: null, d: null };
     row.heard = row.name; state.rows.push(row); renderAll(false, [row.id]); save();
-    say(`<b>${LV[r.level]}</b> 「${esc(row.name)}」 줄을 넣었습니다.`); return;
+    say(`<b>${M.LV[r.level]}</b> 「${esc(row.name)}」 줄을 넣었습니다.`); return;
   }
   if (!r.tasks.length) {
     if (fromVoice) $('sayInput').value = r.text;
-    say(`<span class="warn">날짜를 찾지 못했습니다.</span> 「${esc(r.text)}」 — 날짜나 기간을 넣어 다시 말하거나 위 칸에서 고쳐 주세요.`);
+    say(`<span class="warn">${M.key === 'day' ? '날짜' : '날짜나 시각'}를 찾지 못했습니다.</span> 「${esc(r.text)}」 — ${M.key === 'day' ? '날짜나 기간' : '시각이나 작업시간'}을 넣어 다시 말하거나 위 칸에서 고쳐 주세요.`);
     return;
   }
   pushUndo(); dropSample();
-  const ids = [];
+  const ids = [], added = [];
   r.tasks.forEach(t => {
-    let lvl = r.level && r.level !== 'cat' ? r.level : nextLevel();
+    const lvl = (r.level && r.level !== 'cat' && M.LV[r.level]) ? r.level : M.nextLevel();
     const name = fixName(t.name) || '작업';
     const row = { id: newId(), lvl, trade: guessTrade(name), name, low: '', s: t.s, d: t.d, heard: name };
-    state.rows.push(row); ids.push(row.id);
+    state.rows.push(row); ids.push(row.id); added.push(`「${esc(name)}」 ${M.spanTxt(t.s, t.d)}`);
   });
   renderAll(false, ids); save();
-  const list = r.tasks.map((t, i) => `「${esc(state.rows[state.rows.length - r.tasks.length + i].name)}」 ${md(t.s)}~${md(t.s + t.d - 1)}`).join(', ');
-  say(`${r.tasks.length}줄 추가: ${list} <button class="linkbtn" type="button" data-undo>되돌리기</button>`);
+  say(`${r.tasks.length}줄 추가: ${added.join(', ')}${UNDO_BTN}`);
   $('sayInput').value = '';
 }
 
-/* ───────── 선택한 줄 고치기 ───────── */
+/* ───────── 선택한 줄 · 칸 고치기 ───────── */
 const sel = { id: null, field: null };
-const FIELD = { name: '작업내용', start: '시작일', dur: '기간' };
 const IDLE = '마이크를 누르고 말하거나, 위 칸에 적고 Enter 를 누르면 새 작업이 추가됩니다. 줄을 먼저 누르면 그 줄을 고칩니다.';
 function target() {
   if (!sel.id) return null;
@@ -725,7 +1058,7 @@ function applySel() {
   if (el) {
     el.classList.add('sel');
     if (sel.field) { const inp = el.querySelector('.' + sel.field); if (inp) inp.classList.add('target'); else sel.field = null; }
-  } else {                                   // 접혀서 안 보이는 세부작업 : 바만 표시
+  } else {                                   // 접혀서 안 보이는 줄 : 바만 표시
     sel.field = null;
     const bar = $('rows').querySelector(`.bar[data-rid="${sel.id}"]`); if (bar) bar.classList.add('sel');
   }
@@ -737,30 +1070,32 @@ function showMode() {
   $('delSel').textContent = t ? `「${short(t.r.name)}」 줄 지우기` : '선택한 줄 지우기';
   if (!t) {
     chip.textContent = '새 작업 추가'; chip.className = 'mode add'; $('sayBtn').textContent = '추가';
-    inp.placeholder = '말하는 대신 여기에 적고 Enter · 예) 불기어 기초작업 11월 28일부터 30일, 이어서 패딩작업 이틀';
+    inp.placeholder = M.phAdd;
     if (!listening) say(IDLE);
   } else if (!t.field) {
     chip.textContent = '고치기 · ' + short(t.r.name); chip.className = 'mode'; $('sayBtn').textContent = '고치기';
-    inp.placeholder = '이 줄을 고칠 말 · 예) 하루 뒤로 / 12월 3일부터 이틀 / 기간 5일 / 이름 그라우팅 / 삭제';
-    if (!listening) say(`<b>「${esc(t.r.name)}」</b> 줄을 고칩니다. 마이크를 누르고 말하거나 위 칸에 적으세요 — 하루 뒤로 · 12월 3일부터 이틀 · 기간 5일 · 이름 ○○ · 삭제`);
+    inp.placeholder = M.phEdit;
+    if (!listening) say(`<b>「${esc(t.r.name)}」</b> 줄을 고칩니다. 마이크를 누르고 말하거나 위 칸에 적으세요 — ${M.editHint}`);
   } else {
-    chip.textContent = short(t.r.name) + ' › ' + FIELD[t.field]; chip.className = 'mode'; $('sayBtn').textContent = '넣기';
-    inp.placeholder = { name: '새 작업내용', start: '새 시작일 · 예) 12월 3일', dur: '새 기간 · 예) 3일, 이틀' }[t.field];
-    if (!listening) say(`<b>「${esc(t.r.name)}」</b>의 <b>${FIELD[t.field]}</b>을 넣습니다. 마이크를 누르고 말하세요.`);
+    chip.textContent = short(t.r.name) + ' › ' + M.FIELD[t.field]; chip.className = 'mode'; $('sayBtn').textContent = '넣기';
+    inp.placeholder = M.phField[t.field];
+    if (!listening) say(`<b>「${esc(t.r.name)}」</b>의 <b>${M.FIELD[t.field]}</b>을 넣습니다. 마이크를 누르고 말하세요.`);
   }
 }
-function rowCtx(i) {                                    // 그 줄의 달, 앞 줄의 끝
-  const c = contextNow(); c.last = null;
-  const r = state.rows[i];
-  if (r.s != null) { const o = fromDay(r.s); c.y = o.y; c.m = o.m; }
-  for (let j = i - 1; j >= 0; j--) { const p = state.rows[j]; if (p.s != null && p.d) { c.last = p.s + p.d - 1; if (r.s == null) { const o = fromDay(c.last); c.y = o.y; c.m = o.m; } break; } }
-  return c;
-}
-const NN = '(?:(\\d{1,3})\\s*일|(' + DW + ')|(\\d{1,2})\\s*주(?:일)?)';
-const RE_SHIFT = new RegExp(NN + '\\s*(?:씩\\s*)?(뒤로|미뤄|미루|늦춰|늦게|연기|앞으로|당겨|앞당겨|빨리)');
-const RE_SHIFT2 = new RegExp('(뒤로|앞으로)\\s*' + NN);
-const RE_GROW = new RegExp(NN + '\\s*(?:더\\s*)?(늘려|늘리|연장|줄여|줄이|단축)');
 const TRADE_RE = '공사|조업|토목|건축|기계|전기|배관|철골|기타';
+const RE_DEL = /^(이\s*줄\s*)?(삭제|지워|지우기)(\s*해)?(\s*줘)?\s*$/;
+const RE_TRADE = new RegExp('^(?:공종\\s*(?:은|는|을)?\\s*)?(' + TRADE_RE + ')\\s*(?:공종)?\\s*(?:으로|로)?\\s*(?:변경|바꿔|수정)?(?:\\s*해)?(?:\\s*줘)?\\s*$');
+const DIRS = '(뒤로|미뤄|미루|늦춰|늦게|연기|앞으로|당겨|앞당겨|빨리)', GROWS = '(늘려|늘리|연장|줄여|줄이|단축)';
+const isLater = w => /뒤|미|늦|연기/.test(w), isMore = w => /늘|연장/.test(w);
+function editName(rest) {                                 // 고치는 말에서 이름만 남김
+  rest = rest.replace(/^(이름|작업\s*내용|내용)\s*(?:은|는|을|를)?\s+/, '')
+    .replace(/(?:으로|로)?\s*(?:변경|바꿔|바꾸기|수정|옮겨)(?:\s*해)?(?:\s*줘)?\s*$/, '').replace(/(?<=[가-힣]{2})으로$/, '');
+  rest = cleanName(rest);
+  return (rest && !/^(으로|로|에|해줘|해 줘)$/.test(rest)) ? fixName(rest) : '';
+}
+/* 일 단위 : 고치는 말 → 바꿀 내용 */
+const NN = '(?:(\\d{1,3})\\s*일|(' + DW + ')|(\\d{1,2})\\s*주(?:일)?)';
+const RE_SHIFT = new RegExp(NN + '\\s*(?:씩\\s*)?' + DIRS), RE_SHIFT2 = new RegExp('(뒤로|앞으로)\\s*' + NN), RE_GROW = new RegExp(NN + '\\s*(?:더\\s*)?' + GROWS);
 function parseDur(t) {
   t = normalize(t);
   let m = /(\d{1,3})\s*(주)?/.exec(t);
@@ -770,25 +1105,25 @@ function parseDur(t) {
   if (m) { const n = koNum(m[1]); if (n) return n * (m[2] === '주' ? 7 : 1); }
   return null;
 }
-function isAuto(i) { const r = state.rows[i]; return r.lvl === 'cat' || (r.lvl === 'item' && !!spanOf(i)); }
 function parseEdit(text, i) {
   const r = state.rows[i], t = normalize(text), a = {};
   if (!t) return null;
-  if (/^(이\s*줄\s*)?(삭제|지워|지우기)(\s*해)?(\s*줘)?\s*$/.test(t)) return { del: true };
+  if (RE_DEL.test(t)) return { del: true };
+  const nOf = (m, o) => m[o] ? +m[o] : m[o + 1] ? DUR_WORD[m[o + 1]] : (+m[o + 2]) * 7;
   let m = RE_SHIFT.exec(t);
-  if (m) { const n = m[1] ? +m[1] : m[2] ? DUR_WORD[m[2]] : (+m[3]) * 7; return { shift: /뒤|미|늦|연기/.test(m[4]) ? n : -n }; }
+  if (m) return { shift: isLater(m[4]) ? nOf(m, 1) : -nOf(m, 1) };
   m = RE_SHIFT2.exec(t);
-  if (m) { const n = m[2] ? +m[2] : m[3] ? DUR_WORD[m[3]] : (+m[4]) * 7; return { shift: m[1] === '뒤로' ? n : -n }; }
+  if (m) return { shift: m[1] === '뒤로' ? nOf(m, 2) : -nOf(m, 2) };
   m = RE_GROW.exec(t);
-  if (m) { const n = m[1] ? +m[1] : m[2] ? DUR_WORD[m[2]] : (+m[3]) * 7; return { grow: /늘|연장/.test(m[4]) ? n : -n }; }
+  if (m) return { grow: isMore(m[4]) ? nOf(m, 1) : -nOf(m, 1) };
   m = /^(대분류|작업\s*항목|세부\s*작업)\s*(?:으로|로)?\s*(?:변경|바꿔|수정)?(?:\s*해)?(?:\s*줘)?\s*$/.exec(t);
   if (m) return { lvl: m[1][0] === '대' ? 'cat' : m[1][0] === '세' ? 'det' : 'item' };
-  m = new RegExp('^(?:공종\\s*(?:은|는|을)?\\s*)?(' + TRADE_RE + ')\\s*(?:공종)?\\s*(?:으로|로)?\\s*(?:변경|바꿔|수정)?(?:\\s*해)?(?:\\s*줘)?\\s*$').exec(t);
+  m = RE_TRADE.exec(t);
   if (m) return { trade: m[1] };
   m = /기간\s*(?:은|는|을|를)?\s*(.+)$/.exec(t);
   if (m) { const n = parseDur(m[1]); if (n) return { d: n }; }
   const wantEnd = /종료/.test(t), wantName = /^(이름|작업\s*내용|내용)/.test(t);
-  const res = parseText(t.replace(/(시작일|종료일|시작|종료|기간|날짜)\s*(?:은|는|을|를|이|가)?(?=\s|\d)/g, ' '), rowCtx(i));
+  const res = parseText(t.replace(/(시작일|종료일|시작|종료|기간|날짜)\s*(?:은|는|을|를|이|가)?(?=\s|\d)/g, ' '), DAYM.rowCtx(i));
   let rest;
   if (res.tasks.length && !wantName) {
     const k = res.tasks[0];
@@ -801,20 +1136,75 @@ function parseEdit(text, i) {
     }
     rest = res.rest || '';
   } else rest = t;
-  rest = rest.replace(/^(이름|작업\s*내용|내용)\s*(?:은|는|을|를)?\s+/, '')
-    .replace(/(?:으로|로)?\s*(?:변경|바꿔|바꾸기|수정|옮겨)(?:\s*해)?(?:\s*줘)?\s*$/, '').replace(/(?<=[가-힣]{2})으로$/, '');
-  rest = cleanName(rest);
-  if (rest && !/^(으로|로|에|해줘|해 줘)$/.test(rest)) a.name = fixName(rest);
+  const nm = editName(rest); if (nm) a.name = nm;
   return Object.keys(a).length ? a : null;
 }
-function applyEdit(tg, alts, fromVoice) {
+/* 시간 단위 : 고치는 말 → 바꿀 내용 (단위 = 분) */
+const UN = '(?:(\\d+(?:\\.\\d+)?)\\s*시간(?:\\s*(\\d{1,2})\\s*분|\\s*(반))?|(\\d{1,3})\\s*분|(\\d{1,3})\\s*일|(' + DW + '))';
+const RE_SHIFT_T = new RegExp(UN + '\\s*(?:씩\\s*)?' + DIRS), RE_SHIFT2_T = new RegExp('(뒤로|앞으로)\\s*' + UN), RE_GROW_T = new RegExp(UN + '\\s*(?:더\\s*)?' + GROWS);
+const RE_UN = new RegExp(UN);
+const unMin = (m, o) => m[o] != null ? Math.round(+m[o] * 60) + (m[o + 1] ? +m[o + 1] : m[o + 2] ? 30 : 0) : m[o + 3] != null ? +m[o + 3] : m[o + 4] != null ? +m[o + 4] * 1440 : DUR_WORD[m[o + 5]] * 1440;
+function parseDurT(t) {                                   // "6시간", "1시간 반", "90분", "6" (= 6시간)
+  t = normalizeT(t);
+  let m = RE_UN.exec(t); if (m) return unMin(m, 1);
+  m = /(\d+(?:\.\d+)?)/.exec(t); if (m) return Math.round(+m[1] * 60);
+  return null;
+}
+function parseEditT(text, i) {
+  const r = state.rows[i], t = normalizeT(text), a = {};
+  if (!t) return null;
+  if (RE_DEL.test(t)) return { del: true };
+  let m = RE_SHIFT_T.exec(t);
+  if (m) return { shift: isLater(m[7]) ? unMin(m, 1) : -unMin(m, 1) };
+  m = RE_SHIFT2_T.exec(t);
+  if (m) return { shift: m[1] === '뒤로' ? unMin(m, 2) : -unMin(m, 2) };
+  m = RE_GROW_T.exec(t);
+  if (m) return { grow: isMore(m[7]) ? unMin(m, 1) : -unMin(m, 1) };
+  m = /^(대분류|작업)\s*(?:으로|로)?\s*(?:변경|바꿔|수정)?(?:\s*해)?(?:\s*줘)?\s*$/.exec(t);
+  if (m) return { lvl: m[1] === '대분류' ? 'cat' : 'item' };
+  m = RE_TRADE.exec(t);
+  if (m) return { trade: m[1] };
+  m = /^(?:작업\s*시간|소요\s*시간|기간)\s*(?:은|는|을|를)?\s*(.+)$/.exec(t);
+  if (m) { const n = parseDurT(m[1]); if (n) return { d: n }; }
+  const wantEnd = /종료|끝/.test(t), wantName = /^(이름|작업\s*내용|내용)/.test(t);
+  const res = parseTimeText(t.replace(/(시작\s*시각|시작\s*시간|종료\s*시각|종료\s*시간|시작일|종료일|시작|종료|날짜)\s*(?:은|는|을|를|이|가)?(?=\s|\d|오|새|아|저|밤|낮|정|자)/g, ' '), TIMEM.rowCtx(i));
+  let rest;
+  if (res.tasks.length && !wantName) {
+    const k = res.tasks[0];
+    if (k.kind === 'range' || k.kind === 'dateDur') { a.s = k.s; a.d = k.d; }
+    else if (k.kind === 'dur') a.d = k.d;
+    else {                                              // 시각 하나 : 시작 (…까지 · 종료 이면 끝나는 때)
+      const v = k.kind === 'until' ? k.until : k.s;
+      if (k.kind === 'until' || wantEnd) { if (r.s != null && v > r.s) a.d = v - r.s; else { a.s = v - 60; a.d = 60; } }
+      else a.s = v;
+    }
+    rest = res.rest || '';
+  } else rest = t;
+  const nm = editName(rest); if (nm) a.name = nm;
+  return Object.keys(a).length ? a : null;
+}
+DAYM.edit = parseEdit; TIMEM.edit = parseEditT;
+DAYM.fieldDur = x => parseDur(x); TIMEM.fieldDur = x => parseDurT(x);
+DAYM.fieldStart = (x, i) => {
+  const res = parseText(x.replace(/(시작일|시작|날짜)\s*(?:은|는|을|를)?/g, ' '), DAYM.rowCtx(i));
+  if (res.tasks.length) { const k = res.tasks[0]; if (k.kind !== 'dur') return k.kind === 'until' ? k.until : k.s; }
+  const m = /(\d{1,2})/.exec(normalize(x)), c = DAYM.rowCtx(i);
+  return (m && +m[1] >= 1 && +m[1] <= 31) ? toDay(c.y, c.m, +m[1]) : null;
+};
+TIMEM.fieldStart = (x, i) => {
+  const res = parseTimeText(x.replace(/(시작\s*시각|시작\s*시간|시작일|시작|날짜)\s*(?:은|는|을|를)?/g, ' '), TIMEM.rowCtx(i));
+  if (res.tasks.length) { const k = res.tasks[0]; if (k.kind !== 'dur') return k.kind === 'until' ? k.until : k.s; }
+  const m = /(\d{1,2})/.exec(normalizeT(x)), c = TIMEM.rowCtx(i);
+  return (m && +m[1] <= 24) ? c.day * 1440 + (+m[1]) * 60 : null;
+};
+function applyEdit(tg, alts) {
   let a = null;
-  for (const x of alts) { const c = parseEdit(x, tg.i); if (c && !(Object.keys(c).length === 1 && c.name)) { a = c; break; } if (!a) a = c; }
+  for (const x of alts) { const c = M.edit(x, tg.i); if (c && !(Object.keys(c).length === 1 && c.name)) { a = c; break; } if (!a) a = c; }
   const r = tg.r, i = tg.i;
-  if (!a) { say('<span class="warn">무슨 말인지 알아듣지 못했습니다.</span> 예) 하루 뒤로 · 12월 3일부터 이틀 · 기간 5일 · 이름 ○○ · 삭제'); return; }
-  const auto = isAuto(i), touchesDate = a.s != null || a.d != null || a.grow != null;
-  if (auto && touchesDate && !a.name) {
-    say(`「${esc(r.name)}」의 날짜는 아래 작업 범위로 자동 계산됩니다. 고칠 세부 줄을 누르거나 「하루 뒤로」처럼 전체를 옮기세요.`); return;
+  if (!a) { say(`<span class="warn">무슨 말인지 알아듣지 못했습니다.</span> 예) ${M.editHint}`); return; }
+  const auto = isAuto(i), touches = a.s != null || a.d != null || a.grow != null;
+  if (auto && touches && !a.name) {
+    say(`「${esc(r.name)}」의 날짜는 아래 작업 범위로 자동 계산됩니다. 고칠 줄을 누르거나 「${M.key === 'day' ? '하루' : '2시간'} 뒤로」처럼 전체를 옮기세요.`); return;
   }
   pushUndo(); dropSample();
   let msg;
@@ -822,20 +1212,20 @@ function applyEdit(tg, alts, fromVoice) {
   else if (a.shift != null) {
     let n = 0;
     for (let j = i, e = blockEnd(i); j < e; j++) if (state.rows[j].s != null) { state.rows[j].s += a.shift; n++; }
-    msg = `「${esc(r.name)}」${n > 1 ? ` 아래 ${n}줄` : ''}을 ${Math.abs(a.shift)}일 ${a.shift > 0 ? '뒤로' : '앞으로'} 옮겼습니다.`;
-  } else if (a.lvl) { r.lvl = a.lvl; if (a.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } msg = `「${esc(r.name)}」을 ${LV[a.lvl]}로 바꿨습니다.`; }
-  else if (a.trade) { r.trade = a.trade; msg = `「${esc(r.name)}」 공종을 ${a.trade}로 바꿨습니다.`; }
+    msg = `「${esc(r.name)}」${n > 1 ? ` 아래 ${n}줄` : ''}을 ${M.durTxt(Math.abs(a.shift))} ${a.shift > 0 ? '뒤로' : '앞으로'} 옮겼습니다.`;
+  } else if (a.lvl) { r.lvl = a.lvl; if (a.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } msg = `「${esc(r.name)}」을 ${M.LV[a.lvl]}(으)로 바꿨습니다.`; }
+  else if (a.trade) { r.trade = a.trade; msg = `「${esc(r.name)}」 공종을 ${a.trade}(으)로 바꿨습니다.`; }
   else {
     if (a.name) { r.name = a.name; r.heard = a.name; }
     if (!auto) {
-      if (a.grow != null) r.d = Math.max(1, (r.d || 1) + a.grow);
-      if (a.s != null) { r.s = a.s; if (!r.d) r.d = 1; }
-      if (a.d != null) { r.d = a.d; if (r.s == null) { const c = rowCtx(i); r.s = c.last != null ? c.last + 1 : todayDay; } }
+      if (a.grow != null) r.d = Math.max(M.snap(), (r.d || M.defDur) + a.grow);
+      if (a.s != null) { r.s = a.s; if (!r.d) r.d = M.defDur; }
+      if (a.d != null) { r.d = a.d; if (r.s == null) r.s = M.defStart(i); }
     }
-    msg = `「${esc(r.name)}」` + (r.s != null && r.d ? ` ${md(r.s)}~${md(r.s + r.d - 1)} (${r.d}일)` : '') + '로 고쳤습니다.';
+    msg = `「${esc(r.name)}」` + (r.s != null && r.d ? ` ${M.spanTxt(r.s, r.d)} (${M.durTxt(r.d)})` : '') + '로 고쳤습니다.';
   }
   renderAll(true); save(); showMode();
-  say(msg + ' <button class="linkbtn" type="button" data-undo>되돌리기</button>');
+  say(msg + UNDO_BTN);
   $('sayInput').value = '';
 }
 function applyField(tg, alts, fromVoice) {
@@ -844,24 +1234,16 @@ function applyField(tg, alts, fromVoice) {
     const v = fixName(cleanName(normalize(alts[0]).replace(/[.?!]$/, '')));
     if (v) { pushUndo(); r.name = v; r.heard = v; msg = `작업내용을 「${esc(v)}」로 넣었습니다.`; }
   } else if (f === 'start') {
-    for (const x of alts) {
-      const res = parseText(x.replace(/(시작일|시작|날짜)\s*(?:은|는|을|를)?/g, ' '), rowCtx(tg.i));
-      let day = res.tasks.length ? (res.tasks[0].kind === 'until' ? res.tasks[0].until : res.tasks[0].kind === 'dur' ? null : res.tasks[0].s) : null;
-      if (day == null) { const m = /(\d{1,2})/.exec(normalize(x)); const c = rowCtx(tg.i); if (m && +m[1] >= 1 && +m[1] <= 31) day = toDay(c.y, c.m, +m[1]); }
-      if (day != null) { pushUndo(); r.s = day; if (!r.d) r.d = 1; msg = `시작일을 ${md(day)} (${WD[fromDay(day).w]})로 넣었습니다.`; break; }
-    }
+    for (const x of alts) { const v = M.fieldStart(x, tg.i); if (v != null) { pushUndo(); r.s = v; if (!r.d) r.d = M.defDur; msg = `${M.FIELD.start}을 ${M.fmtW(v)}(으)로 넣었습니다.`; break; } }
   } else {
-    for (const x of alts) { const n = parseDur(x); if (n) { pushUndo(); r.d = Math.min(n, 3650); msg = `기간을 ${r.d}일로 넣었습니다.`; break; } }
+    for (const x of alts) { const n = M.fieldDur(x); if (n) { pushUndo(); r.d = Math.min(n, M.key === 'day' ? 3650 : 1440 * 400); msg = `${M.FIELD.dur}을 ${M.durTxt(r.d)}(으)로 넣었습니다.`; break; } }
   }
-  if (!msg) { say(`<span class="warn">${FIELD[f]}로 알아듣지 못했습니다.</span> 「${esc(normalize(alts[0]))}」 — 다시 말해 주세요.`); return; }
+  if (!msg) { say(`<span class="warn">${M.FIELD[f]}(으)로 알아듣지 못했습니다.</span> 「${esc(normalize(alts[0]))}」 — 다시 말해 주세요.`); return; }
   dropSample(); renderAll(); save();
-  msg += ' <button class="linkbtn" type="button" data-undo>되돌리기</button>';
+  msg += UNDO_BTN;
   $('sayInput').value = '';
   if (fromVoice && listening) micStop(msg); else say(msg);          // 칸 하나는 한 번 듣고 끝
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function say(html, on) { $('liveText').innerHTML = html; if (on !== undefined) $('live').classList.toggle('on', on); }
-function dropSample() { if (state.sample) { state.sample = false; $('sample').hidden = true; } }
 
 /* ───────── 음성 인식 ───────── */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -870,7 +1252,7 @@ const MIC_HELP = '이 화면에서는 마이크 버튼을 쓸 수 없습니다. 
 function micStop(msg) {
   listening = false; $('mic').setAttribute('aria-pressed', 'false');
   try { rec && rec.stop(); } catch (e) { /* 이미 멈춤 */ }
-  if (msg) say(msg, false); else { $('live').classList.remove('on'); showMode(); if (target()) return; say(IDLE); }
+  if (msg) say(msg, false); else { $('live').classList.remove('on'); showMode(); }
 }
 function micStart() {
   if (!SR) { say(MIC_HELP, false); return; }
@@ -900,8 +1282,8 @@ function micStart() {
     startedAt = Date.now(); quick = 0; rec.start(); listening = true;
     $('mic').setAttribute('aria-pressed', 'true');
     const tg = target();
-    say(!tg ? '듣고 있습니다. 작업 이름과 날짜를 말해 주세요.'
-      : tg.field ? `듣고 있습니다. <b>「${esc(tg.r.name)}」</b>의 <b>${FIELD[tg.field]}</b>을 말해 주세요.`
+    say(!tg ? `듣고 있습니다. 작업 이름과 ${M.key === 'day' ? '날짜' : '시각'}를 말해 주세요.`
+      : tg.field ? `듣고 있습니다. <b>「${esc(tg.r.name)}」</b>의 <b>${M.FIELD[tg.field]}</b>을 말해 주세요.`
       : `듣고 있습니다. <b>「${esc(tg.r.name)}」</b> 줄을 어떻게 고칠지 말해 주세요.`, true);
   } catch (e) { micStop(MIC_HELP); }
 }
@@ -915,108 +1297,68 @@ $('eg').addEventListener('click', ev => { if (ev.target.tagName === 'BUTTON') { 
 $('live').addEventListener('click', ev => { if (ev.target.hasAttribute('data-undo')) { doUndo(); say('되돌렸습니다.'); } });
 
 /* ───────── 시트 그리기 ───────── */
-let range = { a: todayDay - 2, n: 30 };
-function blockEnd(i) {                                   // i 줄에 딸린 아래 줄의 끝 (끝 번호 + 1)
-  const rank = { cat: 0, item: 1, det: 2 }, me = rank[state.rows[i].lvl];
-  let j = i + 1;
-  while (j < state.rows.length && rank[state.rows[j].lvl] > me) j++;
-  return j;
-}
-function spanOf(i) {                                     // 아래 줄들의 전체 기간
-  let a = null, b = null;
-  for (let j = i + 1, e = blockEnd(i); j < e; j++) {
-    const r = state.rows[j];
-    if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); }
-  }
-  return a == null ? null : { a, b };
-}
-function calcRange() {
-  let a = null, b = null;
-  state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); } });
-  if (a == null) { a = todayDay; b = todayDay + 20; }
-  range = { a: a - 3, n: Math.max(b - a + 1 + 10, 24) };
-}
+let range = { a: 0, len: 1 };
+const px = v => (v - range.a) * M.ppu();
 function drawHead() {
-  const dw = state.dw, W = range.n * dw;
-  document.documentElement.style.setProperty('--dw', dw + 'px');
+  range = M.range();
+  document.documentElement.style.setProperty('--dw', state.dw + 'px');
+  const W = range.len * M.ppu(), h = M.head();
   $('htrack').style.width = W + 'px';
-  let mh = '', dh = '', ch = '', run = 0, cur = null;
-  for (let i = 0; i < range.n; i++) {
-    const day = range.a + i, o = fromDay(day);
-    const key = o.y + '-' + o.m;
-    if (key !== cur) { if (cur) mh += monthSpan(cur, run); cur = key; run = 0; if (i) ch += `<b style="left:${i * dw}px"></b>`; }
-    run++;
-    const cls = (o.w === 6 ? 'sat' : o.w === 0 ? 'sun' : '') + (day === todayDay ? ' today' : '');
-    dh += `<span class="${cls}" title="${o.m}/${o.d} (${WD[o.w]})">${dw >= 22 || o.d === 1 || o.w === 1 ? o.d : ''}</span>`;
-    if (o.w === 0 || o.w === 6) ch += `<i style="left:${i * dw}px"></i>`;
-  }
-  mh += monthSpan(cur, run);
-  if (todayDay >= range.a && todayDay < range.a + range.n) ch += `<u style="left:${(todayDay - range.a + .5) * dw}px"></u>`;
-  $('months').innerHTML = mh; $('days').innerHTML = dh; $('cols').innerHTML = ch; $('cols').style.width = W + 'px';
-  function monthSpan(key, n) { const [y, m] = key.split('-'); return `<span style="width:${n * dw}px">${n * dw > 70 ? y + '년 ' : ''}${m}월</span>`; }
+  $('months').innerHTML = h.mh; $('days').innerHTML = h.dh; $('cols').innerHTML = h.ch; $('cols').style.width = W + 'px';
 }
 function oneBar(r, i, maxW) {
-  const dw = state.dw, lim = maxW ? ` style="max-width:${maxW}px;overflow:hidden;text-overflow:ellipsis"` : '';
+  const lim = maxW ? ` style="max-width:${maxW}px;overflow:hidden;text-overflow:ellipsis"` : '';
   const clr = (state.barMode === 'trade' && TRADES[effTrade(i)]) ? `--barc:${TRADES[effTrade(i)]}` : '';
-  return `<div class="bar" data-rid="${r.id}" style="left:${(r.s - range.a) * dw}px;width:${r.d * dw}px;${clr}">
-      <span class="lbl"${lim}>${esc(r.name)}<small>${r.d}일</small></span><span class="line"></span><i class="dot s" data-h="s"></i><i class="dot e" data-h="e"></i></div>`;
+  return `<div class="bar" data-rid="${r.id}" style="left:${px(r.s)}px;width:${r.d * M.ppu()}px;${clr}">
+      <span class="lbl"${lim}>${esc(r.name)}<small>${M.durTxt(r.d)}</small></span><span class="line"></span><i class="dot s" data-h="s"></i><i class="dot e" data-h="e"></i></div>`;
 }
-/* 접힌 작업항목 줄에 그릴 세부작업 바와, 다음 바 앞까지 쓸 수 있는 글자 폭 */
+/* 접힌 줄에 그릴 아래 줄의 바와, 다음 바 앞까지 쓸 수 있는 글자 폭 */
 function foldBars(i) {
   const list = [];
-  for (let j = i + 1, e = blockEnd(i); j < e; j++) { const c = state.rows[j]; if (c.s != null && c.d) list.push({ c, j }); }
+  for (let j = i + 1, e = blockEnd(i); j < e; j++) { const c = state.rows[j]; if (c.lvl === M.leaf && c.s != null && c.d) list.push({ c, j }); }
   const starts = list.map(x => x.c.s).sort((a, b) => a - b);
-  list.forEach(x => { const nx = starts.find(v => v > x.c.s); x.maxW = nx == null ? 0 : Math.max(18, (nx - x.c.s) * state.dw - 12); });
+  list.forEach(x => { const nx = starts.find(v => v > x.c.s); x.maxW = nx == null ? 0 : Math.max(18, (nx - x.c.s) * M.ppu() - 12); });
   return list;
 }
 function barHtml(r, i) {
-  const dw = state.dw, sp = spanOf(i);
-  if (r.lvl !== 'cat' && r.s != null && r.d && !(r.lvl === 'item' && sp)) return oneBar(r, i);
-  if (sp && state.fold && r.lvl === 'item') {            // 접힘 : 세부작업 바를 작업항목 줄에
-    return foldBars(i).map(x => oneBar(x.c, x.j, x.maxW)).join('');
-  }
-  if (sp) return `<div class="span" style="left:${(sp.a - range.a) * dw}px;width:${(sp.b - sp.a + 1) * dw}px"><span class="lbl">${md(sp.a)} ~ ${md(sp.b)} · ${sp.b - sp.a + 1}일</span><i></i></div>`;
-  return '';
-}
-function effTrade(i) {                                    // 공종이 비면 위 단계 공종
-  const rank = { cat: 0, item: 1, det: 2 };
-  let lv = rank[state.rows[i].lvl];
-  if (state.rows[i].trade) return state.rows[i].trade;
-  for (let j = i - 1; j >= 0; j--) { const r = state.rows[j]; if (rank[r.lvl] < lv) { if (r.trade) return r.trade; lv = rank[r.lvl]; } }
+  const sp = spanOf(i), auto = M.auto(r, i);
+  if (!auto && r.s != null && r.d) return oneBar(r, i);
+  if (sp && folded() && r.lvl === M.parent) return foldBars(i).map(x => oneBar(x.c, x.j, x.maxW)).join('');
+  if (sp) return `<div class="span" style="left:${px(sp.a)}px;width:${(sp.b - sp.a + M.inc) * M.ppu()}px"><span class="lbl">${M.sumTxt(sp.a, sp.b)}</span><i></i></div>`;
   return '';
 }
 function rowHtml(r, i) {
-  if (state.fold && r.lvl === 'det') return '';
-  const sp = spanOf(i), auto = r.lvl === 'cat' || (r.lvl === 'item' && sp);
-  const e = r.s != null && r.d ? r.s + r.d - 1 : null;
-  const lv = Object.keys(LV).map(k => `<option value="${k}"${k === r.lvl ? ' selected' : ''}>${LV[k]}</option>`).join('');
+  if (folded() && r.lvl === M.leaf) return '';
+  const sp = spanOf(i), auto = M.auto(r, i);
+  const lv = Object.keys(M.LV).map(k => `<option value="${k}"${k === r.lvl ? ' selected' : ''}>${M.LV[k]}</option>`).join('');
   const tr = Object.keys(TRADES).concat(r.trade in TRADES ? [] : [r.trade]).map(k => `<option value="${esc(k)}"${k === r.trade ? ' selected' : ''}>${esc(k) || '–'}</option>`).join('');
-  return `<div class="row lv-${r.lvl}" data-id="${r.id}">
+  return `<div class="row lv-${r.lvl}${M.key === 'time' && r.lvl === 'item' ? ' lv-task' : ''}" data-id="${r.id}">
     <div class="cells">
       <button class="grip c-grip" type="button" aria-label="${esc(r.name)} 순서 바꾸기 (Alt+위·아래 화살표)"><svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg></button>
       <span class="c-lvl"><select class="lvl" id="lv_${r.id}" aria-label="구분">${lv}</select></span>
       <span class="c-trade"><select class="trade" id="tr_${r.id}" aria-label="공종">${tr}</select></span>
       <span class="c-name"><input class="name" id="nm_${r.id}" value="${esc(r.name)}" aria-label="작업내용" spellcheck="false"></span>
-      ${auto ? `<span class="c-start auto">${sp ? md(sp.a) + ' ~ ' + md(sp.b) : '아래 작업 범위'}</span><span class="c-dur auto">${sp ? sp.b - sp.a + 1 : ''}</span><span class="c-end auto">자동</span>`
-        : `<span class="c-start"><input class="start" id="st_${r.id}" type="date" value="${r.s != null ? iso(r.s) : ''}" aria-label="시작일"></span>
-           <span class="c-dur"><input class="dur" id="du_${r.id}" type="number" min="1" max="999" value="${r.d || ''}" aria-label="기간(일)"></span>
-           <span class="c-end end">${e != null ? md(e) + ' ' + WD[fromDay(e).w] : ''}</span>`}
+      ${auto ? `<span class="c-start auto">${sp ? M.fmt(sp.a) + ' ~' : '아래 작업 범위'}</span><span class="c-dur auto">${sp ? M.durNum(sp.b - sp.a + M.inc) : ''}</span><span class="c-end auto">${sp ? M.fmt(sp.b) : '자동'}</span>`
+        : `<span class="c-start">${M.startInput(r)}</span><span class="c-dur">${M.durInput(r)}</span>
+           <span class="c-end end">${r.s != null && r.d ? M.fmtW(M.endOf(r)) : ''}</span>`}
       <span class="c-del"><button class="del" type="button" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
     </div>
-    <div class="track" style="width:${range.n * state.dw}px">${barHtml(r, i)}</div>
+    <div class="track" style="width:${range.len * M.ppu()}px">${barHtml(r, i)}</div>
   </div>`;
 }
+const rowEl = id => $('rows').querySelector(`.row[data-id="${id}"]`);
+const rowIdx = id => state.rows.findIndex(r => r.id === id);
 function renderAll(flip, enterIds) {
   const box = $('rows'), old = {};
   if (flip) box.querySelectorAll('.row').forEach(el => { old[el.dataset.id] = el.getBoundingClientRect().top; });
-  calcRange(); drawHead();
+  drawHead();
   box.innerHTML = state.rows.length ? state.rows.map(rowHtml).join('')
-    : '<div class="empty">아직 작업이 없습니다. 마이크를 누르고 「작업 이름 + 날짜」를 말해 보세요.</div>';
+    : `<div class="empty">아직 작업이 없습니다. 마이크를 누르고 「작업 이름 + ${M.key === 'day' ? '날짜' : '시각'}」를 말해 보세요.</div>`;
   $('sample').hidden = !state.sample;
-  const n = state.rows.filter(r => r.s != null && r.d).length;
-  const sp = n ? (() => { let a = Infinity, b = -Infinity; state.rows.forEach(r => { if (r.s != null && r.d) { a = Math.min(a, r.s); b = Math.max(b, r.s + r.d - 1); } }); return `${md(a)} ~ ${md(b)} · ${b - a + 1}일`; })() : '';
-  const hid = state.fold ? state.rows.filter(r => r.lvl === 'det').length : 0;
-  $('sum').textContent = state.rows.length ? `${state.rows.length}줄 · 날짜 있는 작업 ${n}개${sp ? ' · ' + sp : ''}${hid ? ` · 세부작업 ${hid}줄 접힘` : ''}` : '';
+  let a = null, b = null, n = 0;
+  state.rows.forEach(r => { if (r.s != null && r.d) { n++; const e = M.endOf(r); a = a == null ? r.s : Math.min(a, r.s); b = b == null ? e : Math.max(b, e); } });
+  const hid = folded() ? state.rows.filter(r => r.lvl === M.leaf).length : 0;
+  $('sum').textContent = state.rows.length ? `${state.rows.length}줄 · ${M.key === 'day' ? '날짜' : '시각'} 있는 작업 ${n}개${n ? ' · ' + M.sumTxt(a, b) : ''}${hid ? ` · ${M.LV[M.leaf]} ${hid}줄 접힘` : ''}` : '';
   applySel();
   if (enterIds) enterIds.forEach(id => { const el = rowEl(id); if (el) { el.classList.add('enter'); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); scrollToBar(el); } });
   if (flip) box.querySelectorAll('.row').forEach(el => {
@@ -1027,8 +1369,6 @@ function renderAll(flip, enterIds) {
     el.addEventListener('transitionend', () => { el.style.transition = ''; }, { once: true });
   });
 }
-const rowEl = id => $('rows').querySelector(`.row[data-id="${id}"]`);
-const rowIdx = id => state.rows.findIndex(r => r.id === id);
 function scrollToBar(el) {
   const bar = el.querySelector('.bar'), sh = $('sheet'); if (!bar) return;
   const cellw = el.querySelector('.cells').offsetWidth, x = bar.offsetLeft + cellw;
@@ -1037,16 +1377,17 @@ function scrollToBar(el) {
 }
 /* 값만 바뀐 줄 : 표는 그대로 두고 바와 요약만 다시 */
 function refreshBars() {
-  const before = range.a + ':' + range.n; calcRange();
-  if (before !== range.a + ':' + range.n) drawHead();
+  const before = range.a + ':' + range.len, nr = M.range();
+  if (before !== nr.a + ':' + nr.len) drawHead();
   state.rows.forEach((r, i) => {
     const el = rowEl(r.id); if (!el) return;
-    const tr = el.querySelector('.track'); tr.style.width = range.n * state.dw + 'px';
+    const tr = el.querySelector('.track'); tr.style.width = range.len * M.ppu() + 'px';
     const cur = tr.firstElementChild, tmp = document.createElement('div'); tmp.innerHTML = barHtml(r, i);
     const nx = tmp.firstElementChild;
-    if (cur && nx && tr.children.length === 1 && tmp.children.length === 1 && cur.dataset.rid === nx.dataset.rid && cur.className.split(' ')[0] === nx.className) { cur.style.cssText = nx.style.cssText; cur.querySelector('.lbl').innerHTML = nx.querySelector('.lbl').innerHTML; }
-    else tr.innerHTML = tmp.innerHTML;
-    const e = el.querySelector('.end'); if (e) e.textContent = r.s != null && r.d ? md(r.s + r.d - 1) + ' ' + WD[fromDay(r.s + r.d - 1).w] : '';
+    if (cur && nx && tr.children.length === 1 && tmp.children.length === 1 && cur.dataset.rid === nx.dataset.rid && cur.className.split(' ')[0] === nx.className) {
+      cur.style.cssText = nx.style.cssText; cur.querySelector('.lbl').innerHTML = nx.querySelector('.lbl').innerHTML;
+    } else tr.innerHTML = tmp.innerHTML;
+    const e = el.querySelector('.end'); if (e) e.textContent = r.s != null && r.d ? M.fmtW(M.endOf(r)) : '';
   });
   applySel();
 }
@@ -1057,26 +1398,19 @@ $('rows').addEventListener('change', ev => {
   const i = rowIdx(el.dataset.id), r = state.rows[i], t = ev.target;
   pushUndo();
   if (t.classList.contains('name')) { const v = t.value.trim(); learnFix(r.heard, v); r.name = v; r.heard = null; refreshBars(); }
-  else if (t.classList.contains('start')) { r.s = parseIso(t.value); if (r.s != null && !r.d) r.d = 1; renderAll(); }
-  else if (t.classList.contains('dur')) { const v = parseInt(t.value, 10); r.d = v > 0 ? v : null; renderAll(); }
+  else if (t.classList.contains('start')) { r.s = M.readStart(t.value); if (r.s != null && !r.d) r.d = M.defDur; renderAll(); }
+  else if (t.classList.contains('dur')) { r.d = M.readDur(t.value); renderAll(); }
   else if (t.classList.contains('lvl')) { r.lvl = t.value; if (r.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } renderAll(); }
   else if (t.classList.contains('trade')) { r.trade = t.value; refreshBars(); }
   save();
   // 손으로 고친 뒤에는 선택을 풀어, 다음에 말하는 것이 새 작업으로 들어가게 함 (Tab 으로 옆 칸에 가면 그 칸이 다시 선택됨)
   if (sel.id === r.id) setSel(null);
 });
-/* 줄 · 칸 고르기 */
 $('rows').addEventListener('focusin', ev => {
   const el = ev.target.closest('.row'); if (!el) return;
   const c = ev.target.classList;
   setSel(el.dataset.id, c.contains('name') ? 'name' : c.contains('start') ? 'start' : c.contains('dur') ? 'dur' : null);
 });
-$('rows').addEventListener('click', ev => {
-  if (ev.target.closest('input, select, button')) return;
-  const bar = ev.target.closest('.bar'), el = ev.target.closest('.row'); if (!el) return;
-  setSel(bar ? bar.dataset.rid : el.dataset.id, null);
-});
-document.addEventListener('pointerdown', ev => { if (sel.id && !ev.target.closest('.sheet-card, .say, .out, dialog')) setSel(null); });
 $('rows').addEventListener('input', ev => {
   if (!ev.target.classList.contains('name')) return;
   const el = ev.target.closest('.row'), lbl = el.querySelector(`.bar[data-rid="${el.dataset.id}"] .lbl`);
@@ -1092,20 +1426,23 @@ function deleteRow(id) {                                  // 한 줄만 지움 (
 }
 $('delSel').addEventListener('click', () => { if (sel.id) deleteRow(sel.id); });
 $('rows').addEventListener('click', ev => {
-  const d = ev.target.closest('.del'); if (!d) return;
-  deleteRow(d.closest('.row').dataset.id);
+  const d = ev.target.closest('.del');
+  if (d) { deleteRow(d.closest('.row').dataset.id); return; }
+  if (ev.target.closest('input, select, button')) return;
+  const bar = ev.target.closest('.bar'), el = ev.target.closest('.row'); if (!el) return;
+  setSel(bar ? bar.dataset.rid : el.dataset.id, null);
 });
+document.addEventListener('pointerdown', ev => { if (sel.id && !ev.target.closest('.sheet-card, .say, .out, .keep, dialog')) setSel(null); });
 $('rows').addEventListener('keydown', ev => {
   const g = ev.target.closest('.grip');
   if (!g || !ev.altKey || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
   ev.preventDefault();
   const id = g.closest('.row').dataset.id, i = rowIdx(id), e = blockEnd(i);
-  const rank = { cat: 0, item: 1, det: 2 };
-  let up = i - 1; while (up > 0 && rank[state.rows[up].lvl] > rank[state.rows[i].lvl]) up--;
-  let to = ev.key === 'ArrowUp' ? up : blockEnd(e < state.rows.length ? e : i);
+  let up = i - 1; while (up > 0 && RANK[state.rows[up].lvl] > RANK[state.rows[i].lvl]) up--;
+  const to = ev.key === 'ArrowUp' ? up : blockEnd(e < state.rows.length ? e : i);
   if (ev.key === 'ArrowUp' && i === 0) return;
   if (ev.key === 'ArrowDown' && e >= state.rows.length) return;
-  moveBlock(i, e, to); rowEl(id).querySelector('.grip').focus();
+  moveBlock(i, e, to); const ne = rowEl(id); if (ne) ne.querySelector('.grip').focus();
 });
 function moveBlock(i, e, to) {                           // i~e-1 줄을 to 앞으로
   pushUndo();
@@ -1113,8 +1450,7 @@ function moveBlock(i, e, to) {                           // i~e-1 줄을 to 앞�
   if (to > i) to -= blk.length;
   state.rows.splice(to, 0, ...blk); renderAll(true); save();
 }
-
-/* 줄 끌어서 순서 바꾸기 (딸린 줄도 함께) */
+/* 줄 끌어서 순서 바꾸기 (딸린 줄도 함께, 보이는 줄 기준) */
 $('rows').addEventListener('pointerdown', ev => {
   const g = ev.target.closest('.grip'); if (!g) return;
   ev.preventDefault();
@@ -1143,24 +1479,23 @@ $('rows').addEventListener('pointerdown', ev => {
   };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
 });
-
-/* 바 끌기 : 몸통 = 날짜 이동, 끝 원 = 시작·종료 조정 */
+/* 바 끌기 : 몸통 = 이동, 끝 원 = 시작·종료 조정 (일 단위 1일, 시간 단위 30분·1시간씩) */
 $('rows').addEventListener('pointerdown', ev => {
   const bar = ev.target.closest('.bar'); if (!bar) return;
   ev.preventDefault();
   const rid = bar.dataset.rid, el = rowEl(rid), r = state.rows[rowIdx(rid)], h = ev.target.dataset.h || 'm';
-  const x0 = ev.clientX, s0 = r.s, d0 = r.d, dw = state.dw; let moved = false;
+  const x0 = ev.clientX, s0 = r.s, d0 = r.d, p = M.ppu(), sn = M.snap(); let moved = false;
   bar.setPointerCapture(ev.pointerId); bar.classList.add('live');
   const move = mv => {
-    const dd = Math.round((mv.clientX - x0) / dw);
+    const dd = Math.round((mv.clientX - x0) / p / sn) * sn;
     if (!moved && dd !== 0) { moved = true; pushUndo(); }
     if (h === 'm') r.s = s0 + dd;
-    else if (h === 's') { const ns = Math.min(s0 + dd, s0 + d0 - 1); r.s = ns; r.d = s0 + d0 - ns; }
-    else r.d = Math.max(1, d0 + dd);
-    bar.style.left = (r.s - range.a) * dw + 'px'; bar.style.width = r.d * dw + 'px';
-    bar.querySelector('small').textContent = `${md(r.s)}~${md(r.s + r.d - 1)} · ${r.d}일`;
+    else if (h === 's') { const ns = Math.min(s0 + dd, s0 + d0 - sn); r.s = ns; r.d = s0 + d0 - ns; }
+    else r.d = Math.max(sn, d0 + dd);
+    bar.style.left = px(r.s) + 'px'; bar.style.width = r.d * p + 'px';
+    bar.querySelector('small').textContent = M.live(r);
     const st = el && el.querySelector('.start'), du = el && el.querySelector('.dur'), en = el && el.querySelector('.end');
-    if (st) st.value = iso(r.s); if (du) du.value = r.d; if (en) en.textContent = md(r.s + r.d - 1) + ' ' + WD[fromDay(r.s + r.d - 1).w];
+    if (st) st.value = M.startVal(r); if (du) du.value = M.durVal(r); if (en) en.textContent = M.fmtW(M.endOf(r));
   };
   const up = () => {
     bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); bar.removeEventListener('pointercancel', up);
@@ -1173,46 +1508,65 @@ $('rows').addEventListener('pointerdown', ev => {
 /* ───────── 단추들 ───────── */
 $('addRow').addEventListener('click', () => {
   pushUndo(); dropSample();
-  const ctx = contextNow(), s = ctx.last != null ? ctx.last + 1 : todayDay;
-  const row = { id: newId(), lvl: nextLevel(), trade: '', name: '새 작업', low: '', s, d: 1 };
-  state.rows.push(row); renderAll(false, [row.id]); save();
-  const inp = $('nm_' + row.id); inp.focus(); inp.select();
+  const row = { id: newId(), lvl: M.nextLevel(), trade: '', name: '새 작업', low: '', s: null, d: M.defDur };
+  state.rows.push(row); row.s = M.defStart(state.rows.length - 1);
+  renderAll(false, [row.id]); save();
+  const inp = $('nm_' + row.id); if (inp) { inp.focus(); inp.select(); }
 });
 let clearArmed = 0;
 $('clearAll').addEventListener('click', () => {
   if (!state.rows.length) return;
   if (Date.now() - clearArmed > 4000) { clearArmed = Date.now(); $('clearAll').textContent = '한 번 더 누르면 모두 지웁니다'; setTimeout(() => { $('clearAll').textContent = '모두 지우기'; }, 4000); return; }
   clearArmed = 0; $('clearAll').textContent = '모두 지우기';
-  pushUndo(); state.rows = []; state.sample = false; renderAll(); save(); toast('모두 지웠습니다. [되돌리기]로 살릴 수 있습니다.');
+  pushUndo(); state.rows = []; state.sample = false; sel.id = null; sel.field = null; renderAll(); save(); showMode(); toast('이 탭의 줄을 모두 지웠습니다. [되돌리기]로 살릴 수 있습니다.');
 });
-$('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; state.sample = false; renderAll(); save(); $('sayInput').focus(); });
+$('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; state.sample = false; sel.id = null; sel.field = null; renderAll(); save(); showMode(); $('sayInput').focus(); });
 $('undoBtn').addEventListener('click', doUndo);
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && sel.id && !$('dict').open && !$('imp').open) { setSel(null); if (document.activeElement && document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
-  if (ev.key === 'Delete' && sel.id && !$('dict').open && !$('imp').open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) { ev.preventDefault(); deleteRow(sel.id); return; }
-  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { ev.preventDefault(); doUndo(); }
+  const dlg = $('dict').open || $('imp').open, tag = document.activeElement.tagName;
+  if (ev.key === 'Escape' && sel.id && !dlg) { setSel(null); if (document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
+  if (ev.key === 'Delete' && sel.id && !dlg && !/^(INPUT|TEXTAREA)$/.test(tag)) { ev.preventDefault(); deleteRow(sel.id); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) { ev.preventDefault(); doUndo(); }
 });
+const press = (box, on) => box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', on(x)));
 $('zoom').addEventListener('click', ev => {
   const b = ev.target.closest('button'); if (!b) return;
-  state.dw = +b.dataset.z; $('zoom').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('dw', state.dw); renderAll();
+  state.dw = +b.dataset.z; press($('zoom'), x => x === b); store.set('dw', state.dw); renderAll();
+});
+$('slot').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  state.slotH = +b.dataset.h; press($('slot'), x => x === b); store.set('slotH', state.slotH); renderAll();
 });
 $('fold').addEventListener('click', ev => {
   const b = ev.target.closest('button'); if (!b) return;
-  state.fold = b.dataset.f === '1'; $('fold').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('fold', state.fold); renderAll(true); showMode();
+  state.fold[state.tab] = b.dataset.f === '1'; press($('fold'), x => x === b); store.set('fold2', state.fold); renderAll(true); showMode();
 });
 $('barMode').addEventListener('click', ev => {
   const b = ev.target.closest('button'); if (!b) return;
-  state.barMode = b.dataset.m; $('barMode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('barMode', state.barMode); refreshBars();
+  state.barMode = b.dataset.m; press($('barMode'), x => x === b); store.set('barMode', state.barMode); refreshBars();
 });
 $('baseMonth').addEventListener('change', () => store.set('base', $('baseMonth').value));
 
-/* 엑셀 작업입력 양식 : 구분 / 공종 / 작업내용 / 하단표기 / 시작일 / 기간 */
-function toTsv() {
-  return state.rows.map((r, i) => {
-    const auto = r.lvl === 'cat' || (r.lvl === 'item' && spanOf(i));
-    return [LV[r.lvl], r.trade, r.name.replace(/[\t\r\n]/g, ' '), r.low || '', (!auto && r.s != null) ? iso(r.s) : '', (!auto && r.d) ? r.d : ''].join('\t');
-  }).join('\r\n');
+/* 탭 바꾸기 */
+function setTab(tab, keepSel) {
+  state.tab = tab; M = tab === 'time' ? TIMEM : DAYM;
+  if (!keepSel) { sel.id = null; sel.field = null; }
+  document.querySelector('.wrap').classList.toggle('tm', tab === 'time');
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  $('slot').hidden = tab !== 'time';
+  $('foldBtn').textContent = M.foldLabel;
+  press($('fold'), x => (x.dataset.f === '1') === folded());
+  $('hStart').textContent = M.hStart; $('hDur').textContent = M.hDur;
+  $('eg').innerHTML = '<span>이렇게 말해 보세요</span>' + M.eg.map(t => `<button type="button">${esc(t)}</button>`).join('');
+  M.steps.forEach((t, k) => { $('st' + (k + 1)).textContent = t; });
+  $('impSheet1').textContent = `[${M.sheet}]`; $('impSheet2').textContent = `[${M.sheet}]에서 ${M.colsTxt} 칸(${M.cols})`;
+  store.set('tab', tab);
+  renderAll(); showMode();
 }
+document.querySelector('.tabs').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b && b.dataset.tab !== state.tab) setTab(b.dataset.tab); });
+
+/* ───────── 엑셀용 복사 ───────── */
+function toTsv() { return state.rows.map((r, i) => M.tsvRow(r, isAuto(i)).join('\t')).join('\r\n'); }
 $('copyBtn').addEventListener('click', async () => {
   if (!state.rows.length) { toast('복사할 작업이 없습니다.'); return; }
   const text = toTsv(); let ok = false;
@@ -1222,44 +1576,15 @@ $('copyBtn').addEventListener('click', async () => {
   if (ok) {
     $('copyBtn').classList.add('done'); $('copyLabel').textContent = `${state.rows.length}줄 복사됨`;
     setTimeout(() => { $('copyBtn').classList.remove('done'); $('copyLabel').textContent = '엑셀용 복사'; }, 2200);
-    toast('복사했습니다. 엑셀 [작업입력] 시트의 구분 칸(A5)에서 Ctrl+V 하세요.');
+    toast(`복사했습니다. 엑셀 [${M.sheet}] 시트의 구분 칸(A${M.firstRow})에서 Ctrl+V 하세요.`);
   } else { $('tsvBox').hidden = false; $('tsv').value = text; $('tsv').select(); }
 });
 let toastT = 0;
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3400); }
 
 /* ───────── 엑셀에서 가져오기 ───────── */
-const LV_OF = t => { t = String(t || '').replace(/\s/g, ''); return t === '대분류' ? 'cat' : t === '작업항목' ? 'item' : 'det'; };
-function cellDay(v) {                                     // 날짜 칸 : 2026-11-28 / 2026.11.28 / 11/28/2026 / 일련번호
-  v = String(v == null ? '' : v).trim(); if (!v) return null;
-  let m = /(\d{4})\D+(\d{1,2})\D+(\d{1,2})/.exec(v); if (m) return toDay(+m[1], +m[2], +m[3]);
-  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); if (m) return toDay(+m[3], +m[1], +m[2]);
-  if (/^\d+(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000) return Math.floor(+v) - 25569;
-  return null;
-}
-/* 줄 목록 [구분, 공종, 작업내용, 하단표기, 시작일, 기간, 종료일] → 작업 줄 */
-function rowsFromCells(list) {
-  const out = [];
-  list.forEach(c => {
-    const lvT = String(c[0] || '').trim(), name = String(c[2] || '').trim();
-    if (lvT === '구분' || (!name && !lvT)) return;        // 머리글 · 빈 줄
-    if (!name) return;
-    const lvl = LV_OF(lvT);
-    let s = cellDay(c[4]), d = parseInt(c[5], 10); const e = cellDay(c[6]);
-    if (!(d > 0)) d = (s != null && e != null && e >= s) ? e - s + 1 : null;
-    if (lvl === 'cat') { s = null; d = null; }
-    if (s == null) d = null; else if (!d) d = 1;
-    out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
-  });
-  // 세부작업에 날짜가 있는 작업항목의 날짜는 엑셀이 계산해 넣은 요약 값 → 비워 두고 자동으로
-  out.forEach((r, i) => {
-    if (r.lvl !== 'item') return;
-    for (let j = i + 1; j < out.length && out[j].lvl === 'det'; j++) if (out[j].s != null) { r.s = null; r.d = null; break; }
-  });
-  return out;
-}
 function importRows(rows, from) {
-  if (!rows.length) { $('impMsg').textContent = '가져올 작업 줄을 찾지 못했습니다. 구분 · 공종 · 작업내용 · 하단표기 · 시작일 · 기간 순서의 줄이어야 합니다.'; return false; }
+  if (!rows.length) { $('impMsg').textContent = `가져올 작업 줄을 찾지 못했습니다. [${M.sheet}] 양식(${M.colsTxt})의 줄이어야 합니다.`; return false; }
   pushUndo();
   if ($('impAppend').checked && !state.sample) state.rows = state.rows.concat(rows); else state.rows = rows;
   state.sample = false; sel.id = null; sel.field = null;
@@ -1270,9 +1595,7 @@ function importRows(rows, from) {
   return true;
 }
 const tsvCells = text => text.replace(/\r/g, '').split('\n').filter(l => l.trim()).map(l => l.split('\t'));
-const looksLikeSheet = text => /(^|\n)\s*(대분류|작업항목|세부작업)\t/.test(text);
-
-/* xlsx / xlsm 은 zip : 목록을 읽고 필요한 XML 만 풀어 [작업입력] 시트를 찾음 */
+/* xlsx / xlsm 은 zip : 목록을 읽고 필요한 XML 만 풀어 시트를 찾음 */
 async function unzip(buf) {
   const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder('utf-8');
   let eo = -1;
@@ -1296,48 +1619,67 @@ async function unzip(buf) {
   };
 }
 const xml = t => new DOMParser().parseFromString(t, 'application/xml');
-async function readWorkbook(buf) {
+/* 통합 문서에서 여러 시트의 줄을 읽음 : want = [{ name, firstRow }] → { 시트이름: 줄 목록 | undefined } */
+async function readWorkbook(buf, want) {
   const get = await unzip(buf);
   const wbT = await get('xl/workbook.xml'), relT = await get('xl/_rels/workbook.xml.rels');
   if (!wbT || !relT) throw new Error('엑셀 파일(.xlsm / .xlsx)이 아닙니다.');
-  const sheets = Array.from(xml(wbT).getElementsByTagName('sheet'));
-  const sh = sheets.find(x => x.getAttribute('name') === '작업입력');
-  if (!sh) throw new Error('이 파일에는 [작업입력] 시트가 없습니다. 엑셀에서 초기 설정을 마치고 저장한 파일을 골라 주세요.');
-  const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
-  const rel = Array.from(xml(relT).getElementsByTagName('Relationship')).find(x => x.getAttribute('Id') === rid);
-  let path = rel.getAttribute('Target'); path = path.startsWith('/') ? path.slice(1) : 'xl/' + path;
+  const sheets = Array.from(xml(wbT).getElementsByTagName('sheet')), rels = Array.from(xml(relT).getElementsByTagName('Relationship'));
   const ssT = await get('xl/sharedStrings.xml'), strs = [];
   if (ssT) Array.from(xml(ssT).getElementsByTagName('si')).forEach(si => {
     strs.push(Array.from(si.getElementsByTagName('t')).filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join(''));
   });
-  const list = [];
-  Array.from(xml(await get(path)).getElementsByTagName('row')).forEach(row => {
-    if (+row.getAttribute('r') < 5) return;                // 작업은 5행부터
-    const c = [];
-    Array.from(row.getElementsByTagName('c')).forEach(cell => {
-      const col = (/^[A-Z]+/.exec(cell.getAttribute('r') || '') || [''])[0];
-      if (col.length !== 1 || col > 'G') return;           // A~G 만
-      const t = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0];
-      let val = '';
-      if (t === 's') val = v ? strs[+v.textContent] || '' : '';
-      else if (t === 'inlineStr') val = Array.from(cell.getElementsByTagName('t')).map(x => x.textContent).join('');
-      else val = v ? v.textContent : '';
-      c[col.charCodeAt(0) - 65] = val;
+  const out = {};
+  for (const w of want) {
+    const sh = sheets.find(x => x.getAttribute('name') === w.name); if (!sh) continue;
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    const rel = rels.find(x => x.getAttribute('Id') === rid); if (!rel) continue;
+    let path = rel.getAttribute('Target'); path = path.startsWith('/') ? path.slice(1) : 'xl/' + path;
+    const list = [];
+    Array.from(xml(await get(path)).getElementsByTagName('row')).forEach(row => {
+      if (+row.getAttribute('r') < w.firstRow) return;
+      const c = [];
+      Array.from(row.getElementsByTagName('c')).forEach(cell => {
+        const col = (/^[A-Z]+/.exec(cell.getAttribute('r') || '') || [''])[0];
+        if (col.length !== 1 || col > 'H') return;           // A~H 만
+        const t = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0];
+        let val = '';
+        if (t === 's') val = v ? strs[+v.textContent] || '' : '';
+        else if (t === 'inlineStr') val = Array.from(cell.getElementsByTagName('t')).map(x => x.textContent).join('');
+        else val = v ? v.textContent : '';
+        c[col.charCodeAt(0) - 65] = val;
+      });
+      if (c.length) list.push(c);
     });
-    if (c.length) list.push(c);
-  });
-  return list;
+    out[w.name] = list;
+  }
+  return out;
 }
-async function importFile(file) {
-  try {
-    $('impMsg').textContent = '';
-    const list = await readWorkbook(await file.arrayBuffer());
-    if (!importRows(rowsFromCells(list), '「' + file.name + '」')) { if (!$('imp').open) openImp(); }
-  } catch (e) { if (!$('imp').open) openImp(); $('impMsg').textContent = e.message || '파일을 읽지 못했습니다.'; }
-}
-function openImp(text) {
+const openImp = text => {
   $('impMsg').textContent = ''; if (text != null) $('impText').value = text;
   if ($('imp').showModal) $('imp').showModal(); else $('imp').setAttribute('open', '');
+};
+async function importFile(file) {                         // 지금 탭의 시트만
+  try {
+    $('impMsg').textContent = '';
+    const got = await readWorkbook(await file.arrayBuffer(), [{ name: M.sheet, firstRow: M.firstRow }]);
+    if (!got[M.sheet]) throw new Error(`이 파일에는 [${M.sheet}] 시트가 없습니다. ${M.key === 'day' ? '엑셀에서 초기 설정을 마치고 저장한 파일을 골라 주세요.' : '시간공정표가 들어 있는 파일(v0.8 이상)을 골라 주세요.'}`);
+    if (!importRows(M.fromCells(got[M.sheet]), '「' + file.name + '」')) { if (!$('imp').open) openImp(); }
+  } catch (e) { if (!$('imp').open) openImp(); $('impMsg').textContent = e.message || '파일을 읽지 못했습니다.'; }
+}
+async function openSaved(file) {                          // 저장한 파일 : 두 탭 모두
+  try {
+    const got = await readWorkbook(await file.arrayBuffer(), [{ name: DAYM.sheet, firstRow: DAYM.firstRow }, { name: TIMEM.sheet, firstRow: TIMEM.firstRow }]);
+    if (!got[DAYM.sheet] && !got[TIMEM.sheet]) throw new Error('이 파일에는 [작업입력] · [시간입력] 시트가 없습니다.');
+    pushUndo();
+    const nd = got[DAYM.sheet] ? DAYM.fromCells(got[DAYM.sheet]) : null, nt = got[TIMEM.sheet] ? TIMEM.fromCells(got[TIMEM.sheet]) : null;
+    if (nd) state.tabs.day = { rows: nd, sample: false };
+    if (nt) state.tabs.time = { rows: nt, sample: false };
+    sel.id = null; sel.field = null;
+    if (!state.rows.length && state.tabs[state.tab === 'day' ? 'time' : 'day'].rows.length) setTab(state.tab === 'day' ? 'time' : 'day'); else { renderAll(); showMode(); }
+    save();
+    toast(`「${file.name}」을 열었습니다 · 일 단위 ${nd ? nd.length : 0}줄, 시간 단위 ${nt ? nt.length : 0}줄. [되돌리기]로 이전 초안으로 돌아갈 수 있습니다.`);
+  } catch (e) { toast(e.message || '파일을 읽지 못했습니다.'); }
 }
 $('impBtn').addEventListener('click', () => openImp());
 $('impClose').addEventListener('click', () => $('imp').close());
@@ -1345,13 +1687,13 @@ $('impFile').addEventListener('change', () => { const f = $('impFile').files[0];
 $('impGo').addEventListener('click', () => {
   const t = $('impText').value;
   if (!t.trim()) { $('impMsg').textContent = '파일을 고르거나, 엑셀에서 복사한 줄을 위 칸에 붙여 넣어 주세요.'; return; }
-  importRows(rowsFromCells(tsvCells(t)), '붙여 넣은 내용');
+  importRows(M.fromCells(tsvCells(t)), '붙여 넣은 내용');
 });
 // 화면 아무 데나 엑셀 줄을 붙여 넣으면 가져오기 창을 채워서 엶
 document.addEventListener('paste', ev => {
   if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
   const t = (ev.clipboardData || window.clipboardData).getData('text');
-  if (t && looksLikeSheet(t)) { ev.preventDefault(); openImp(t); }
+  if (t && M.looks(t)) { ev.preventDefault(); openImp(t); }
 });
 // 표 위로 엑셀 파일 끌어다 놓기
 (() => {
@@ -1401,129 +1743,162 @@ function zipStore(files) {
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
   return new Blob(parts.concat(cd, [new Uint8Array(end.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
-/* [작업입력] 양식 그대로 : 4행 머리글, 5행부터 구분/공종/작업내용/하단표기/시작일/기간/종료일 */
+/* 엑셀 파일 : [작업입력] (4행 머리글, 5행부터) + [시간입력] (14행 머리글, 15행부터) — 엑셀 바차트 파일과 같은 양식 */
 function buildXlsx() {
   const x = v => String(v).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
   const H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
   const str = (ref, v, st) => v === '' ? '' : `<c r="${ref}" t="inlineStr"${st ? ` s="${st}"` : ''}><is><t xml:space="preserve">${x(v)}</t></is></c>`;
   const num = (ref, v, st) => `<c r="${ref}"${st ? ` s="${st}"` : ''}><v>${v}</v></c>`;
-  let rowsXml = `<row r="1">${str('A1', baseName() + ' (공정 받아쓰기에서 저장 · ' + iso(todayDay) + ')', 3)}</row>`;
-  rowsXml += '<row r="4">' + ['구분', '공종', '작업내용 (선 위)', '하단표기', '시작일', '기간', '종료일', '비고'].map((h, i) => str('ABCDEFGH'[i] + '4', h, 2)).join('') + '</row>';
+  const title = baseName() + ' (공정 받아쓰기에서 저장 · ' + iso(todayDay) + ')';
+  const hdr = (n, list) => `<row r="${n}">` + list.map((h, i) => str('ABCDEFGHI'[i] + n, h, 2)).join('') + '</row>';
+  const cur = state.tab;
+  // 일 단위
+  state.tab = 'day'; M = DAYM;
+  let dayX = `<row r="1">${str('A1', title, 3)}</row>` + hdr(4, ['구분', '공종', '작업내용 (선 위)', '하단표기', '시작일', '기간', '종료일', '비고']);
   state.rows.forEach((r, i) => {
     const n = 5 + i, auto = isAuto(i);
-    let c = str('A' + n, LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
+    let c = str('A' + n, DAYM.LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
     if (!auto && r.s != null && r.d) c += num('E' + n, r.s + 25569, 1) + num('F' + n, r.d) + num('G' + n, r.s + r.d - 1 + 25569, 1);
-    rowsXml += `<row r="${n}">${c}</row>`;
+    dayX += `<row r="${n}">${c}</row>`;
   });
+  // 시간 단위
+  state.tab = 'time'; M = TIMEM;
+  let timeX = `<row r="1">${str('A1', title, 3)}</row>` + hdr(14, ['구분', '공종', '작업내용 (선 위)', '하단표기', '시작일', '시작시각', '작업시간(h)', '일수(일)', '종료']);
+  state.rows.forEach((r, i) => {
+    const n = 15 + i, auto = isAuto(i);
+    let c = str('A' + n, TIMEM.LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
+    if (!auto && r.s != null && r.d) c += num('E' + n, dayOf(r.s) + 25569, 1) + num('F' + n, ((r.s % 1440) / 1440).toFixed(8), 4) + num('G' + n, numTxt(r.d / 60)) + num('I' + n, ((r.s + r.d) / 1440 + 25569).toFixed(8), 5);
+    timeX += `<row r="${n}">${c}</row>`;
+  });
+  state.tab = cur; M = cur === 'time' ? TIMEM : DAYM;
   const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', RN = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', PR = 'http://schemas.openxmlformats.org/package/2006/relationships';
+  const WS = 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml';
+  const cols = w => '<cols>' + w.map((v, i) => `<col min="${i + 1}" max="${i + 1}" width="${v}" customWidth="1"/>`).join('') + '</cols>';
   return zipStore([
-    { name: '[Content_Types].xml', text: H + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>' },
+    { name: '[Content_Types].xml', text: H + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${WS}"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="${WS}"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
     { name: '_rels/.rels', text: H + `<Relationships xmlns="${PR}"><Relationship Id="rId1" Type="${RN}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
-    { name: 'xl/workbook.xml', text: H + `<workbook xmlns="${NS}" xmlns:r="${RN}"><sheets><sheet name="작업입력" sheetId="1" r:id="rId1"/></sheets></workbook>` },
-    { name: 'xl/_rels/workbook.xml.rels', text: H + `<Relationships xmlns="${PR}"><Relationship Id="rId1" Type="${RN}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${RN}/styles" Target="styles.xml"/></Relationships>` },
-    { name: 'xl/styles.xml', text: H + `<styleSheet xmlns="${NS}"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/></numFmts><fonts count="3"><font><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="13"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFBDD7EE"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
-    { name: 'xl/worksheets/sheet1.xml', text: H + `<worksheet xmlns="${NS}"><cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="8" customWidth="1"/><col min="3" max="3" width="34" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/><col min="6" max="6" width="6" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/><col min="8" max="8" width="12" customWidth="1"/></cols><sheetData>${rowsXml}</sheetData></worksheet>` }
+    { name: 'xl/workbook.xml', text: H + `<workbook xmlns="${NS}" xmlns:r="${RN}"><sheets><sheet name="작업입력" sheetId="1" r:id="rId1"/><sheet name="시간입력" sheetId="2" r:id="rId2"/></sheets></workbook>` },
+    { name: 'xl/_rels/workbook.xml.rels', text: H + `<Relationships xmlns="${PR}"><Relationship Id="rId1" Type="${RN}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${RN}/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="${RN}/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', text: H + `<styleSheet xmlns="${NS}"><numFmts count="3"><numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/><numFmt numFmtId="165" formatCode="hh:mm"/><numFmt numFmtId="166" formatCode="m\\/d\\ hh:mm"/></numFmts><fonts count="3"><font><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="13"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFBDD7EE"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+    { name: 'xl/worksheets/sheet1.xml', text: H + `<worksheet xmlns="${NS}">${cols([10, 8, 34, 12, 12, 6, 12, 12])}<sheetData>${dayX}</sheetData></worksheet>` },
+    { name: 'xl/worksheets/sheet2.xml', text: H + `<worksheet xmlns="${NS}">${cols([10, 8, 34, 12, 12, 9, 11, 8, 13])}<sheetData>${timeX}</sheetData></worksheet>` }
   ]);
 }
 $('saveFile').addEventListener('click', () => {
-  if (!state.rows.length) { toast('저장할 작업이 없습니다.'); return; }
+  if (!state.tabs.day.rows.length && !state.tabs.time.rows.length) { toast('저장할 작업이 없습니다.'); return; }
   download(buildXlsx(), `${baseName()}_${stamp()}.xlsx`);
 });
 $('openFile').addEventListener('click', () => $('openInput').click());
-$('openInput').addEventListener('change', () => {
-  const f = $('openInput').files[0]; if (!f) return;
-  $('impReplace').checked = true; importFile(f); $('openInput').value = '';
-});
+$('openInput').addEventListener('change', () => { const f = $('openInput').files[0]; if (!f) return; openSaved(f); $('openInput').value = ''; });
 $('fileName').addEventListener('change', () => store.set('name', $('fileName').value));
 
-/* 그림 : 지금 보이는 표와 바차트를 밝은 색으로 다시 그림 */
+/* 그림 : 지금 보이는 탭의 표와 바차트를 밝은 색으로 다시 그림 */
 function drawPng() {
-  const vis = []; state.rows.forEach((r, i) => { if (!(state.fold && r.lvl === 'det')) vis.push(i); });
-  const C = { ink: '#17212c', ink2: '#536070', ink3: '#8894a1', rule: '#d3d9e0', rule2: '#e7ebef', head: '#dce8f4', cat: '#e3edf8', wk: '#fbf5dd', sat: '#1b6cc2', sun: '#cf3d2e' };
-  const W1 = 240, W2 = 62, W3 = 40, W4 = 62, L = W1 + W2 + W3 + W4, pad0 = 18, titleH = 46, hh = 22, rh = 36;
-  const dw = Math.max(8, Math.min(state.dw, Math.floor((7000 - L) / range.n)));
-  const TW = range.n * dw, W = pad0 * 2 + L + TW, Hh = pad0 * 2 + titleH + hh * 2 + rh * vis.length;
+  const T = M.key === 'time';
+  const vis = []; state.rows.forEach((r, i) => { if (!(folded() && r.lvl === M.leaf)) vis.push(i); });
+  const C = { ink: '#17212c', ink2: '#536070', ink3: '#8894a1', rule: '#d3d9e0', rule2: '#e7ebef', head: '#dce8f4', cat: '#e3edf8', wk: '#fbf5dd', night: '#f1f3f5', sat: '#1b6cc2', sun: '#cf3d2e' };
+  const W1 = 240, W2 = T ? 92 : 62, W3 = T ? 46 : 40, W4 = T ? 92 : 62, L = W1 + W2 + W3 + W4, pad0 = 18, titleH = 46, hh = 22, rh = 36;
+  const unit = T ? state.slotH * 60 : 1, cells = range.len / unit;               // 한 칸(하루 · 시간 칸)의 수
+  const dw = Math.max(T ? 10 : 8, Math.min(state.dw, Math.floor((7000 - L) / cells))), p = dw / unit;
+  const TW = cells * dw, W = pad0 * 2 + L + TW, Hh = pad0 * 2 + titleH + hh * 2 + rh * vis.length;
   const sc = (W * 2 > 16000 || Hh * 2 > 16000) ? 1 : 2;
   const cv = document.createElement('canvas'); cv.width = W * sc; cv.height = Hh * sc;
   const g = cv.getContext('2d'); g.scale(sc, sc);
-  const font = (px, w) => { g.font = `${w || 400} ${px}px "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`; };
+  const font = (s, w) => { g.font = `${w || 400} ${s}px "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`; };
+  const X = v => xt + (v - range.a) * p;
   g.fillStyle = '#fff'; g.fillRect(0, 0, W, Hh);
-  const x0 = pad0, y0 = pad0 + titleH, xt = x0 + L, yb = y0 + hh * 2;
+  const x0 = pad0, y0 = pad0 + titleH, xt = x0 + L, yb = y0 + hh * 2, bodyH = rh * vis.length;
   // 제목
-  g.fillStyle = C.ink; font(18, 700); g.textBaseline = 'alphabetic'; g.fillText(baseName(), x0, pad0 + 20);
-  let a = null, b = null; state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); } });
+  g.fillStyle = C.ink; font(18, 700); g.textBaseline = 'alphabetic'; g.fillText(baseName() + (T ? ' · 시간 공정' : ''), x0, pad0 + 20);
+  let a = null, b = null; state.rows.forEach(r => { if (r.s != null && r.d) { const e = M.endOf(r); a = a == null ? r.s : Math.min(a, r.s); b = b == null ? e : Math.max(b, e); } });
   font(11.5); g.fillStyle = C.ink2;
-  g.fillText((a != null ? `${iso(a)} ~ ${iso(b)} · ${b - a + 1}일 · ` : '') + `작성 ${iso(todayDay)} · 초안`, x0, pad0 + 38);
-  // 머리글 띠, 주말, 월 경계
+  g.fillText((a != null ? M.sumTxt(a, b) + ' · ' : '') + `작성 ${iso(todayDay)} · 초안`, x0, pad0 + 38);
   g.fillStyle = C.head; g.fillRect(x0, y0, L + TW, hh * 2);
-  for (let i = 0; i < range.n; i++) { const o = fromDay(range.a + i); if (o.w === 0 || o.w === 6) { g.fillStyle = C.wk; g.fillRect(xt + i * dw, yb, dw, rh * vis.length); } }
-  // 줄 바탕 · 구분선
+  // 바탕 : 주말(일 단위) · 야간(시간 단위)
+  if (T) {
+    for (let k = 0; k < range.len / 1440; k++) { g.fillStyle = C.night; g.fillRect(xt + k * 1440 * p, yb, 360 * p, bodyH); g.fillRect(xt + (k * 1440 + 1080) * p, yb, 360 * p, bodyH); }
+  } else {
+    for (let i = 0; i < range.len; i++) { const o = fromDay(range.a + i); if (o.w === 0 || o.w === 6) { g.fillStyle = C.wk; g.fillRect(xt + i * dw, yb, dw, bodyH); } }
+  }
   vis.forEach((ri, k) => {
     const r = state.rows[ri], y = yb + k * rh;
     if (r.lvl === 'cat') { g.fillStyle = C.cat; g.fillRect(x0, y, L + TW, rh); }
     g.strokeStyle = C.rule2; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y + rh + .5); g.lineTo(x0 + L + TW, y + rh + .5); g.stroke();
   });
-  // 날짜 머리글
-  let cur = null, mx = 0;
+  // 머리글
   g.textBaseline = 'middle';
-  for (let i = 0; i <= range.n; i++) {
-    const o = i < range.n ? fromDay(range.a + i) : null, key = o ? o.y + '-' + o.m : null;
-    if (key !== cur) {
-      if (cur) { const [yy, mm] = cur.split('-'); font(11.5, 600); g.fillStyle = C.ink; const tx = (i * dw - mx > 70 ? yy + '년 ' : '') + mm + '월'; if (i * dw - mx > 26) g.fillText(tx, xt + mx + 5, y0 + hh / 2); }
-      if (o && i) { g.strokeStyle = C.rule; g.beginPath(); g.moveTo(xt + i * dw + .5, y0); g.lineTo(xt + i * dw + .5, yb + rh * vis.length); g.stroke(); }
-      cur = key; mx = i * dw;
+  const vline = x => { g.strokeStyle = C.rule; g.lineWidth = 1; g.beginPath(); g.moveTo(x + .5, y0); g.lineTo(x + .5, yb + bodyH); g.stroke(); };
+  if (T) {
+    const per = 1440 / unit;
+    for (let k = 0; k < range.len / 1440; k++) {
+      const o = fromDay(dayOf(range.a) + k), x = xt + k * 1440 * p, w = 1440 * p;
+      if (k) vline(x);
+      font(11.5, 600); g.fillStyle = o.w === 6 ? C.sat : o.w === 0 ? C.sun : C.ink; g.textAlign = 'center';
+      g.fillText(w > 96 ? `${o.m}/${o.d} (${WD[o.w]})` : `${o.m}/${o.d}`, x + w / 2, y0 + hh / 2);
+      font(dw >= 18 ? 9.5 : 8.5); g.fillStyle = C.ink2;
+      for (let j = 0; j < per; j++) { const h = j * state.slotH; if (dw >= 18 || h % (state.slotH * 2) === 0) g.fillText(pad(h), x + j * dw + dw / 2, y0 + hh + hh / 2); }
+      g.textAlign = 'left';
     }
-    if (o && (dw >= 15 || o.d === 1 || o.w === 1)) {
-      font(dw >= 15 ? 10 : 9); g.fillStyle = o.w === 6 ? C.sat : o.w === 0 ? C.sun : C.ink2; g.textAlign = 'center';
-      g.fillText(String(o.d), xt + i * dw + dw / 2, y0 + hh + hh / 2); g.textAlign = 'left';
+  } else {
+    let cur = null, mx = 0;
+    for (let i = 0; i <= range.len; i++) {
+      const o = i < range.len ? fromDay(range.a + i) : null, key = o ? o.y + '-' + o.m : null;
+      if (key !== cur) {
+        if (cur) { const [yy, mm] = cur.split('-'); font(11.5, 600); g.fillStyle = C.ink; if (i * dw - mx > 26) g.fillText((i * dw - mx > 70 ? yy + '년 ' : '') + mm + '월', xt + mx + 5, y0 + hh / 2); }
+        if (o && i) vline(xt + i * dw);
+        cur = key; mx = i * dw;
+      }
+      if (o && (dw >= 15 || o.d === 1 || o.w === 1)) {
+        font(dw >= 15 ? 10 : 9); g.fillStyle = o.w === 6 ? C.sat : o.w === 0 ? C.sun : C.ink2; g.textAlign = 'center';
+        g.fillText(String(o.d), xt + i * dw + dw / 2, y0 + hh + hh / 2); g.textAlign = 'left';
+      }
     }
   }
   font(11.5, 600); g.fillStyle = C.ink;
   g.fillText('작업내용', x0 + 10, y0 + hh); g.textAlign = 'center';
-  g.fillText('시작', x0 + W1 + W2 / 2, y0 + hh); g.fillText('기간', x0 + W1 + W2 + W3 / 2, y0 + hh); g.fillText('종료', x0 + W1 + W2 + W3 + W4 / 2, y0 + hh); g.textAlign = 'left';
+  g.fillText('시작', x0 + W1 + W2 / 2, y0 + hh); g.fillText(T ? '시간' : '기간', x0 + W1 + W2 + W3 / 2, y0 + hh); g.fillText('종료', x0 + W1 + W2 + W3 + W4 / 2, y0 + hh); g.textAlign = 'left';
   // 바
+  function clip(t, w) { if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; }
   const bar = (r, y, clr, maxW) => {
-    const bx = xt + (r.s - range.a) * dw, bw = r.d * dw, ly = y + 25;
+    const bx = X(r.s), bw = r.d * p, ly = y + 25, lim = maxW ? maxW * p / M.ppu() : 0;
     g.strokeStyle = clr; g.lineWidth = 3; g.beginPath(); g.moveTo(bx, ly); g.lineTo(bx + bw, ly); g.stroke();
     [bx, bx + bw].forEach(cx => { g.beginPath(); g.arc(cx, ly, 4.5, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.8; g.stroke(); });
     font(11.5); g.fillStyle = C.ink; g.textBaseline = 'alphabetic';
-    const nm = maxW ? clip(r.name, maxW * dw / state.dw) : r.name, tw = g.measureText(nm).width;
+    const nm = lim ? clip(r.name, lim) : r.name, tw = g.measureText(nm).width;
     g.fillText(nm, bx + 7, y + 17);
-    if (!maxW || tw + 30 < maxW * dw / state.dw) { font(9.5); g.fillStyle = C.ink3; g.fillText(r.d + '일', bx + 13 + tw, y + 17); }
+    if (!lim || tw + 34 < lim) { font(9.5); g.fillStyle = C.ink3; g.fillText(M.durTxt(r.d), bx + 13 + tw, y + 17); }
     g.textBaseline = 'middle';
   };
-  function clip(t, w) { if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; }
   vis.forEach((ri, k) => {
     const r = state.rows[ri], y = yb + k * rh, sp = spanOf(ri), auto = isAuto(ri);
     const ind = r.lvl === 'cat' ? 10 : r.lvl === 'item' ? 22 : 38;
     font(12, r.lvl === 'cat' ? 700 : r.lvl === 'item' ? 500 : 400); g.fillStyle = r.lvl === 'det' ? C.ink2 : C.ink;
     g.fillText(clip(r.name, W1 - ind - 6), x0 + ind, y + rh / 2);
-    const s = auto ? (sp ? sp.a : null) : r.s, e = auto ? (sp ? sp.b : null) : (r.s != null && r.d ? r.s + r.d - 1 : null);
+    const s = auto ? (sp ? sp.a : null) : r.s, e = auto ? (sp ? sp.b : null) : (r.s != null && r.d ? M.endOf(r) : null);
     if (s != null && e != null) {
-      font(11); g.fillStyle = auto ? C.ink3 : C.ink2; g.textAlign = 'center';
-      g.fillText(md(s), x0 + W1 + W2 / 2, y + rh / 2); g.fillText(String(e - s + 1), x0 + W1 + W2 + W3 / 2, y + rh / 2); g.fillText(md(e), x0 + W1 + W2 + W3 + W4 / 2, y + rh / 2); g.textAlign = 'left';
+      font(T ? 10.5 : 11); g.fillStyle = auto ? C.ink3 : C.ink2; g.textAlign = 'center';
+      g.fillText(M.fmt(s), x0 + W1 + W2 / 2, y + rh / 2); g.fillText(M.durNum(e - s + M.inc), x0 + W1 + W2 + W3 / 2, y + rh / 2); g.fillText(M.fmt(e), x0 + W1 + W2 + W3 + W4 / 2, y + rh / 2); g.textAlign = 'left';
     }
     const clr = j => (state.barMode === 'trade' && TRADES[effTrade(j)]) ? TRADES[effTrade(j)] : C.ink;
     if (!auto && r.s != null && r.d) bar(r, y, clr(ri));
-    else if (sp && state.fold && r.lvl === 'item') foldBars(ri).forEach(x => bar(x.c, y, clr(x.j), x.maxW));
+    else if (sp && folded() && r.lvl === M.parent) foldBars(ri).forEach(x => bar(x.c, y, clr(x.j), x.maxW));
     else if (sp) {
-      const bx = xt + (sp.a - range.a) * dw, bw = (sp.b - sp.a + 1) * dw;
+      const bx = X(sp.a), bw = (sp.b - sp.a + M.inc) * p;
       g.strokeStyle = C.ink3; g.lineWidth = 1.5; g.beginPath(); g.moveTo(bx, y + 22); g.lineTo(bx, y + 27); g.lineTo(bx + bw, y + 27); g.lineTo(bx + bw, y + 22); g.stroke();
     }
   });
-  // 테두리
   g.strokeStyle = C.ink; g.lineWidth = 1.5;
-  g.strokeRect(x0, y0, L + TW, hh * 2 + rh * vis.length);
-  g.beginPath(); g.moveTo(x0, yb); g.lineTo(x0 + L + TW, yb); g.moveTo(xt, y0); g.lineTo(xt, yb + rh * vis.length); g.stroke();
+  g.strokeRect(x0, y0, L + TW, hh * 2 + bodyH);
+  g.beginPath(); g.moveTo(x0, yb); g.lineTo(x0 + L + TW, yb); g.moveTo(xt, y0); g.lineTo(xt, yb + bodyH); g.stroke();
   return cv;
 }
 $('savePng').addEventListener('click', () => {
   if (!state.rows.length) { toast('저장할 작업이 없습니다.'); return; }
   const cv = drawPng();
-  cv.toBlob(blob => { if (blob) download(blob, `${baseName()}_${stamp()}.png`); else toast('그림을 만들지 못했습니다. 날짜 칸을 [좁게] 하고 다시 눌러 주세요.'); }, 'image/png');
+  cv.toBlob(blob => { if (blob) download(blob, `${baseName()}${M.key === 'time' ? '_시간' : ''}_${stamp()}.png`); else toast('그림을 만들지 못했습니다. 날짜 칸을 [좁게] 하고 다시 눌러 주세요.'); }, 'image/png');
 });
 
-/* 용어 사전 */
+/* ───────── 용어 사전 ───────── */
 $('dictBtn').addEventListener('click', () => {
   $('terms').value = state.terms.join('\n'); drawFixes();
   if ($('dict').showModal) $('dict').showModal(); else $('dict').setAttribute('open', '');
@@ -1539,33 +1914,26 @@ function drawFixes() {
 $('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (k == null) return; delete state.fixes[k]; store.set('fixes', state.fixes); drawFixes(); });
 
 /* ───────── 시작 ───────── */
-function sampleRows() {
-  const t = fromDay(todayDay), d = (off) => todayDay + off;
-  void t;
-  return [
-    { lvl: 'cat', trade: '공사', name: '불기어 교체', s: null, d: null },
-    { lvl: 'item', trade: '토목', name: '불기어 기초작업', s: d(3), d: 3 },
-    { lvl: 'item', trade: '기계', name: '패딩작업', s: d(5), d: 2 },
-    { lvl: 'item', trade: '기계', name: '불기어 설치', s: null, d: null },
-    { lvl: 'det', trade: '', name: '인양 · 가조립', s: d(7), d: 2 },
-    { lvl: 'det', trade: '', name: '센터링', s: d(9), d: 3 },
-    { lvl: 'item', trade: '기계', name: '시운전', s: d(12), d: 2 }
-  ].map(r => Object.assign({ id: newId(), low: '' }, r));
-}
 (function init() {
   const t = fromDay(todayDay);
   $('baseMonth').value = state.base || `${t.y}-${pad(t.m)}`;
   $('fileName').value = store.get('name', '공정초안') || '공정초안';
-  state.dw = store.get('dw', 26); state.barMode = store.get('barMode', 'ink'); state.fold = !!store.get('fold', false);
-  $('fold').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', (x.dataset.f === '1') === state.fold));
-  $('zoom').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', +x.dataset.z === state.dw));
-  $('barMode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === state.barMode));
-  const saved = store.get('rows', null);
-  if (saved && saved.length) { state.rows = saved; state.sample = !!store.get('sample', false); }
-  else { state.rows = sampleRows(); state.sample = true; }
-  renderAll(); showMode(); save();
+  state.dw = store.get('dw', 26); state.slotH = store.get('slotH', 2); state.barMode = store.get('barMode', 'ink');
+  const f = store.get('fold2', null); if (f) state.fold = { day: !!f.day, time: !!f.time };
+  press($('zoom'), x => +x.dataset.z === state.dw); press($('slot'), x => +x.dataset.h === state.slotH); press($('barMode'), x => x.dataset.m === state.barMode);
+  const saved = store.get('tabs', null), oldRows = store.get('rows', null);          // rows = v0.5 까지의 저장 (일 단위만)
+  if (saved && saved.day && saved.time) state.tabs = saved;
+  else if (oldRows && oldRows.length) state.tabs.day = { rows: oldRows, sample: !!store.get('sample', false) };
+  ['day', 'time'].forEach(k => {
+    if (state.tabs[k].rows.length || (saved && saved[k])) return;
+    state.tab = k; M = k === 'time' ? TIMEM : DAYM;
+    state.tabs[k] = { rows: M.sample(), sample: true };
+  });
+  setTab(store.get('tab', 'day') === 'time' ? 'time' : 'day');
+  save();
   if (!SR) { $('mic').disabled = true; $('mic').title = '이 브라우저는 음성 인식을 지원하지 않습니다'; say(MIC_HELP); }
 })();
-window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel, rowsFromCells, tsvCells, buildXlsx, drawPng };
+window.__vs = { parseText, parseTimeText, parseEdit, parseEditT, parseDur, parseDurT, state, toTsv, handleSentence, fixName, toDay, iso, mdhm, sel, tsvCells, buildXlsx, drawPng, setTab,
+  rowsFromCells: l => DAYM.fromCells(l), timeFromCells: l => TIMEM.fromCells(l) };
 })();
 </script>
