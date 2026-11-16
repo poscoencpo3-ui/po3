@@ -1,0 +1,1393 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>공정 받아쓰기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* 배치 : 위에서 아래로 한 흐름 — 말하기 줄 → 공정 시트(왼쪽 표 + 오른쪽 바차트가 한 줄씩 붙음) → 엑셀로 보내기 */
+:root {
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --ink: #17212c;
+  --ink-2: #536070;
+  --ink-3: #8894a1;
+  --rule: #d3d9e0;
+  --rule-2: #e7ebef;
+  --accent: #1b5ec2;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2ecfb;
+  --rec: #cf3d2e;
+  --rec-soft: #fbe5e2;
+  --ok: #1c8650;
+  --sat: #1b6cc2;
+  --sun: #cf3d2e;
+  --weekend: #fbf5dd;
+  --cat: #e3edf8;
+  --bar: #17212c;
+  --head: #dce8f4;
+  --lift: 0 10px 30px rgba(23, 33, 44, .22);
+  --font: "IBM Plex Sans KR", "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", "D2Coding", Consolas, "Malgun Gothic", monospace;
+  --dw: 26px;          /* 하루 폭 */
+  --rowh: 44px;
+  --cellw: 664px;      /* 왼쪽 표 폭 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
+    --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
+    --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a;
+    --cat: #1e2a39; --bar: #e5eaf0;
+    --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
+  --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
+  --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a;
+  --cat: #1e2a39; --bar: #e5eaf0;
+  --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ── 머리 ── */
+.top { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.top h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.top p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.top .ver { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+/* ── 말하기 ── */
+.say { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 14px 16px; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.say-row { display: flex; gap: 12px; align-items: center; }
+.mic { flex: none; width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--rule); background: var(--surface-2);
+  display: grid; place-items: center; position: relative; transition: background .2s, border-color .2s, transform .15s; }
+.mic:hover { border-color: var(--accent); }
+.mic:active { transform: scale(.96); }
+.mic svg { width: 22px; height: 22px; stroke: var(--ink); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mic[aria-pressed="true"] { background: var(--rec); border-color: var(--rec); }
+.mic[aria-pressed="true"] svg { stroke: #fff; }
+.mic[aria-pressed="true"]::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 2px solid var(--rec);
+  animation: ring 1.6s ease-out infinite; }
+.mic:disabled { opacity: .45; cursor: not-allowed; }
+@keyframes ring { from { transform: scale(1); opacity: .7; } to { transform: scale(1.55); opacity: 0; } }
+.say-box { flex: 1; min-width: 0; display: flex; border: 1px solid var(--rule); border-radius: 5px; background: var(--surface);
+  transition: border-color .15s, box-shadow .15s; }
+.say-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.say-box input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 14px; height: 54px; font-size: 16px; outline: none; }
+.say-box input::placeholder { color: var(--ink-3); }
+.say-box button { flex: none; border: 0; border-left: 1px solid var(--rule); background: transparent; padding: 0 18px; font-weight: 600;
+  color: var(--accent); border-radius: 0 5px 5px 0; }
+.say-box button:hover { background: var(--accent-soft); }
+.live { min-height: 22px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+.live .eq { display: none; gap: 3px; align-items: flex-end; height: 14px; }
+.live.on .eq { display: inline-flex; }
+.live .eq i { width: 3px; background: var(--rec); border-radius: 1px; animation: eq 1s ease-in-out infinite; }
+.live .eq i:nth-child(2) { animation-delay: .18s; } .live .eq i:nth-child(3) { animation-delay: .36s; }
+@keyframes eq { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+.live .interim { color: var(--ink-3); font-style: italic; }
+.live b { color: var(--ink); font-weight: 600; }
+.live .warn { color: var(--rec); }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.say-foot { display: flex; gap: 8px 18px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2);
+  border-top: 1px solid var(--rule-2); padding-top: 10px; }
+.say-foot .eg { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-width: 0; }
+.eg button { border: 1px solid var(--rule); background: var(--surface-2); border-radius: 4px; padding: 3px 9px; font-size: 12.5px; color: var(--ink); }
+.eg button:hover { border-color: var(--accent); color: var(--accent); }
+.say-foot label { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
+.say-foot input[type="month"] { border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); padding: 2px 6px; font-family: var(--mono); font-size: 12px; }
+.ghost { border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; padding: 5px 11px; font-size: 13px; }
+.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.ghost:disabled { opacity: .45; cursor: default; border-color: var(--rule); color: inherit; }
+
+/* ── 공정 시트 ── */
+.sheet-card { background: var(--surface); border: 1.5px solid var(--ink); border-radius: 3px; overflow: hidden; }
+.sheet-bar { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1.5px solid var(--ink); flex-wrap: wrap; }
+.sheet-bar h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.sheet-bar .sum { color: var(--ink-2); font-size: 12.5px; }
+.sheet-bar .sp { margin-left: auto; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 10px; font-size: 12.5px; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.sample { margin: 0; padding: 8px 14px; background: var(--accent-soft); font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.sheet { overflow-x: auto; position: relative; -webkit-overflow-scrolling: touch; }
+.grid { position: relative; width: max-content; min-width: 100%; }
+.cols { position: absolute; top: 0; bottom: 0; left: var(--cellw); pointer-events: none; }
+.cols i { position: absolute; top: 0; bottom: 0; width: var(--dw); background: var(--weekend); }
+.cols b { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--rule); }
+.cols u { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px dashed var(--rec); opacity: .7; }
+.hrow, .row { display: flex; position: relative; }
+.hrow { border-bottom: 1.5px solid var(--ink); }
+.cells { flex: none; width: var(--cellw); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px;
+  position: sticky; left: 0; z-index: 2; background: var(--surface); border-right: 1.5px solid var(--ink); }
+.hrow { background: var(--head); }
+.hrow .cells { background: var(--head); font-size: 12px; font-weight: 600; color: var(--ink); height: 46px; }
+.track { flex: none; position: relative; }
+.c-grip { width: 24px; flex: none; } .c-lvl { width: 84px; flex: none; } .c-trade { width: 70px; flex: none; }
+.c-name { flex: 1; min-width: 0; } .c-start { width: 128px; flex: none; } .c-dur { width: 52px; flex: none; text-align: center; }
+.c-end { width: 68px; flex: none; text-align: center; } .c-del { width: 26px; flex: none; }
+.months, .days { display: flex; height: 23px; }
+.months span { flex: none; font-size: 12px; font-weight: 600; padding-left: 6px; line-height: 23px; border-left: 1px solid var(--rule); white-space: nowrap; overflow: hidden; }
+.days span { flex: none; width: var(--dw); text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 23px; color: var(--ink-2); }
+.days span.sat { color: var(--sat); } .days span.sun { color: var(--sun); }
+.days span.today { background: var(--rec); color: #fff; border-radius: 3px; }
+
+.row { height: var(--rowh); border-bottom: 1px solid var(--rule-2); }
+#rows > .row:last-child { border-bottom: 0; }
+.row.lv-cat { background: var(--cat); }
+.row.lv-cat .cells { background: var(--cat); }
+.row.lv-cat .name { font-weight: 700; }
+.row.lv-item .name { padding-left: 14px; font-weight: 500; }
+.row.lv-det .name { padding-left: 30px; color: var(--ink-2); }
+.row input, .row select { height: 30px; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0 6px; min-width: 0; width: 100%; }
+.row select { padding: 0 2px; font-size: 12.5px; }
+.row input:hover, .row select:hover { border-color: var(--rule); }
+.row input:focus, .row select:focus { border-color: var(--accent); background: var(--surface); outline: none; }
+.row .start, .row .dur { font-family: var(--mono); font-size: 12.5px; }
+.row .dur { text-align: center; padding: 0 2px; -moz-appearance: textfield; }
+.row .dur::-webkit-outer-spin-button, .row .dur::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.row .end { font-family: var(--mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.row .auto { color: var(--ink-3); font-size: 12px; }
+.grip { width: 24px; height: 30px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: grab; touch-action: none; border-radius: 4px; }
+.grip:hover { background: var(--rule-2); }
+.grip svg { width: 10px; height: 16px; fill: var(--ink-3); }
+.del { width: 24px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; }
+.row:hover .del, .del:focus-visible { opacity: 1; }
+.del:hover { background: var(--rec-soft); color: var(--rec); }
+@media (hover: none) { .del { opacity: 1; } }
+.row.sel, .row.sel .cells { background: var(--accent-soft); }
+.row.sel .cells { box-shadow: inset 3px 0 0 var(--accent); }
+.row input.target { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
+.bar.sel .line { background: var(--accent); height: 5px; top: 29px; }
+.bar.sel .dot { border-color: var(--accent); }
+.mode { flex: none; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 3px; background: var(--accent); color: var(--accent-ink); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.mode.add { background: var(--ink-2); color: var(--surface); }
+.tdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 2px; flex: none; }
+
+/* 바 : 칸 아래 굵은 선 + 양 끝 원 (엑셀 바차트와 같은 모양) */
+.bar { position: absolute; top: 0; height: var(--rowh); cursor: grab; touch-action: none;
+  transition: left .28s cubic-bezier(.2, .7, .2, 1), width .28s cubic-bezier(.2, .7, .2, 1); }
+.bar.live { transition: none; cursor: grabbing; }
+.bar .line { position: absolute; left: 0; right: 0; top: 30px; height: 3px; background: var(--barc, var(--bar)); border-radius: 2px; transform-origin: left center; }
+.bar .dot { position: absolute; top: 25.5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--barc, var(--bar)); background: var(--surface); cursor: ew-resize; }
+.bar .dot::after { content: ""; position: absolute; inset: -9px; }
+.bar .dot.s { left: -6px; } .bar .dot.e { right: -6px; }
+.bar .lbl { position: absolute; left: 8px; top: 7px; font-size: 12.5px; white-space: nowrap; pointer-events: none; }
+.bar .lbl small { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-left: 6px; }
+.bar:hover .line, .bar.live .line { height: 5px; top: 29px; }
+.bar.live .lbl small { color: var(--accent); font-weight: 600; }
+.span { position: absolute; top: 0; height: var(--rowh); pointer-events: none; transition: left .28s, width .28s; }
+.span i { position: absolute; left: 0; right: 0; top: 29px; height: 5px; border: 1.5px solid var(--ink-3); border-top: 0; border-radius: 0 0 2px 2px; }
+.span .lbl { position: absolute; left: 6px; top: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+
+/* 새로 들어온 줄 : 선이 왼쪽에서 그어지고 끝 원이 찍힘 */
+.row.enter { animation: rowin .32s ease-out both; }
+.row.enter .line { animation: draw .55s cubic-bezier(.2, .7, .2, 1) .12s both; }
+.row.enter .dot.s { animation: pop .2s ease-out .1s both; }
+.row.enter .dot.e { animation: pop .2s ease-out .6s both; }
+.row.enter .lbl { animation: fade .3s ease-out .3s both; }
+@keyframes rowin { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes draw { from { transform: scaleX(0); } }
+@keyframes pop { from { transform: scale(0); } }
+@keyframes fade { from { opacity: 0; } }
+.row.drag { z-index: 5; box-shadow: var(--lift); background: var(--surface); transition: box-shadow .15s; }
+.row.drag .cells { background: var(--surface); }
+.row.drag .grip { cursor: grabbing; }
+.dropline { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--accent); z-index: 6; pointer-events: none; }
+.dropline::before { content: ""; position: absolute; left: 2px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.empty { padding: 34px 16px; text-align: center; color: var(--ink-2); }
+.addrow { display: flex; gap: 8px; padding: 10px 14px; border-top: 1.5px solid var(--ink); flex-wrap: wrap; align-items: center; }
+.addrow .hint { color: var(--ink-3); font-size: 12.5px; margin-left: auto; }
+
+/* ── 엑셀로 ── */
+.out { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px;
+  display: flex; gap: 12px 22px; align-items: center; flex-wrap: wrap; }
+.primary { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 15px; padding: 11px 20px; border-radius: 5px;
+  display: inline-flex; gap: 8px; align-items: center; transition: background .2s, transform .12s; }
+.primary:active { transform: scale(.97); }
+.primary.done { background: var(--ok); }
+.primary svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; gap: 6px 18px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; flex: 1; min-width: 240px; }
+.steps li { display: flex; gap: 7px; align-items: baseline; }
+.steps li b { font-family: var(--mono); font-size: 11px; color: var(--surface); background: var(--ink-2); border-radius: 3px; padding: 0 5px; }
+.steps kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface-2); color: var(--ink); }
+.tsv { width: 100%; }
+.tsv textarea { width: 100%; height: 120px; font-family: var(--mono); font-size: 12px; border: 1px solid var(--rule); border-radius: 6px; padding: 8px; background: var(--surface-2); white-space: pre; }
+.toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 8px; font-size: 13.5px; box-shadow: var(--lift); transition: opacity .2s, transform .2s; z-index: 30; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ── 용어 사전 ── */
+dialog { border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); color: var(--ink); padding: 0; width: min(560px, calc(100% - 32px)); box-shadow: var(--lift); }
+dialog::backdrop { background: rgba(10, 16, 22, .45); }
+.dlg { padding: 18px 20px; display: grid; gap: 12px; }
+.dlg h3 { margin: 0; font-size: 16px; }
+.dlg p { margin: 0; color: var(--ink-2); font-size: 13px; }
+.dlg textarea { width: 100%; height: 130px; border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; background: var(--surface-2); resize: vertical; }
+.fixes { display: grid; gap: 4px; max-height: 150px; overflow: auto; }
+.fixes div { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 3px 8px; background: var(--surface-2); border-radius: 4px; }
+.fixes div span:first-child { color: var(--ink-3); text-decoration: line-through; }
+.fixes div button { margin-left: auto; border: 0; background: none; color: var(--ink-3); }
+.dlg .acts { display: flex; justify-content: flex-end; gap: 8px; }
+.dlg h4 { margin: 4px 0 0; font-size: 13.5px; }
+.dlg .pick { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dlg .pick input[type="file"] { max-width: 100%; font-size: 13px; }
+.dlg .opt { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; }
+.dlg .opt label { display: inline-flex; gap: 5px; align-items: center; }
+.dlg .msg { min-height: 20px; font-size: 13px; color: var(--rec); }
+#impText { height: 110px; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.sheet-card.dropping { outline: 3px dashed var(--accent); outline-offset: -3px; }
+
+@media (max-width: 900px) {
+  :root { --cellw: 600px; }
+  .c-name { min-width: 150px; }
+  .cells { position: static; }
+  .c-trade { width: 62px; } .c-lvl { width: 76px; } .c-start { width: 122px; }
+  .say-foot label { margin-left: 0; }
+  .top .ver { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>공정 받아쓰기</h1>
+    <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
+    <span class="ver">v0.4</span>
+  </header>
+
+  <section class="say" aria-label="말하기">
+    <div class="say-row">
+      <button class="mic" id="mic" type="button" aria-pressed="false" aria-label="음성으로 입력" title="눌러서 말하기 / 다시 누르면 끝">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"/></svg>
+      </button>
+      <form class="say-box" id="sayForm" autocomplete="off">
+        <input id="sayInput" type="text" placeholder="" aria-label="공정 문장">
+        <button type="submit" id="sayBtn">추가</button>
+      </form>
+    </div>
+    <div class="live" id="live" aria-live="polite">
+      <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="mode add" id="modeChip">새 작업 추가</span>
+      <span id="liveText"></span>
+      <button class="linkbtn" type="button" id="unsel" hidden>선택 해제</button>
+    </div>
+    <div class="say-foot">
+      <div class="eg" id="eg">
+        <span>이렇게 말해 보세요</span>
+        <button type="button">불기어 기초작업 11월 28일부터 30일</button>
+        <button type="button">이어서 패딩작업 이틀</button>
+        <button type="button">대분류 분체설비</button>
+        <button type="button">취소</button>
+      </div>
+      <label>월을 말하지 않으면 <input type="month" id="baseMonth" aria-label="기준 월"> 로 봅니다</label>
+      <button class="ghost" type="button" id="dictBtn">용어 사전</button>
+    </div>
+  </section>
+
+  <section class="sheet-card" aria-label="공정 시트">
+    <div class="sheet-bar">
+      <h2>공정 초안</h2>
+      <span class="sum" id="sum"></span>
+      <span class="sp"></span>
+      <div class="seg" id="fold" role="group" aria-label="보이는 단계">
+        <button type="button" data-f="0" aria-pressed="true">전체</button><button type="button" data-f="1">작업항목까지</button>
+      </div>
+      <div class="seg" id="zoom" role="group" aria-label="날짜 칸 너비">
+        <button type="button" data-z="16">좁게</button><button type="button" data-z="26" aria-pressed="true">보통</button><button type="button" data-z="38">넓게</button>
+      </div>
+      <div class="seg" id="barMode" role="group" aria-label="바 색상">
+        <button type="button" data-m="ink" aria-pressed="true">검정</button><button type="button" data-m="trade">공종색</button>
+      </div>
+      <button class="ghost" type="button" id="undoBtn" disabled>되돌리기</button>
+    </div>
+    <p class="sample" id="sample" hidden>아래는 <b>예시</b>입니다. 말하기 시작하면 예시 뒤에 붙습니다. <button class="ghost" type="button" id="clearSample">예시 지우고 시작</button></p>
+    <div class="sheet" id="sheet">
+      <div class="grid" id="grid">
+        <div class="cols" id="cols"></div>
+        <div class="hrow">
+          <div class="cells">
+            <span class="c-grip"></span><span class="c-lvl">구분</span><span class="c-trade">공종</span><span class="c-name">작업내용</span>
+            <span class="c-start">시작일</span><span class="c-dur">기간</span><span class="c-end">종료</span><span class="c-del"></span>
+          </div>
+          <div class="track" id="htrack"><div class="months" id="months"></div><div class="days" id="days"></div></div>
+        </div>
+        <div id="rows"></div>
+      </div>
+    </div>
+    <div class="addrow">
+      <button class="ghost" type="button" id="addRow">+ 줄 추가</button>
+      <button class="ghost" type="button" id="impBtn">엑셀에서 가져오기</button>
+      <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
+      <button class="ghost" type="button" id="clearAll">모두 지우기</button>
+      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고치고, Delete 키나 줄 끝의 ×로 그 줄을 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
+    </div>
+  </section>
+
+  <section class="out" aria-label="엑셀로 보내기">
+    <button class="primary" type="button" id="copyBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      <span id="copyLabel">엑셀용 복사</span>
+    </button>
+    <ol class="steps">
+      <li><b>1</b>엑셀 바차트 파일의 [작업입력] 시트를 엽니다</li>
+      <li><b>2</b>구분 칸의 첫 줄 A5(또는 비어 있는 줄)를 누릅니다</li>
+      <li><b>3</b><kbd>Ctrl</kbd>+<kbd>V</kbd> → 종료일과 간트가 자동으로 채워집니다</li>
+      <li><b>4</b>붙인 줄 아래에 예전 줄이 남아 있으면 지우고 [바차트 생성]</li>
+    </ol>
+    <div class="tsv" id="tsvBox" hidden>
+      <p style="margin:0 0 6px;color:var(--ink-2);font-size:13px">자동 복사가 막혀 있습니다. 아래 내용을 모두 선택해(Ctrl+A) 복사하세요.</p>
+      <textarea id="tsv" readonly aria-label="엑셀에 붙여 넣을 내용"></textarea>
+    </div>
+  </section>
+</div>
+
+<dialog id="dict">
+  <form method="dialog" class="dlg">
+    <h3>용어 사전</h3>
+    <p>현장 용어를 한 줄에 하나씩 적어 두면, 비슷하게 들린 말을 이 용어로 바로잡습니다 (세 글자 이상).</p>
+    <textarea id="terms" aria-label="현장 용어"></textarea>
+    <p>작업내용을 직접 고치면 「들린 말 → 고친 말」이 여기에 쌓이고, 다음부터 자동으로 바꿉니다.</p>
+    <div class="fixes" id="fixes"></div>
+    <div class="acts"><button class="ghost" value="ok">닫기</button></div>
+  </form>
+</dialog>
+<dialog id="imp">
+  <div class="dlg">
+    <h3>엑셀에서 가져오기</h3>
+    <p>엑셀 바차트 파일의 [작업입력] 내용을 이 화면으로 불러옵니다. 불러온 뒤 말이나 끌기로 고치고 다시 [엑셀용 복사]로 보낼 수 있습니다.</p>
+    <div class="opt" role="radiogroup" aria-label="가져오는 방법">
+      <label><input type="radio" name="impMode" id="impReplace" value="replace" checked> 지금 초안을 바꾸기</label>
+      <label><input type="radio" name="impMode" id="impAppend" value="append"> 지금 초안 아래에 붙이기</label>
+    </div>
+    <h4>방법 1 · 엑셀 파일 고르기</h4>
+    <div class="pick">
+      <input type="file" id="impFile" accept=".xlsm,.xlsx" aria-label="엑셀 파일">
+    </div>
+    <p>.xlsm / .xlsx 파일을 고르면 바로 읽습니다. 파일은 이 컴퓨터에서만 읽고 어디에도 보내지 않습니다. (공정 초안 표 위로 파일을 끌어다 놓아도 됩니다)</p>
+    <h4>방법 2 · 복사해서 붙여넣기</h4>
+    <p>엑셀 [작업입력]에서 구분~기간 칸(A~F열)의 줄을 복사해 아래 칸에 붙여 넣고 [가져오기]를 누르세요.</p>
+    <textarea id="impText" aria-label="엑셀에서 복사한 내용" spellcheck="false"></textarea>
+    <div class="msg" id="impMsg" role="alert"></div>
+    <div class="acts"><button class="ghost" type="button" id="impClose">닫기</button><button class="primary" type="button" id="impGo" style="font-size:14px;padding:7px 16px">가져오기</button></div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+/* ───────── 날짜 ───────── */
+const DAY = 864e5;
+const pad = n => String(n).padStart(2, '0');
+const toDay = (y, m, d) => Math.round(Date.UTC(y, m - 1, d) / DAY);
+const fromDay = n => { const t = new Date(n * DAY); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), w: t.getUTCDay() }; };
+const iso = n => { const o = fromDay(n); return `${o.y}-${pad(o.m)}-${pad(o.d)}`; };
+const parseIso = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? toDay(+m[1], +m[2], +m[3]) : null; };
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+const md = n => { const o = fromDay(n); return `${o.m}/${o.d}`; };
+const todayDay = (() => { const t = new Date(); return toDay(t.getFullYear(), t.getMonth() + 1, t.getDate()); })();
+
+/* ───────── 상태 ───────── */
+const LV = { cat: '대분류', item: '작업항목', det: '세부작업' };
+const TRADES = { '': '', '공사': '#3b5b92', '조업': '#df4439', '토목': '#1f9d55', '건축': '#b3860e', '기계': '#2b7fd0', '전기': '#d9a300', '배관': '#8a4fc0', '철골': '#e07b2c', '기타': '#8b949e' };
+const DEFAULT_TERMS = ['불기어', '트러니언', '그라우팅', '컨베이어', '감속기', '커플링', '센터링', '내화물', '시운전', '거푸집', '터파기', '되메우기', '라이닝'];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('vs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('vs.' + k, JSON.stringify(v)); } catch (e) { /* 저장 불가 환경 */ } }
+};
+let seq = 1;
+const newId = () => 'r' + (seq++) + Math.random().toString(36).slice(2, 6);
+const state = {
+  rows: [], sample: false, dw: 26, barMode: 'ink', fold: false,
+  terms: store.get('terms', DEFAULT_TERMS), fixes: store.get('fixes', {}),
+  base: store.get('base', null)
+};
+const undo = [];
+const snap = () => JSON.stringify({ rows: state.rows, sample: state.sample });
+function pushUndo() { undo.push(snap()); if (undo.length > 60) undo.shift(); $('undoBtn').disabled = false; }
+function doUndo() {
+  if (!undo.length) return false;
+  const s = JSON.parse(undo.pop()); state.rows = s.rows; state.sample = s.sample;
+  $('undoBtn').disabled = !undo.length; renderAll(true); save(); showMode(); return true;
+}
+function save() { store.set('rows', state.rows); store.set('sample', state.sample); }
+const $ = id => document.getElementById(id);
+
+/* ───────── 문장 → 작업 ───────── */
+const KO = { 일: 1, 이: 2, 삼: 3, 사: 4, 오: 5, 육: 6, 칠: 7, 팔: 8, 구: 9 };
+function koNum(s) {
+  if (/^\d+$/.test(s)) return +s;
+  if (s.includes('십')) {
+    const [a, b] = s.split('십');
+    const t = a ? KO[a] : 1, o = b ? KO[b] : 0;
+    return (!t || (b && !o)) ? NaN : t * 10 + o;
+  }
+  return KO[s] || NaN;
+}
+const DUR_WORD = { 하루: 1, 이틀: 2, 사흘: 3, 나흘: 4, 닷새: 5, 엿새: 6, 이레: 7, 열흘: 10, 보름: 15, 일주일: 7 };
+const DW = '하루|이틀|사흘|나흘|닷새|엿새|이레|열흘|보름|일주일';
+function normalize(t) {
+  t = String(t).replace(/["'“”‘’]/g, '').replace(/[∼〜–—]/g, '~').replace(/\s+/g, ' ').trim();
+  t = t.replace(/(시월|유월|[일이삼사오육칠팔구십]+월)\s*([일이삼사오육칠팔구십]+)일/g, (m, a, b) => {
+    const mm = a === '시월' ? 10 : a === '유월' ? 6 : koNum(a.slice(0, -1)), dd = koNum(b);
+    return (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) ? `${mm}월 ${dd}일` : m;
+  });
+  t = t.replace(/([일이삼사오육칠팔구십]+)일(?=\s*(?:부터|까지|에서|~|간|동안))/g, (m, b) => {
+    const dd = koNum(b); return (dd >= 1 && dd <= 31) ? dd + '일' : m;
+  });
+  return t;
+}
+const DATE_ALT = '(\\d{1,2})\\s*월\\s*(\\d{1,2})\\s*일?|(\\d{1,2})\\s*[\\/.]\\s*(\\d{1,2})(?!\\d)\\s*일?';
+const RE_START = new RegExp(
+  '(?<!\\d)(?:(\\d{4})\\s*년\\s*)?(?:' + DATE_ALT + '|(\\d{1,2})\\s*일(?!\\s*(?:간|동안)))' +   // 1 년, 2·3 월일, 4·5 슬래시, 6 일
+  '|(?<!\\d)(\\d{1,3})\\s*일\\s*(?:간|동안)' +                                                 // 7 n일간
+  '|(' + DW + ')(?:\\s*(?:간|동안))?' +                                                        // 8 이틀
+  '|(?<!\\d)(\\d{1,2})\\s*주(?:일)?(?:\\s*(?:간|동안))?' +                                      // 9 n주
+  '|(오늘|내일|모레)', 'g');                                                                   // 10
+const RE_DUR_Y = new RegExp('\\s*(?:부터|에서)?\\s*(?:(\\d{1,3})\\s*일\\s*(?:간|동안)|(' + DW + ')(?:\\s*(?:간|동안))?|(\\d{1,2})\\s*주(?:일)?(?:\\s*(?:간|동안))?)', 'y');
+const RE_TO_Y = new RegExp('\\s*(?:부터|에서|~|-)\\s*(?:' + DATE_ALT + '|(\\d{1,2})(?!\\d)\\s*일?)(?:\\s*까지)?', 'y');
+const RE_TO2_Y = new RegExp('\\s+(?:' + DATE_ALT + '|(\\d{1,2})\\s*일)\\s*까지', 'y');
+const RE_UNTIL_Y = /\s*까지/y;
+
+function parseText(raw, ctx) {
+  // ctx : { y, m, last } — 월을 말하지 않으면 직전 날짜의 달
+  const t = normalize(raw);
+  const res = { text: t, tasks: [], header: null, cmd: null, level: null };
+  if (!t) return res;
+  if (/^(취소|되돌려|되돌리기|실행\s*취소|방금\s*(거|것)?\s*(취소|삭제|지워))\s*$/.test(t)) { res.cmd = 'undo'; return res; }
+  let body = t;
+  const mk = /^(대분류|작업\s*항목|항목|세부\s*작업)\s+(.+)$/.exec(t);
+  if (mk) { res.level = mk[1][0] === '대' ? 'cat' : (mk[1][0] === '세' ? 'det' : 'item'); body = mk[2]; }
+
+  const ex = [];
+  const setCtx = day => { const o = fromDay(day); ctx.y = o.y; ctx.m = o.m; ctx.last = day; };
+  const mkDate = (yy, mm, dd) => {
+    let y = yy ? +yy : ctx.y;
+    if (!yy && ctx.last != null && toDay(y, mm, dd) < ctx.last - 180) y += 1;
+    return toDay(y, mm, dd);
+  };
+  const durOf = k => k[1] ? +k[1] : k[2] ? DUR_WORD[k[2]] : (+k[3]) * 7;
+  RE_START.lastIndex = 0;
+  let m;
+  while ((m = RE_START.exec(body))) {
+    let q = RE_START.lastIndex, s = null, d = null, kind = 'date', until = null;
+    const isDate = m[2] || m[4] || m[6] || m[10];
+    if (isDate) {
+      if (m[10]) s = todayDay + ({ 오늘: 0, 내일: 1, 모레: 2 })[m[10]];
+      else if (m[2]) s = mkDate(m[1], +m[2], +m[3]);
+      else if (m[4]) s = mkDate(m[1], +m[4], +m[5]);
+      else s = toDay(ctx.y, ctx.m, +m[6]);
+      let k;
+      RE_DUR_Y.lastIndex = q;
+      if ((k = RE_DUR_Y.exec(body))) { d = durOf(k); q = RE_DUR_Y.lastIndex; kind = 'dateDur'; }
+      else {
+        RE_TO_Y.lastIndex = q; k = RE_TO_Y.exec(body);
+        if (!k) { RE_TO2_Y.lastIndex = q; k = RE_TO2_Y.exec(body); if (k) q = RE_TO2_Y.lastIndex; } else q = RE_TO_Y.lastIndex;
+        if (k) {
+          const so = fromDay(s);
+          let e;
+          if (k[1]) e = mkDateFrom(so, +k[1], +k[2]);
+          else if (k[3]) e = mkDateFrom(so, +k[3], +k[4]);
+          else { e = toDay(so.y, so.m, +k[5]); if (e < s) e = toDay(so.y, so.m + 1, +k[5]); }
+          if (e < s) e = s;
+          d = e - s + 1; kind = 'range';
+        } else {
+          RE_UNTIL_Y.lastIndex = q;
+          if (RE_UNTIL_Y.exec(body)) {                       // "30일까지" : 앞 작업 다음 날부터 그날까지
+            q = RE_UNTIL_Y.lastIndex;
+            const e = s; s = (ctx.last != null && ctx.last < e) ? ctx.last + 1 : e; d = e - s + 1; kind = 'until'; until = e;
+          } else d = 1;
+        }
+      }
+    } else {                                                  // 기간만 : 앞 작업 다음 날부터
+      kind = 'dur';
+      d = m[7] ? +m[7] : m[8] ? DUR_WORD[m[8]] : (+m[9]) * 7;
+      s = ctx.last != null ? ctx.last + 1 : (fromDay(todayDay).y === ctx.y && fromDay(todayDay).m === ctx.m ? todayDay : toDay(ctx.y, ctx.m, 1));
+    }
+    d = Math.max(1, Math.min(d, 3650));
+    setCtx(s + d - 1);
+    ex.push({ p: m.index, q, s, d, kind, until });
+    RE_START.lastIndex = q;
+  }
+  function mkDateFrom(so, mm, dd) { let e = toDay(so.y, mm, dd); if (e < toDay(so.y, so.m, so.d) - 180) e = toDay(so.y + 1, mm, dd); return e; }
+
+  if (!ex.length) {
+    if (res.level === 'cat' || res.level === 'item') res.header = cleanName(body);
+    return res;
+  }
+  // 이름 : 날짜 앞 글 (날짜를 먼저 말하면 뒤 글)
+  const gaps = [];
+  let pos = 0;
+  ex.forEach(e => { gaps.push(body.slice(pos, e.p)); pos = e.q; });
+  gaps.push(body.slice(pos));
+  const names = gaps.map(cleanName);
+  const dateFirst = !names[0] && names.slice(1).some(Boolean);
+  ex.forEach((e, i) => {
+    let nm = dateFirst ? names[i + 1] : names[i];
+    if (!dateFirst && i === ex.length - 1 && !nm && names[i + 1]) nm = names[i + 1];
+    res.tasks.push({ name: nm || '', s: e.s, d: e.d, kind: e.kind, until: e.until });
+  });
+  res.rest = names.filter(Boolean).join(' ');
+  if (!dateFirst && names[ex.length] && res.tasks.length && res.tasks[res.tasks.length - 1].name) res.tail = names[ex.length];
+  return res;
+}
+const CONN = '부터|그리고\\s*나서|그리고|그\\s*다음(?:에|은|엔)?|다음(?:에|은|엔)?|그\\s*후(?:에)?|이어서|이어|끝나고|끝나면|후에|및|또|까지|동안|에는|에|은|는|하고|이고';
+const RE_LEAD = new RegExp('^(?:[,.·]|(?:' + CONN + ')(?=\\s|$))\\s*');
+const RE_TRAIL = new RegExp('(?:\\s+(?:' + CONN + ')|[,.·])$');
+function cleanName(s) {
+  s = (s || '').trim();
+  for (let i = 0; i < 6; i++) { const b = s; s = s.replace(RE_LEAD, '').replace(RE_TRAIL, '').trim(); if (s === b) break; }
+  s = s.replace(/(?<=[가-힣]{2})(?:은|는|을|를)$/, '');
+  return s.trim();
+}
+
+/* 용어 사전 : 자모 단위로 비슷한 말을 바로잡음 */
+function jamo(s) {
+  let o = '';
+  for (const ch of s) {
+    const c = ch.charCodeAt(0) - 0xAC00;
+    if (c >= 0 && c < 11172) o += String.fromCharCode(0x1100 + Math.floor(c / 588), 0x1161 + Math.floor(c % 588 / 28), 0x11A7 + c % 28);
+    else o += ch;
+  }
+  return o;
+}
+function lev(a, b) {
+  const n = b.length; let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function snapTerm(w) {
+  if (w.length < 3 || state.terms.includes(w)) return null;
+  const jw = jamo(w); let best = null, bd = 99;
+  for (const term of state.terms) {
+    if (term.length < 3 || Math.abs(term.length - w.length) > 1) continue;
+    const d = lev(jw, jamo(term)), lim = term.length >= 5 ? 2 : 1;
+    if (d > 0 && d <= lim && d < bd) { best = term; bd = d; }
+  }
+  return best;
+}
+function fixName(name) {
+  if (!name) return name;
+  if (state.fixes[name]) return state.fixes[name];
+  let ws = name.split(' ').map(w => state.fixes[w] || w);
+  for (let i = 0; i < ws.length - 1; i++) {                    // "불 기어" → "불기어"
+    const j = ws[i] + ws[i + 1];
+    if (state.terms.includes(j) || snapTerm(j)) { ws.splice(i, 2, state.terms.includes(j) ? j : snapTerm(j)); }
+  }
+  ws = ws.map(w => snapTerm(w) || w);
+  return ws.join(' ');
+}
+function learnFix(heard, fixed) {
+  // 소리가 비슷하게 바뀐 낱말만 기억 (이름을 보태거나 새로 쓴 것은 잘못 들은 게 아님)
+  if (!heard || !fixed || heard === fixed) return;
+  const a = heard.split(' '), b = fixed.split(' ');
+  if (a.length !== b.length) return;
+  let changed = false;
+  a.forEach((w, i) => {
+    if (w === b[i] || w.length < 2) return;
+    const ja = jamo(w), jb = jamo(b[i]);
+    if (lev(ja, jb) <= Math.max(2, Math.round(Math.max(ja.length, jb.length) * 0.4))) { state.fixes[w] = b[i]; changed = true; }
+  });
+  if (changed) store.set('fixes', state.fixes);
+}
+function guessTrade(n) {
+  if (/배관|파이프|밸브/.test(n)) return '배관';
+  if (/케이블|전기|전원|배선|계장/.test(n)) return '전기';
+  if (/철골|트러스|데크/.test(n)) return '철골';
+  if (/터파기|되메우기|타설|콘크리트|굴착|포장|기초/.test(n)) return '토목';
+  if (/거푸집|비계|도장|마감/.test(n)) return '건축';
+  return '';
+}
+
+/* 문맥 : 마지막 날짜가 있는 줄의 달, 없으면 기준 월 */
+function contextNow() {
+  const b = /^(\d{4})-(\d{2})$/.exec($('baseMonth').value) || [];
+  const t = fromDay(todayDay);
+  const ctx = { y: +b[1] || t.y, m: +b[2] || t.m, last: null };
+  for (let i = state.rows.length - 1; i >= 0; i--) {
+    const r = state.rows[i];
+    if (r.s != null && r.d) { const e = r.s + r.d - 1, o = fromDay(e); ctx.y = o.y; ctx.m = o.m; ctx.last = e; break; }
+  }
+  return ctx;
+}
+function nextLevel() {
+  const last = state.rows[state.rows.length - 1];
+  if (!last) return 'item';
+  if (last.lvl === 'cat') return 'item';
+  if (last.lvl === 'det') return 'det';
+  return last.s == null ? 'det' : 'item';
+}
+/* 문장 하나 처리. 여러 인식 후보 중 작업이 가장 잘 잡히는 것을 씀 */
+function handleSentence(alts, fromVoice) {
+  const tg = target();
+  if (tg && tg.field) { applyField(tg, alts, fromVoice); return; }
+  if (tg) { applyEdit(tg, alts, fromVoice); return; }
+  let best = null;
+  for (const a of alts) {
+    const r = parseText(a, contextNow());
+    const score = r.cmd ? 100 : r.tasks.filter(x => x.name).length * 10 + r.tasks.length + (r.header ? 5 : 0);
+    if (!best || score > best.score) best = { r, score };
+  }
+  const r = best && best.r;
+  if (!r || !r.text) return;
+  if (r.cmd === 'undo') { say(doUndo() ? '방금 한 것을 되돌렸습니다.' : '되돌릴 것이 없습니다.'); return; }
+  if (r.header) {
+    pushUndo(); dropSample();
+    const row = { id: newId(), lvl: r.level, trade: r.level === 'cat' ? '공사' : '', name: fixName(r.header), low: '', s: null, d: null };
+    row.heard = row.name; state.rows.push(row); renderAll(false, [row.id]); save();
+    say(`<b>${LV[r.level]}</b> 「${esc(row.name)}」 줄을 넣었습니다.`); return;
+  }
+  if (!r.tasks.length) {
+    if (fromVoice) $('sayInput').value = r.text;
+    say(`<span class="warn">날짜를 찾지 못했습니다.</span> 「${esc(r.text)}」 — 날짜나 기간을 넣어 다시 말하거나 위 칸에서 고쳐 주세요.`);
+    return;
+  }
+  pushUndo(); dropSample();
+  const ids = [];
+  r.tasks.forEach(t => {
+    let lvl = r.level && r.level !== 'cat' ? r.level : nextLevel();
+    const name = fixName(t.name) || '작업';
+    const row = { id: newId(), lvl, trade: guessTrade(name), name, low: '', s: t.s, d: t.d, heard: name };
+    state.rows.push(row); ids.push(row.id);
+  });
+  renderAll(false, ids); save();
+  const list = r.tasks.map((t, i) => `「${esc(state.rows[state.rows.length - r.tasks.length + i].name)}」 ${md(t.s)}~${md(t.s + t.d - 1)}`).join(', ');
+  say(`${r.tasks.length}줄 추가: ${list} <button class="linkbtn" type="button" data-undo>되돌리기</button>`);
+  $('sayInput').value = '';
+}
+
+/* ───────── 선택한 줄 고치기 ───────── */
+const sel = { id: null, field: null };
+const FIELD = { name: '작업내용', start: '시작일', dur: '기간' };
+const IDLE = '마이크를 누르고 말하거나, 위 칸에 적고 Enter 를 누르면 새 작업이 추가됩니다. 줄을 먼저 누르면 그 줄을 고칩니다.';
+function target() {
+  if (!sel.id) return null;
+  const i = rowIdx(sel.id);
+  if (i < 0) { sel.id = null; sel.field = null; return null; }
+  return { r: state.rows[i], i, field: sel.field };
+}
+function setSel(id, field) {
+  field = field || null;
+  if (sel.id === id && sel.field === field) return;
+  sel.id = id; sel.field = id ? field : null; applySel(); showMode();
+}
+function applySel() {
+  $('rows').querySelectorAll('.sel').forEach(e => e.classList.remove('sel'));
+  $('rows').querySelectorAll('.target').forEach(e => e.classList.remove('target'));
+  const t = target(); if (!t) return;
+  const el = rowEl(sel.id);
+  if (el) {
+    el.classList.add('sel');
+    if (sel.field) { const inp = el.querySelector('.' + sel.field); if (inp) inp.classList.add('target'); else sel.field = null; }
+  } else {                                   // 접혀서 안 보이는 세부작업 : 바만 표시
+    sel.field = null;
+    const bar = $('rows').querySelector(`.bar[data-rid="${sel.id}"]`); if (bar) bar.classList.add('sel');
+  }
+}
+const short = n => n.length > 14 ? n.slice(0, 13) + '…' : n;
+function showMode() {
+  const t = target(), chip = $('modeChip'), inp = $('sayInput');
+  $('unsel').hidden = !t; $('delSel').disabled = !t;
+  $('delSel').textContent = t ? `「${short(t.r.name)}」 줄 지우기` : '선택한 줄 지우기';
+  if (!t) {
+    chip.textContent = '새 작업 추가'; chip.className = 'mode add'; $('sayBtn').textContent = '추가';
+    inp.placeholder = '말하는 대신 여기에 적고 Enter · 예) 불기어 기초작업 11월 28일부터 30일, 이어서 패딩작업 이틀';
+    if (!listening) say(IDLE);
+  } else if (!t.field) {
+    chip.textContent = '고치기 · ' + short(t.r.name); chip.className = 'mode'; $('sayBtn').textContent = '고치기';
+    inp.placeholder = '이 줄을 고칠 말 · 예) 하루 뒤로 / 12월 3일부터 이틀 / 기간 5일 / 이름 그라우팅 / 삭제';
+    if (!listening) say(`<b>「${esc(t.r.name)}」</b> 줄을 고칩니다. 마이크를 누르고 말하거나 위 칸에 적으세요 — 하루 뒤로 · 12월 3일부터 이틀 · 기간 5일 · 이름 ○○ · 삭제`);
+  } else {
+    chip.textContent = short(t.r.name) + ' › ' + FIELD[t.field]; chip.className = 'mode'; $('sayBtn').textContent = '넣기';
+    inp.placeholder = { name: '새 작업내용', start: '새 시작일 · 예) 12월 3일', dur: '새 기간 · 예) 3일, 이틀' }[t.field];
+    if (!listening) say(`<b>「${esc(t.r.name)}」</b>의 <b>${FIELD[t.field]}</b>을 넣습니다. 마이크를 누르고 말하세요.`);
+  }
+}
+function rowCtx(i) {                                    // 그 줄의 달, 앞 줄의 끝
+  const c = contextNow(); c.last = null;
+  const r = state.rows[i];
+  if (r.s != null) { const o = fromDay(r.s); c.y = o.y; c.m = o.m; }
+  for (let j = i - 1; j >= 0; j--) { const p = state.rows[j]; if (p.s != null && p.d) { c.last = p.s + p.d - 1; if (r.s == null) { const o = fromDay(c.last); c.y = o.y; c.m = o.m; } break; } }
+  return c;
+}
+const NN = '(?:(\\d{1,3})\\s*일|(' + DW + ')|(\\d{1,2})\\s*주(?:일)?)';
+const RE_SHIFT = new RegExp(NN + '\\s*(?:씩\\s*)?(뒤로|미뤄|미루|늦춰|늦게|연기|앞으로|당겨|앞당겨|빨리)');
+const RE_SHIFT2 = new RegExp('(뒤로|앞으로)\\s*' + NN);
+const RE_GROW = new RegExp(NN + '\\s*(?:더\\s*)?(늘려|늘리|연장|줄여|줄이|단축)');
+const TRADE_RE = '공사|조업|토목|건축|기계|전기|배관|철골|기타';
+function parseDur(t) {
+  t = normalize(t);
+  let m = /(\d{1,3})\s*(주)?/.exec(t);
+  if (m) return (+m[1]) * (m[2] ? 7 : 1);
+  m = new RegExp(DW).exec(t); if (m) return DUR_WORD[m[0]];
+  m = /([일이삼사오육칠팔구십]+?)\s*(주|일)?(?:간|동안)?\s*$/.exec(t.replace(/\s+/g, ''));
+  if (m) { const n = koNum(m[1]); if (n) return n * (m[2] === '주' ? 7 : 1); }
+  return null;
+}
+function isAuto(i) { const r = state.rows[i]; return r.lvl === 'cat' || (r.lvl === 'item' && !!spanOf(i)); }
+function parseEdit(text, i) {
+  const r = state.rows[i], t = normalize(text), a = {};
+  if (!t) return null;
+  if (/^(이\s*줄\s*)?(삭제|지워|지우기)(\s*해)?(\s*줘)?\s*$/.test(t)) return { del: true };
+  let m = RE_SHIFT.exec(t);
+  if (m) { const n = m[1] ? +m[1] : m[2] ? DUR_WORD[m[2]] : (+m[3]) * 7; return { shift: /뒤|미|늦|연기/.test(m[4]) ? n : -n }; }
+  m = RE_SHIFT2.exec(t);
+  if (m) { const n = m[2] ? +m[2] : m[3] ? DUR_WORD[m[3]] : (+m[4]) * 7; return { shift: m[1] === '뒤로' ? n : -n }; }
+  m = RE_GROW.exec(t);
+  if (m) { const n = m[1] ? +m[1] : m[2] ? DUR_WORD[m[2]] : (+m[3]) * 7; return { grow: /늘|연장/.test(m[4]) ? n : -n }; }
+  m = /^(대분류|작업\s*항목|세부\s*작업)\s*(?:으로|로)?\s*(?:변경|바꿔|수정)?(?:\s*해)?(?:\s*줘)?\s*$/.exec(t);
+  if (m) return { lvl: m[1][0] === '대' ? 'cat' : m[1][0] === '세' ? 'det' : 'item' };
+  m = new RegExp('^(?:공종\\s*(?:은|는|을)?\\s*)?(' + TRADE_RE + ')\\s*(?:공종)?\\s*(?:으로|로)?\\s*(?:변경|바꿔|수정)?(?:\\s*해)?(?:\\s*줘)?\\s*$').exec(t);
+  if (m) return { trade: m[1] };
+  m = /기간\s*(?:은|는|을|를)?\s*(.+)$/.exec(t);
+  if (m) { const n = parseDur(m[1]); if (n) return { d: n }; }
+  const wantEnd = /종료/.test(t), wantName = /^(이름|작업\s*내용|내용)/.test(t);
+  const res = parseText(t.replace(/(시작일|종료일|시작|종료|기간|날짜)\s*(?:은|는|을|를|이|가)?(?=\s|\d)/g, ' '), rowCtx(i));
+  let rest;
+  if (res.tasks.length && !wantName) {
+    const k = res.tasks[0];
+    if (k.kind === 'range' || k.kind === 'dateDur') { a.s = k.s; a.d = k.d; }
+    else if (k.kind === 'dur') a.d = k.d;
+    else {                                              // 날짜 하나 : 시작일 (…까지 · 종료일 이면 끝 날짜)
+      const day = k.kind === 'until' ? k.until : k.s;
+      if (k.kind === 'until' || wantEnd) { if (r.s != null && day >= r.s) a.d = day - r.s + 1; else { a.s = day; a.d = 1; } }
+      else a.s = day;
+    }
+    rest = res.rest || '';
+  } else rest = t;
+  rest = rest.replace(/^(이름|작업\s*내용|내용)\s*(?:은|는|을|를)?\s+/, '')
+    .replace(/(?:으로|로)?\s*(?:변경|바꿔|바꾸기|수정|옮겨)(?:\s*해)?(?:\s*줘)?\s*$/, '').replace(/(?<=[가-힣]{2})으로$/, '');
+  rest = cleanName(rest);
+  if (rest && !/^(으로|로|에|해줘|해 줘)$/.test(rest)) a.name = fixName(rest);
+  return Object.keys(a).length ? a : null;
+}
+function applyEdit(tg, alts, fromVoice) {
+  let a = null;
+  for (const x of alts) { const c = parseEdit(x, tg.i); if (c && !(Object.keys(c).length === 1 && c.name)) { a = c; break; } if (!a) a = c; }
+  const r = tg.r, i = tg.i;
+  if (!a) { say('<span class="warn">무슨 말인지 알아듣지 못했습니다.</span> 예) 하루 뒤로 · 12월 3일부터 이틀 · 기간 5일 · 이름 ○○ · 삭제'); return; }
+  const auto = isAuto(i), touchesDate = a.s != null || a.d != null || a.grow != null;
+  if (auto && touchesDate && !a.name) {
+    say(`「${esc(r.name)}」의 날짜는 아래 작업 범위로 자동 계산됩니다. 고칠 세부 줄을 누르거나 「하루 뒤로」처럼 전체를 옮기세요.`); return;
+  }
+  pushUndo(); dropSample();
+  let msg;
+  if (a.del) { state.rows.splice(i, 1); sel.id = null; sel.field = null; msg = `「${esc(r.name)}」 줄을 지웠습니다.`; }
+  else if (a.shift != null) {
+    let n = 0;
+    for (let j = i, e = blockEnd(i); j < e; j++) if (state.rows[j].s != null) { state.rows[j].s += a.shift; n++; }
+    msg = `「${esc(r.name)}」${n > 1 ? ` 아래 ${n}줄` : ''}을 ${Math.abs(a.shift)}일 ${a.shift > 0 ? '뒤로' : '앞으로'} 옮겼습니다.`;
+  } else if (a.lvl) { r.lvl = a.lvl; if (a.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } msg = `「${esc(r.name)}」을 ${LV[a.lvl]}로 바꿨습니다.`; }
+  else if (a.trade) { r.trade = a.trade; msg = `「${esc(r.name)}」 공종을 ${a.trade}로 바꿨습니다.`; }
+  else {
+    if (a.name) { r.name = a.name; r.heard = a.name; }
+    if (!auto) {
+      if (a.grow != null) r.d = Math.max(1, (r.d || 1) + a.grow);
+      if (a.s != null) { r.s = a.s; if (!r.d) r.d = 1; }
+      if (a.d != null) { r.d = a.d; if (r.s == null) { const c = rowCtx(i); r.s = c.last != null ? c.last + 1 : todayDay; } }
+    }
+    msg = `「${esc(r.name)}」` + (r.s != null && r.d ? ` ${md(r.s)}~${md(r.s + r.d - 1)} (${r.d}일)` : '') + '로 고쳤습니다.';
+  }
+  renderAll(true); save(); showMode();
+  say(msg + ' <button class="linkbtn" type="button" data-undo>되돌리기</button>');
+  $('sayInput').value = '';
+}
+function applyField(tg, alts, fromVoice) {
+  const r = tg.r, f = tg.field; let msg = null;
+  if (f === 'name') {
+    const v = fixName(cleanName(normalize(alts[0]).replace(/[.?!]$/, '')));
+    if (v) { pushUndo(); r.name = v; r.heard = v; msg = `작업내용을 「${esc(v)}」로 넣었습니다.`; }
+  } else if (f === 'start') {
+    for (const x of alts) {
+      const res = parseText(x.replace(/(시작일|시작|날짜)\s*(?:은|는|을|를)?/g, ' '), rowCtx(tg.i));
+      let day = res.tasks.length ? (res.tasks[0].kind === 'until' ? res.tasks[0].until : res.tasks[0].kind === 'dur' ? null : res.tasks[0].s) : null;
+      if (day == null) { const m = /(\d{1,2})/.exec(normalize(x)); const c = rowCtx(tg.i); if (m && +m[1] >= 1 && +m[1] <= 31) day = toDay(c.y, c.m, +m[1]); }
+      if (day != null) { pushUndo(); r.s = day; if (!r.d) r.d = 1; msg = `시작일을 ${md(day)} (${WD[fromDay(day).w]})로 넣었습니다.`; break; }
+    }
+  } else {
+    for (const x of alts) { const n = parseDur(x); if (n) { pushUndo(); r.d = Math.min(n, 3650); msg = `기간을 ${r.d}일로 넣었습니다.`; break; } }
+  }
+  if (!msg) { say(`<span class="warn">${FIELD[f]}로 알아듣지 못했습니다.</span> 「${esc(normalize(alts[0]))}」 — 다시 말해 주세요.`); return; }
+  dropSample(); renderAll(); save();
+  msg += ' <button class="linkbtn" type="button" data-undo>되돌리기</button>';
+  $('sayInput').value = '';
+  if (fromVoice && listening) micStop(msg); else say(msg);          // 칸 하나는 한 번 듣고 끝
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function say(html, on) { $('liveText').innerHTML = html; if (on !== undefined) $('live').classList.toggle('on', on); }
+function dropSample() { if (state.sample) { state.sample = false; $('sample').hidden = true; } }
+
+/* ───────── 음성 인식 ───────── */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, startedAt = 0, quick = 0;
+const MIC_HELP = '이 화면에서는 마이크 버튼을 쓸 수 없습니다. 위 입력 칸을 누른 뒤 <b>Windows는 Win+H</b>, 휴대폰은 <b>자판의 마이크</b>로 말하면 그대로 받아 적습니다. 다 적히면 Enter.';
+function micStop(msg) {
+  listening = false; $('mic').setAttribute('aria-pressed', 'false');
+  try { rec && rec.stop(); } catch (e) { /* 이미 멈춤 */ }
+  if (msg) say(msg, false); else { $('live').classList.remove('on'); showMode(); if (target()) return; say(IDLE); }
+}
+function micStart() {
+  if (!SR) { say(MIC_HELP, false); return; }
+  rec = new SR();
+  rec.lang = 'ko-KR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
+  rec.onresult = ev => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r = ev.results[i];
+      if (r.isFinal) handleSentence(Array.from(r, a => a.transcript), true);
+      else interim += r[0].transcript;
+    }
+    if (interim) $('liveText').innerHTML = `<span class="interim">${esc(interim)}</span>`;
+  };
+  rec.onerror = ev => {
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') micStop(MIC_HELP);
+    else if (ev.error === 'network') micStop('<span class="warn">음성 인식 서버에 연결하지 못했습니다.</span> 인터넷 연결을 확인하거나 입력 칸에 적어 주세요.');
+    else if (ev.error === 'audio-capture') micStop('<span class="warn">마이크를 찾지 못했습니다.</span> 마이크 연결을 확인해 주세요.');
+  };
+  rec.onend = () => {
+    if (!listening) return;
+    quick = (Date.now() - startedAt < 1500) ? quick + 1 : 0;      // 바로 끊기면 다시 걸지 않음
+    if (quick >= 3) { micStop(MIC_HELP); return; }
+    try { startedAt = Date.now(); rec.start(); } catch (e) { micStop(); }
+  };
+  try {
+    startedAt = Date.now(); quick = 0; rec.start(); listening = true;
+    $('mic').setAttribute('aria-pressed', 'true');
+    const tg = target();
+    say(!tg ? '듣고 있습니다. 작업 이름과 날짜를 말해 주세요.'
+      : tg.field ? `듣고 있습니다. <b>「${esc(tg.r.name)}」</b>의 <b>${FIELD[tg.field]}</b>을 말해 주세요.`
+      : `듣고 있습니다. <b>「${esc(tg.r.name)}」</b> 줄을 어떻게 고칠지 말해 주세요.`, true);
+  } catch (e) { micStop(MIC_HELP); }
+}
+$('mic').addEventListener('click', () => listening ? micStop() : micStart());
+$('sayForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  setTimeout(() => { const v = $('sayInput').value.trim(); if (v) handleSentence([v], false); }, 0);   // 한글 조합이 끝난 뒤 읽기
+});
+$('unsel').addEventListener('click', () => setSel(null));
+$('eg').addEventListener('click', ev => { if (ev.target.tagName === 'BUTTON') { $('sayInput').value = ev.target.textContent; $('sayInput').focus(); } });
+$('live').addEventListener('click', ev => { if (ev.target.hasAttribute('data-undo')) { doUndo(); say('되돌렸습니다.'); } });
+
+/* ───────── 시트 그리기 ───────── */
+let range = { a: todayDay - 2, n: 30 };
+function blockEnd(i) {                                   // i 줄에 딸린 아래 줄의 끝 (끝 번호 + 1)
+  const rank = { cat: 0, item: 1, det: 2 }, me = rank[state.rows[i].lvl];
+  let j = i + 1;
+  while (j < state.rows.length && rank[state.rows[j].lvl] > me) j++;
+  return j;
+}
+function spanOf(i) {                                     // 아래 줄들의 전체 기간
+  let a = null, b = null;
+  for (let j = i + 1, e = blockEnd(i); j < e; j++) {
+    const r = state.rows[j];
+    if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); }
+  }
+  return a == null ? null : { a, b };
+}
+function calcRange() {
+  let a = null, b = null;
+  state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); } });
+  if (a == null) { a = todayDay; b = todayDay + 20; }
+  range = { a: a - 3, n: Math.max(b - a + 1 + 10, 24) };
+}
+function drawHead() {
+  const dw = state.dw, W = range.n * dw;
+  document.documentElement.style.setProperty('--dw', dw + 'px');
+  $('htrack').style.width = W + 'px';
+  let mh = '', dh = '', ch = '', run = 0, cur = null;
+  for (let i = 0; i < range.n; i++) {
+    const day = range.a + i, o = fromDay(day);
+    const key = o.y + '-' + o.m;
+    if (key !== cur) { if (cur) mh += monthSpan(cur, run); cur = key; run = 0; if (i) ch += `<b style="left:${i * dw}px"></b>`; }
+    run++;
+    const cls = (o.w === 6 ? 'sat' : o.w === 0 ? 'sun' : '') + (day === todayDay ? ' today' : '');
+    dh += `<span class="${cls}" title="${o.m}/${o.d} (${WD[o.w]})">${dw >= 22 || o.d === 1 || o.w === 1 ? o.d : ''}</span>`;
+    if (o.w === 0 || o.w === 6) ch += `<i style="left:${i * dw}px"></i>`;
+  }
+  mh += monthSpan(cur, run);
+  if (todayDay >= range.a && todayDay < range.a + range.n) ch += `<u style="left:${(todayDay - range.a + .5) * dw}px"></u>`;
+  $('months').innerHTML = mh; $('days').innerHTML = dh; $('cols').innerHTML = ch; $('cols').style.width = W + 'px';
+  function monthSpan(key, n) { const [y, m] = key.split('-'); return `<span style="width:${n * dw}px">${n * dw > 70 ? y + '년 ' : ''}${m}월</span>`; }
+}
+function oneBar(r, i) {
+  const dw = state.dw;
+  const clr = (state.barMode === 'trade' && TRADES[effTrade(i)]) ? `--barc:${TRADES[effTrade(i)]}` : '';
+  return `<div class="bar" data-rid="${r.id}" style="left:${(r.s - range.a) * dw}px;width:${r.d * dw}px;${clr}">
+      <span class="lbl">${esc(r.name)}<small>${r.d}일</small></span><span class="line"></span><i class="dot s" data-h="s"></i><i class="dot e" data-h="e"></i></div>`;
+}
+function barHtml(r, i) {
+  const dw = state.dw, sp = spanOf(i);
+  if (r.lvl !== 'cat' && r.s != null && r.d && !(r.lvl === 'item' && sp)) return oneBar(r, i);
+  if (sp && state.fold && r.lvl === 'item') {            // 접힘 : 세부작업 바를 작업항목 줄에
+    let h = '';
+    for (let j = i + 1, e = blockEnd(i); j < e; j++) { const c = state.rows[j]; if (c.s != null && c.d) h += oneBar(c, j); }
+    return h;
+  }
+  if (sp) return `<div class="span" style="left:${(sp.a - range.a) * dw}px;width:${(sp.b - sp.a + 1) * dw}px"><span class="lbl">${md(sp.a)} ~ ${md(sp.b)} · ${sp.b - sp.a + 1}일</span><i></i></div>`;
+  return '';
+}
+function effTrade(i) {                                    // 공종이 비면 위 단계 공종
+  const rank = { cat: 0, item: 1, det: 2 };
+  let lv = rank[state.rows[i].lvl];
+  if (state.rows[i].trade) return state.rows[i].trade;
+  for (let j = i - 1; j >= 0; j--) { const r = state.rows[j]; if (rank[r.lvl] < lv) { if (r.trade) return r.trade; lv = rank[r.lvl]; } }
+  return '';
+}
+function rowHtml(r, i) {
+  if (state.fold && r.lvl === 'det') return '';
+  const sp = spanOf(i), auto = r.lvl === 'cat' || (r.lvl === 'item' && sp);
+  const e = r.s != null && r.d ? r.s + r.d - 1 : null;
+  const lv = Object.keys(LV).map(k => `<option value="${k}"${k === r.lvl ? ' selected' : ''}>${LV[k]}</option>`).join('');
+  const tr = Object.keys(TRADES).concat(r.trade in TRADES ? [] : [r.trade]).map(k => `<option value="${esc(k)}"${k === r.trade ? ' selected' : ''}>${esc(k) || '–'}</option>`).join('');
+  return `<div class="row lv-${r.lvl}" data-id="${r.id}">
+    <div class="cells">
+      <button class="grip c-grip" type="button" aria-label="${esc(r.name)} 순서 바꾸기 (Alt+위·아래 화살표)"><svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg></button>
+      <span class="c-lvl"><select class="lvl" id="lv_${r.id}" aria-label="구분">${lv}</select></span>
+      <span class="c-trade"><select class="trade" id="tr_${r.id}" aria-label="공종">${tr}</select></span>
+      <span class="c-name"><input class="name" id="nm_${r.id}" value="${esc(r.name)}" aria-label="작업내용" spellcheck="false"></span>
+      ${auto ? `<span class="c-start auto">${sp ? md(sp.a) + ' ~ ' + md(sp.b) : '아래 작업 범위'}</span><span class="c-dur auto">${sp ? sp.b - sp.a + 1 : ''}</span><span class="c-end auto">자동</span>`
+        : `<span class="c-start"><input class="start" id="st_${r.id}" type="date" value="${r.s != null ? iso(r.s) : ''}" aria-label="시작일"></span>
+           <span class="c-dur"><input class="dur" id="du_${r.id}" type="number" min="1" max="999" value="${r.d || ''}" aria-label="기간(일)"></span>
+           <span class="c-end end">${e != null ? md(e) + ' ' + WD[fromDay(e).w] : ''}</span>`}
+      <span class="c-del"><button class="del" type="button" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
+    </div>
+    <div class="track" style="width:${range.n * state.dw}px">${barHtml(r, i)}</div>
+  </div>`;
+}
+function renderAll(flip, enterIds) {
+  const box = $('rows'), old = {};
+  if (flip) box.querySelectorAll('.row').forEach(el => { old[el.dataset.id] = el.getBoundingClientRect().top; });
+  calcRange(); drawHead();
+  box.innerHTML = state.rows.length ? state.rows.map(rowHtml).join('')
+    : '<div class="empty">아직 작업이 없습니다. 마이크를 누르고 「작업 이름 + 날짜」를 말해 보세요.</div>';
+  $('sample').hidden = !state.sample;
+  const n = state.rows.filter(r => r.s != null && r.d).length;
+  const sp = n ? (() => { let a = Infinity, b = -Infinity; state.rows.forEach(r => { if (r.s != null && r.d) { a = Math.min(a, r.s); b = Math.max(b, r.s + r.d - 1); } }); return `${md(a)} ~ ${md(b)} · ${b - a + 1}일`; })() : '';
+  const hid = state.fold ? state.rows.filter(r => r.lvl === 'det').length : 0;
+  $('sum').textContent = state.rows.length ? `${state.rows.length}줄 · 날짜 있는 작업 ${n}개${sp ? ' · ' + sp : ''}${hid ? ` · 세부작업 ${hid}줄 접힘` : ''}` : '';
+  applySel();
+  if (enterIds) enterIds.forEach(id => { const el = rowEl(id); if (el) { el.classList.add('enter'); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); scrollToBar(el); } });
+  if (flip) box.querySelectorAll('.row').forEach(el => {
+    const o = old[el.dataset.id]; if (o == null) return;
+    const dy = o - el.getBoundingClientRect().top; if (!dy) return;
+    el.style.transition = 'none'; el.style.transform = `translateY(${dy}px)`;
+    requestAnimationFrame(() => { el.style.transition = 'transform .24s cubic-bezier(.2,.7,.2,1)'; el.style.transform = ''; });
+    el.addEventListener('transitionend', () => { el.style.transition = ''; }, { once: true });
+  });
+}
+const rowEl = id => $('rows').querySelector(`.row[data-id="${id}"]`);
+const rowIdx = id => state.rows.findIndex(r => r.id === id);
+function scrollToBar(el) {
+  const bar = el.querySelector('.bar'), sh = $('sheet'); if (!bar) return;
+  const cellw = el.querySelector('.cells').offsetWidth, x = bar.offsetLeft + cellw;
+  const stick = getComputedStyle(el.querySelector('.cells')).position === 'sticky' ? cellw : 0;
+  if (x < sh.scrollLeft + stick + 20 || x + bar.offsetWidth > sh.scrollLeft + sh.clientWidth - 20) sh.scrollTo({ left: Math.max(0, x - stick - 60), behavior: 'smooth' });
+}
+/* 값만 바뀐 줄 : 표는 그대로 두고 바와 요약만 다시 */
+function refreshBars() {
+  const before = range.a + ':' + range.n; calcRange();
+  if (before !== range.a + ':' + range.n) drawHead();
+  state.rows.forEach((r, i) => {
+    const el = rowEl(r.id); if (!el) return;
+    const tr = el.querySelector('.track'); tr.style.width = range.n * state.dw + 'px';
+    const cur = tr.firstElementChild, tmp = document.createElement('div'); tmp.innerHTML = barHtml(r, i);
+    const nx = tmp.firstElementChild;
+    if (cur && nx && tr.children.length === 1 && tmp.children.length === 1 && cur.dataset.rid === nx.dataset.rid && cur.className.split(' ')[0] === nx.className) { cur.style.cssText = nx.style.cssText; cur.querySelector('.lbl').innerHTML = nx.querySelector('.lbl').innerHTML; }
+    else tr.innerHTML = tmp.innerHTML;
+    const e = el.querySelector('.end'); if (e) e.textContent = r.s != null && r.d ? md(r.s + r.d - 1) + ' ' + WD[fromDay(r.s + r.d - 1).w] : '';
+  });
+  applySel();
+}
+
+/* ───────── 표 고치기 ───────── */
+$('rows').addEventListener('change', ev => {
+  const el = ev.target.closest('.row'); if (!el) return;
+  const i = rowIdx(el.dataset.id), r = state.rows[i], t = ev.target;
+  pushUndo();
+  if (t.classList.contains('name')) { const v = t.value.trim(); learnFix(r.heard, v); r.name = v; r.heard = null; refreshBars(); }
+  else if (t.classList.contains('start')) { r.s = parseIso(t.value); if (r.s != null && !r.d) r.d = 1; renderAll(); }
+  else if (t.classList.contains('dur')) { const v = parseInt(t.value, 10); r.d = v > 0 ? v : null; renderAll(); }
+  else if (t.classList.contains('lvl')) { r.lvl = t.value; if (r.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } renderAll(); }
+  else if (t.classList.contains('trade')) { r.trade = t.value; refreshBars(); }
+  save();
+  // 손으로 고친 뒤에는 선택을 풀어, 다음에 말하는 것이 새 작업으로 들어가게 함 (Tab 으로 옆 칸에 가면 그 칸이 다시 선택됨)
+  if (sel.id === r.id) setSel(null);
+});
+/* 줄 · 칸 고르기 */
+$('rows').addEventListener('focusin', ev => {
+  const el = ev.target.closest('.row'); if (!el) return;
+  const c = ev.target.classList;
+  setSel(el.dataset.id, c.contains('name') ? 'name' : c.contains('start') ? 'start' : c.contains('dur') ? 'dur' : null);
+});
+$('rows').addEventListener('click', ev => {
+  if (ev.target.closest('input, select, button')) return;
+  const bar = ev.target.closest('.bar'), el = ev.target.closest('.row'); if (!el) return;
+  setSel(bar ? bar.dataset.rid : el.dataset.id, null);
+});
+document.addEventListener('pointerdown', ev => { if (sel.id && !ev.target.closest('.sheet-card, .say, .out, dialog')) setSel(null); });
+$('rows').addEventListener('input', ev => {
+  if (!ev.target.classList.contains('name')) return;
+  const el = ev.target.closest('.row'), lbl = el.querySelector(`.bar[data-rid="${el.dataset.id}"] .lbl`);
+  if (lbl) lbl.firstChild.textContent = ev.target.value;
+});
+function deleteRow(id) {                                  // 한 줄만 지움 (딸린 줄은 남아 위 줄에 붙음)
+  const i = rowIdx(id); if (i < 0) return;
+  const nm = state.rows[i].name;
+  pushUndo(); state.rows.splice(i, 1);
+  if (sel.id === id) { sel.id = null; sel.field = null; }
+  renderAll(true); save(); showMode();
+  toast(`「${nm}」 줄을 지웠습니다. [되돌리기]로 살릴 수 있습니다.`);
+}
+$('delSel').addEventListener('click', () => { if (sel.id) deleteRow(sel.id); });
+$('rows').addEventListener('click', ev => {
+  const d = ev.target.closest('.del'); if (!d) return;
+  deleteRow(d.closest('.row').dataset.id);
+});
+$('rows').addEventListener('keydown', ev => {
+  const g = ev.target.closest('.grip');
+  if (!g || !ev.altKey || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
+  ev.preventDefault();
+  const id = g.closest('.row').dataset.id, i = rowIdx(id), e = blockEnd(i);
+  const rank = { cat: 0, item: 1, det: 2 };
+  let up = i - 1; while (up > 0 && rank[state.rows[up].lvl] > rank[state.rows[i].lvl]) up--;
+  let to = ev.key === 'ArrowUp' ? up : blockEnd(e < state.rows.length ? e : i);
+  if (ev.key === 'ArrowUp' && i === 0) return;
+  if (ev.key === 'ArrowDown' && e >= state.rows.length) return;
+  moveBlock(i, e, to); rowEl(id).querySelector('.grip').focus();
+});
+function moveBlock(i, e, to) {                           // i~e-1 줄을 to 앞으로
+  pushUndo();
+  const blk = state.rows.splice(i, e - i);
+  if (to > i) to -= blk.length;
+  state.rows.splice(to, 0, ...blk); renderAll(true); save();
+}
+
+/* 줄 끌어서 순서 바꾸기 (딸린 줄도 함께) */
+$('rows').addEventListener('pointerdown', ev => {
+  const g = ev.target.closest('.grip'); if (!g) return;
+  ev.preventDefault();
+  const el = g.closest('.row'), i = rowIdx(el.dataset.id), e = blockEnd(i);
+  const vis = Array.from($('rows').querySelectorAll('.row')), idx = vis.map(x => rowIdx(x.dataset.id));
+  const blk = vis.filter((_, k) => idx[k] >= i && idx[k] < e);
+  const tops = vis.map(x => x.offsetTop), h = el.offsetHeight, y0 = ev.clientY, top0 = el.offsetTop;
+  const line = document.createElement('div'); line.className = 'dropline'; $('rows').style.position = 'relative'; $('rows').appendChild(line);
+  blk.forEach(x => x.classList.add('drag'));
+  g.setPointerCapture(ev.pointerId);
+  let to = i;
+  const move = mv => {
+    const dy = mv.clientY - y0;
+    blk.forEach(x => { x.style.transform = `translateY(${dy}px)`; });
+    const mid = top0 + dy + h / 2;
+    to = state.rows.length; let lt = tops[vis.length - 1] + h;
+    for (let k = 0; k < vis.length; k++) { if (idx[k] >= i && idx[k] < e) continue; if (mid < tops[k] + h / 2) { to = idx[k]; lt = tops[k]; break; } }
+    line.style.top = lt + 'px';
+    line.style.display = (to === i || to === e) ? 'none' : '';
+  };
+  const up = () => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    line.remove();
+    if (to !== i && to !== e) moveBlock(i, e, to);
+    else blk.forEach(x => { x.style.transition = 'transform .18s'; x.style.transform = ''; x.classList.remove('drag'); setTimeout(() => { x.style.transition = ''; }, 200); });
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+});
+
+/* 바 끌기 : 몸통 = 날짜 이동, 끝 원 = 시작·종료 조정 */
+$('rows').addEventListener('pointerdown', ev => {
+  const bar = ev.target.closest('.bar'); if (!bar) return;
+  ev.preventDefault();
+  const rid = bar.dataset.rid, el = rowEl(rid), r = state.rows[rowIdx(rid)], h = ev.target.dataset.h || 'm';
+  const x0 = ev.clientX, s0 = r.s, d0 = r.d, dw = state.dw; let moved = false;
+  bar.setPointerCapture(ev.pointerId); bar.classList.add('live');
+  const move = mv => {
+    const dd = Math.round((mv.clientX - x0) / dw);
+    if (!moved && dd !== 0) { moved = true; pushUndo(); }
+    if (h === 'm') r.s = s0 + dd;
+    else if (h === 's') { const ns = Math.min(s0 + dd, s0 + d0 - 1); r.s = ns; r.d = s0 + d0 - ns; }
+    else r.d = Math.max(1, d0 + dd);
+    bar.style.left = (r.s - range.a) * dw + 'px'; bar.style.width = r.d * dw + 'px';
+    bar.querySelector('small').textContent = `${md(r.s)}~${md(r.s + r.d - 1)} · ${r.d}일`;
+    const st = el && el.querySelector('.start'), du = el && el.querySelector('.dur'), en = el && el.querySelector('.end');
+    if (st) st.value = iso(r.s); if (du) du.value = r.d; if (en) en.textContent = md(r.s + r.d - 1) + ' ' + WD[fromDay(r.s + r.d - 1).w];
+  };
+  const up = () => {
+    bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); bar.removeEventListener('pointercancel', up);
+    bar.classList.remove('live');
+    if (moved) { renderAll(); save(); }
+  };
+  bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up); bar.addEventListener('pointercancel', up);
+});
+
+/* ───────── 단추들 ───────── */
+$('addRow').addEventListener('click', () => {
+  pushUndo(); dropSample();
+  const ctx = contextNow(), s = ctx.last != null ? ctx.last + 1 : todayDay;
+  const row = { id: newId(), lvl: nextLevel(), trade: '', name: '새 작업', low: '', s, d: 1 };
+  state.rows.push(row); renderAll(false, [row.id]); save();
+  const inp = $('nm_' + row.id); inp.focus(); inp.select();
+});
+let clearArmed = 0;
+$('clearAll').addEventListener('click', () => {
+  if (!state.rows.length) return;
+  if (Date.now() - clearArmed > 4000) { clearArmed = Date.now(); $('clearAll').textContent = '한 번 더 누르면 모두 지웁니다'; setTimeout(() => { $('clearAll').textContent = '모두 지우기'; }, 4000); return; }
+  clearArmed = 0; $('clearAll').textContent = '모두 지우기';
+  pushUndo(); state.rows = []; state.sample = false; renderAll(); save(); toast('모두 지웠습니다. [되돌리기]로 살릴 수 있습니다.');
+});
+$('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; state.sample = false; renderAll(); save(); $('sayInput').focus(); });
+$('undoBtn').addEventListener('click', doUndo);
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && sel.id && !$('dict').open && !$('imp').open) { setSel(null); if (document.activeElement && document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
+  if (ev.key === 'Delete' && sel.id && !$('dict').open && !$('imp').open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) { ev.preventDefault(); deleteRow(sel.id); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { ev.preventDefault(); doUndo(); }
+});
+$('zoom').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  state.dw = +b.dataset.z; $('zoom').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('dw', state.dw); renderAll();
+});
+$('fold').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  state.fold = b.dataset.f === '1'; $('fold').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('fold', state.fold); renderAll(true); showMode();
+});
+$('barMode').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  state.barMode = b.dataset.m; $('barMode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); store.set('barMode', state.barMode); refreshBars();
+});
+$('baseMonth').addEventListener('change', () => store.set('base', $('baseMonth').value));
+
+/* 엑셀 작업입력 양식 : 구분 / 공종 / 작업내용 / 하단표기 / 시작일 / 기간 */
+function toTsv() {
+  return state.rows.map((r, i) => {
+    const auto = r.lvl === 'cat' || (r.lvl === 'item' && spanOf(i));
+    return [LV[r.lvl], r.trade, r.name.replace(/[\t\r\n]/g, ' '), r.low || '', (!auto && r.s != null) ? iso(r.s) : '', (!auto && r.d) ? r.d : ''].join('\t');
+  }).join('\r\n');
+}
+$('copyBtn').addEventListener('click', async () => {
+  if (!state.rows.length) { toast('복사할 작업이 없습니다.'); return; }
+  const text = toTsv(); let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+    try { const ta = $('tsv'); $('tsvBox').hidden = false; ta.value = text; ta.focus(); ta.select(); ok = document.execCommand('copy'); if (ok) $('tsvBox').hidden = true; } catch (e2) { ok = false; }
+  }
+  if (ok) {
+    $('copyBtn').classList.add('done'); $('copyLabel').textContent = `${state.rows.length}줄 복사됨`;
+    setTimeout(() => { $('copyBtn').classList.remove('done'); $('copyLabel').textContent = '엑셀용 복사'; }, 2200);
+    toast('복사했습니다. 엑셀 [작업입력] 시트의 구분 칸(A5)에서 Ctrl+V 하세요.');
+  } else { $('tsvBox').hidden = false; $('tsv').value = text; $('tsv').select(); }
+});
+let toastT = 0;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
+
+/* ───────── 엑셀에서 가져오기 ───────── */
+const LV_OF = t => { t = String(t || '').replace(/\s/g, ''); return t === '대분류' ? 'cat' : t === '작업항목' ? 'item' : 'det'; };
+function cellDay(v) {                                     // 날짜 칸 : 2026-11-28 / 2026.11.28 / 11/28/2026 / 일련번호
+  v = String(v == null ? '' : v).trim(); if (!v) return null;
+  let m = /(\d{4})\D+(\d{1,2})\D+(\d{1,2})/.exec(v); if (m) return toDay(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); if (m) return toDay(+m[3], +m[1], +m[2]);
+  if (/^\d+(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000) return Math.floor(+v) - 25569;
+  return null;
+}
+/* 줄 목록 [구분, 공종, 작업내용, 하단표기, 시작일, 기간, 종료일] → 작업 줄 */
+function rowsFromCells(list) {
+  const out = [];
+  list.forEach(c => {
+    const lvT = String(c[0] || '').trim(), name = String(c[2] || '').trim();
+    if (lvT === '구분' || (!name && !lvT)) return;        // 머리글 · 빈 줄
+    if (!name) return;
+    const lvl = LV_OF(lvT);
+    let s = cellDay(c[4]), d = parseInt(c[5], 10); const e = cellDay(c[6]);
+    if (!(d > 0)) d = (s != null && e != null && e >= s) ? e - s + 1 : null;
+    if (lvl === 'cat') { s = null; d = null; }
+    if (s == null) d = null; else if (!d) d = 1;
+    out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+  });
+  // 세부작업에 날짜가 있는 작업항목의 날짜는 엑셀이 계산해 넣은 요약 값 → 비워 두고 자동으로
+  out.forEach((r, i) => {
+    if (r.lvl !== 'item') return;
+    for (let j = i + 1; j < out.length && out[j].lvl === 'det'; j++) if (out[j].s != null) { r.s = null; r.d = null; break; }
+  });
+  return out;
+}
+function importRows(rows, from) {
+  if (!rows.length) { $('impMsg').textContent = '가져올 작업 줄을 찾지 못했습니다. 구분 · 공종 · 작업내용 · 하단표기 · 시작일 · 기간 순서의 줄이어야 합니다.'; return false; }
+  pushUndo();
+  if ($('impAppend').checked && !state.sample) state.rows = state.rows.concat(rows); else state.rows = rows;
+  state.sample = false; sel.id = null; sel.field = null;
+  renderAll(false, rows.slice(0, 40).map(r => r.id)); save(); showMode();
+  if ($('imp').open) $('imp').close();
+  $('impText').value = ''; $('impFile').value = ''; $('impMsg').textContent = '';
+  toast(`${from}에서 ${rows.length}줄을 가져왔습니다. [되돌리기]로 이전 초안으로 돌아갈 수 있습니다.`);
+  return true;
+}
+const tsvCells = text => text.replace(/\r/g, '').split('\n').filter(l => l.trim()).map(l => l.split('\t'));
+const looksLikeSheet = text => /(^|\n)\s*(대분류|작업항목|세부작업)\t/.test(text);
+
+/* xlsx / xlsm 은 zip : 목록을 읽고 필요한 XML 만 풀어 [작업입력] 시트를 찾음 */
+async function unzip(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder('utf-8');
+  let eo = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+  if (eo < 0) throw new Error('엑셀 파일이 아닙니다.');
+  const n = dv.getUint16(eo + 10, true); let p = dv.getUint32(eo + 16, true); const files = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+      xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    files[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { method, csize, off };
+    p += 46 + nl + xl + cl;
+  }
+  return async name => {
+    const f = files[name]; if (!f) return null;
+    const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true), raw = u8.subarray(start, start + f.csize);
+    if (f.method === 0) return td.decode(raw);
+    if (typeof DecompressionStream === 'undefined') throw new Error('이 브라우저는 파일을 바로 읽지 못합니다. 방법 2(복사해서 붙여넣기)를 써 주세요.');
+    const ab = await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return td.decode(ab);
+  };
+}
+const xml = t => new DOMParser().parseFromString(t, 'application/xml');
+async function readWorkbook(buf) {
+  const get = await unzip(buf);
+  const wbT = await get('xl/workbook.xml'), relT = await get('xl/_rels/workbook.xml.rels');
+  if (!wbT || !relT) throw new Error('엑셀 파일(.xlsm / .xlsx)이 아닙니다.');
+  const sheets = Array.from(xml(wbT).getElementsByTagName('sheet'));
+  const sh = sheets.find(x => x.getAttribute('name') === '작업입력');
+  if (!sh) throw new Error('이 파일에는 [작업입력] 시트가 없습니다. 엑셀에서 초기 설정을 마치고 저장한 파일을 골라 주세요.');
+  const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+  const rel = Array.from(xml(relT).getElementsByTagName('Relationship')).find(x => x.getAttribute('Id') === rid);
+  let path = rel.getAttribute('Target'); path = path.startsWith('/') ? path.slice(1) : 'xl/' + path;
+  const ssT = await get('xl/sharedStrings.xml'), strs = [];
+  if (ssT) Array.from(xml(ssT).getElementsByTagName('si')).forEach(si => {
+    strs.push(Array.from(si.getElementsByTagName('t')).filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join(''));
+  });
+  const list = [];
+  Array.from(xml(await get(path)).getElementsByTagName('row')).forEach(row => {
+    if (+row.getAttribute('r') < 5) return;                // 작업은 5행부터
+    const c = [];
+    Array.from(row.getElementsByTagName('c')).forEach(cell => {
+      const col = (/^[A-Z]+/.exec(cell.getAttribute('r') || '') || [''])[0];
+      if (col.length !== 1 || col > 'G') return;           // A~G 만
+      const t = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0];
+      let val = '';
+      if (t === 's') val = v ? strs[+v.textContent] || '' : '';
+      else if (t === 'inlineStr') val = Array.from(cell.getElementsByTagName('t')).map(x => x.textContent).join('');
+      else val = v ? v.textContent : '';
+      c[col.charCodeAt(0) - 65] = val;
+    });
+    if (c.length) list.push(c);
+  });
+  return list;
+}
+async function importFile(file) {
+  try {
+    $('impMsg').textContent = '';
+    const list = await readWorkbook(await file.arrayBuffer());
+    if (!importRows(rowsFromCells(list), '「' + file.name + '」')) { if (!$('imp').open) openImp(); }
+  } catch (e) { if (!$('imp').open) openImp(); $('impMsg').textContent = e.message || '파일을 읽지 못했습니다.'; }
+}
+function openImp(text) {
+  $('impMsg').textContent = ''; if (text != null) $('impText').value = text;
+  if ($('imp').showModal) $('imp').showModal(); else $('imp').setAttribute('open', '');
+}
+$('impBtn').addEventListener('click', () => openImp());
+$('impClose').addEventListener('click', () => $('imp').close());
+$('impFile').addEventListener('change', () => { const f = $('impFile').files[0]; if (f) importFile(f); });
+$('impGo').addEventListener('click', () => {
+  const t = $('impText').value;
+  if (!t.trim()) { $('impMsg').textContent = '파일을 고르거나, 엑셀에서 복사한 줄을 위 칸에 붙여 넣어 주세요.'; return; }
+  importRows(rowsFromCells(tsvCells(t)), '붙여 넣은 내용');
+});
+// 화면 아무 데나 엑셀 줄을 붙여 넣으면 가져오기 창을 채워서 엶
+document.addEventListener('paste', ev => {
+  if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  const t = (ev.clipboardData || window.clipboardData).getData('text');
+  if (t && looksLikeSheet(t)) { ev.preventDefault(); openImp(t); }
+});
+// 표 위로 엑셀 파일 끌어다 놓기
+(() => {
+  const card = document.querySelector('.sheet-card');
+  const isFile = ev => ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files');
+  card.addEventListener('dragover', ev => { if (isFile(ev)) { ev.preventDefault(); card.classList.add('dropping'); } });
+  card.addEventListener('dragleave', () => card.classList.remove('dropping'));
+  card.addEventListener('drop', ev => {
+    if (!isFile(ev)) return;
+    ev.preventDefault(); card.classList.remove('dropping');
+    const f = ev.dataTransfer.files[0]; if (f) importFile(f);
+  });
+})();
+
+/* 용어 사전 */
+$('dictBtn').addEventListener('click', () => {
+  $('terms').value = state.terms.join('\n'); drawFixes();
+  if ($('dict').showModal) $('dict').showModal(); else $('dict').setAttribute('open', '');
+});
+$('dict').addEventListener('close', () => {
+  state.terms = $('terms').value.split(/\n/).map(s => s.trim()).filter(Boolean); store.set('terms', state.terms);
+});
+function drawFixes() {
+  const ks = Object.keys(state.fixes);
+  $('fixes').innerHTML = ks.length ? ks.map(k => `<div><span>${esc(k)}</span><span>→ ${esc(state.fixes[k])}</span><button type="button" data-k="${esc(k)}" aria-label="지우기">×</button></div>`).join('')
+    : '<div><span style="text-decoration:none">아직 없습니다.</span></div>';
+}
+$('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (k == null) return; delete state.fixes[k]; store.set('fixes', state.fixes); drawFixes(); });
+
+/* ───────── 시작 ───────── */
+function sampleRows() {
+  const t = fromDay(todayDay), d = (off) => todayDay + off;
+  void t;
+  return [
+    { lvl: 'cat', trade: '공사', name: '불기어 교체', s: null, d: null },
+    { lvl: 'item', trade: '토목', name: '불기어 기초작업', s: d(3), d: 3 },
+    { lvl: 'item', trade: '기계', name: '패딩작업', s: d(5), d: 2 },
+    { lvl: 'item', trade: '기계', name: '불기어 설치', s: null, d: null },
+    { lvl: 'det', trade: '', name: '인양 · 가조립', s: d(7), d: 2 },
+    { lvl: 'det', trade: '', name: '센터링', s: d(9), d: 3 },
+    { lvl: 'item', trade: '기계', name: '시운전', s: d(12), d: 2 }
+  ].map(r => Object.assign({ id: newId(), low: '' }, r));
+}
+(function init() {
+  const t = fromDay(todayDay);
+  $('baseMonth').value = state.base || `${t.y}-${pad(t.m)}`;
+  state.dw = store.get('dw', 26); state.barMode = store.get('barMode', 'ink'); state.fold = !!store.get('fold', false);
+  $('fold').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', (x.dataset.f === '1') === state.fold));
+  $('zoom').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', +x.dataset.z === state.dw));
+  $('barMode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === state.barMode));
+  const saved = store.get('rows', null);
+  if (saved && saved.length) { state.rows = saved; state.sample = !!store.get('sample', false); }
+  else { state.rows = sampleRows(); state.sample = true; }
+  renderAll(); showMode();
+  if (!SR) { $('mic').disabled = true; $('mic').title = '이 브라우저는 음성 인식을 지원하지 않습니다'; say(MIC_HELP); }
+})();
+window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel, rowsFromCells, tsvCells };
+})();
+</script>
+
+</body>
+</html>

@@ -145,7 +145,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
       <h1>바차트 공정표 사용설명서</h1>
       <p>엑셀 파일 하나로 작업 입력 → 공종색 간트로 조정 → 보고용 바차트 출력까지</p>
     </div>
-    <span class="ver">v0.7.5 기본판 · v0.8.2 시간공정표판 · 공정 받아쓰기 v0.3</span>
+    <span class="ver">v0.7.5 기본판 · v0.8.2 시간공정표판 · 공정 받아쓰기 v0.4</span>
   </div>
 </header>
 
@@ -186,7 +186,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
           <ul class="plain">
             <li><strong>바차트_v0.7.5_붙여넣기보완.xlsm</strong> : 바차트 기본판 (일 단위)</li>
             <li><strong>바차트_v0.8.2_붙여넣기보완.xlsm</strong> : 기본판 + 시간 단위 공정표·직종별 인원/장비 산적표·누적 공수 (<a href="#time">10장</a>). 기본판 기능은 똑같습니다.</li>
-            <li><strong>공정받아쓰기_v0.3_줄지우기.html</strong> : 말로 공정 초안을 만들어 위 엑셀에 붙여 넣는 프로그램 (<a href="#voice">11장</a>)</li>
+            <li><strong>공정받아쓰기_v0.4_엑셀가져오기.html</strong> : 말로 공정 초안을 만들어 위 엑셀에 붙여 넣는 프로그램 (<a href="#voice">11장</a>)</li>
             <li>이전 버전 파일도 download 폴더에 그대로 남겨 두었습니다.</li>
           </ul>
         </li>
@@ -554,7 +554,7 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
     <!-- 11 -->
     <section id="voice">
       <h2><span class="n">11</span>공정 받아쓰기 (음성 초안)</h2>
-      <p class="lead">손으로 한 줄씩 입력하는 대신, 공정을 말하면 작업 줄과 바차트 초안이 생깁니다. 화면에서 다듬은 뒤 엑셀 [작업입력]에 붙여 넣으면 바차트가 됩니다. 설치 없이 <b>공정받아쓰기_v0.3_줄지우기.html</b> 파일을 Chrome 이나 Edge 로 열면 됩니다.</p>
+      <p class="lead">손으로 한 줄씩 입력하는 대신, 공정을 말하면 작업 줄과 바차트 초안이 생깁니다. 화면에서 다듬은 뒤 엑셀 [작업입력]에 붙여 넣으면 바차트가 됩니다. 설치 없이 <b>공정받아쓰기_v0.4_엑셀가져오기.html</b> 파일을 Chrome 이나 Edge 로 열면 됩니다.</p>
       <figure class="wide">
         <div class="shot"><img src="{{img:voice}}" alt="공정 받아쓰기 화면: 위쪽 말하기 칸, 가운데 공정 초안 표와 바차트, 아래 엑셀용 복사"></div>
         <figcaption>위에서 말하고(또는 적고), 가운데에서 다듬고, 아래 [엑셀용 복사]로 보냅니다. 그림은 「패딩작업」 줄을 눌러 고치기 상태가 된 모습입니다.</figcaption>
@@ -609,6 +609,22 @@ kbd { font-family: var(--mono); font-size: 12px; background: var(--kbd); border:
         <li>종료일·대분류 기간·오른쪽 간트가 자동으로 채워집니다. 붙인 줄 아래에 예전 줄이 남아 있으면 지웁니다.</li>
         <li><b>[바차트 생성]</b>을 누릅니다.</li>
       </ol>
+      <h3>엑셀에서 가져오기 (v0.4)</h3>
+      <p>이미 엑셀에 입력해 둔 공정을 이 화면으로 불러와, 말이나 끌기로 고친 뒤 다시 엑셀로 보낼 수 있습니다. 표 아래 <b>[엑셀에서 가져오기]</b>를 누릅니다.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>방법</th><th>하는 법</th></tr></thead>
+          <tbody>
+            <tr><td class="k">엑셀 파일 고르기</td><td>.xlsm / .xlsx 파일을 고르면 [작업입력] 시트를 바로 읽습니다. 공정 초안 표 위로 파일을 끌어다 놓아도 됩니다. 파일은 이 컴퓨터에서만 읽습니다</td></tr>
+            <tr><td class="k">복사해서 붙여넣기</td><td>엑셀 [작업입력]에서 구분~기간(A~F열) 줄을 복사해 창의 칸에 붙여 넣고 [가져오기]. 화면 빈 곳에서 Ctrl+V 를 눌러도 창이 열립니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="plain">
+        <li><b>지금 초안을 바꾸기 / 아래에 붙이기</b> 중에서 고릅니다. 잘못 가져왔으면 [되돌리기].</li>
+        <li>대분류와, 세부작업이 있는 작업항목의 날짜는 엑셀이 계산한 값이므로 비워서 가져오고 화면에서도 자동으로 계산합니다.</li>
+        <li>고친 뒤 엑셀로 되돌릴 때는 [엑셀용 복사] → [작업입력] A5 에 붙여 넣으면 같은 줄이 덮어써집니다. 줄 수가 줄었으면 아래에 남은 줄을 지우세요.</li>
+      </ul>
       <div class="tip"><strong>마이크 버튼이 안 될 때</strong><p>회사 PC 보안 설정이나 브라우저에 따라 마이크 버튼이 막힐 수 있습니다. 그때는 입력 칸을 누른 뒤 <b>Windows 는 Win+H</b>(음성 입력), 휴대폰은 자판의 마이크로 말하면 같은 방식으로 받아 적습니다. 적힌 뒤 Enter 를 누르세요. 음성 인식은 인터넷 연결이 필요합니다.</p></div>
     </section>
   </main>

@@ -243,6 +243,14 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 .fixes div span:first-child { color: var(--ink-3); text-decoration: line-through; }
 .fixes div button { margin-left: auto; border: 0; background: none; color: var(--ink-3); }
 .dlg .acts { display: flex; justify-content: flex-end; gap: 8px; }
+.dlg h4 { margin: 4px 0 0; font-size: 13.5px; }
+.dlg .pick { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dlg .pick input[type="file"] { max-width: 100%; font-size: 13px; }
+.dlg .opt { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; }
+.dlg .opt label { display: inline-flex; gap: 5px; align-items: center; }
+.dlg .msg { min-height: 20px; font-size: 13px; color: var(--rec); }
+#impText { height: 110px; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.sheet-card.dropping { outline: 3px dashed var(--accent); outline-offset: -3px; }
 
 @media (max-width: 900px) {
   :root { --cellw: 600px; }
@@ -261,7 +269,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.3</span>
+    <span class="ver">v0.4</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -325,6 +333,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     </div>
     <div class="addrow">
       <button class="ghost" type="button" id="addRow">+ 줄 추가</button>
+      <button class="ghost" type="button" id="impBtn">엑셀에서 가져오기</button>
       <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
       <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고치고, Delete 키나 줄 끝의 ×로 그 줄을 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
@@ -358,6 +367,26 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     <div class="fixes" id="fixes"></div>
     <div class="acts"><button class="ghost" value="ok">닫기</button></div>
   </form>
+</dialog>
+<dialog id="imp">
+  <div class="dlg">
+    <h3>엑셀에서 가져오기</h3>
+    <p>엑셀 바차트 파일의 [작업입력] 내용을 이 화면으로 불러옵니다. 불러온 뒤 말이나 끌기로 고치고 다시 [엑셀용 복사]로 보낼 수 있습니다.</p>
+    <div class="opt" role="radiogroup" aria-label="가져오는 방법">
+      <label><input type="radio" name="impMode" id="impReplace" value="replace" checked> 지금 초안을 바꾸기</label>
+      <label><input type="radio" name="impMode" id="impAppend" value="append"> 지금 초안 아래에 붙이기</label>
+    </div>
+    <h4>방법 1 · 엑셀 파일 고르기</h4>
+    <div class="pick">
+      <input type="file" id="impFile" accept=".xlsm,.xlsx" aria-label="엑셀 파일">
+    </div>
+    <p>.xlsm / .xlsx 파일을 고르면 바로 읽습니다. 파일은 이 컴퓨터에서만 읽고 어디에도 보내지 않습니다. (공정 초안 표 위로 파일을 끌어다 놓아도 됩니다)</p>
+    <h4>방법 2 · 복사해서 붙여넣기</h4>
+    <p>엑셀 [작업입력]에서 구분~기간 칸(A~F열)의 줄을 복사해 아래 칸에 붙여 넣고 [가져오기]를 누르세요.</p>
+    <textarea id="impText" aria-label="엑셀에서 복사한 내용" spellcheck="false"></textarea>
+    <div class="msg" id="impMsg" role="alert"></div>
+    <div class="acts"><button class="ghost" type="button" id="impClose">닫기</button><button class="primary" type="button" id="impGo" style="font-size:14px;padding:7px 16px">가져오기</button></div>
+  </div>
 </dialog>
 <div class="toast" id="toast" role="status"></div>
 
@@ -930,7 +959,7 @@ function rowHtml(r, i) {
   const sp = spanOf(i), auto = r.lvl === 'cat' || (r.lvl === 'item' && sp);
   const e = r.s != null && r.d ? r.s + r.d - 1 : null;
   const lv = Object.keys(LV).map(k => `<option value="${k}"${k === r.lvl ? ' selected' : ''}>${LV[k]}</option>`).join('');
-  const tr = Object.keys(TRADES).map(k => `<option value="${k}"${k === r.trade ? ' selected' : ''}>${k || '–'}</option>`).join('');
+  const tr = Object.keys(TRADES).concat(r.trade in TRADES ? [] : [r.trade]).map(k => `<option value="${esc(k)}"${k === r.trade ? ' selected' : ''}>${esc(k) || '–'}</option>`).join('');
   return `<div class="row lv-${r.lvl}" data-id="${r.id}">
     <div class="cells">
       <button class="grip c-grip" type="button" aria-label="${esc(r.name)} 순서 바꾸기 (Alt+위·아래 화살표)"><svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg></button>
@@ -1128,8 +1157,8 @@ $('clearAll').addEventListener('click', () => {
 $('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; state.sample = false; renderAll(); save(); $('sayInput').focus(); });
 $('undoBtn').addEventListener('click', doUndo);
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && sel.id && !$('dict').open) { setSel(null); if (document.activeElement && document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
-  if (ev.key === 'Delete' && sel.id && !$('dict').open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) { ev.preventDefault(); deleteRow(sel.id); return; }
+  if (ev.key === 'Escape' && sel.id && !$('dict').open && !$('imp').open) { setSel(null); if (document.activeElement && document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
+  if (ev.key === 'Delete' && sel.id && !$('dict').open && !$('imp').open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) { ev.preventDefault(); deleteRow(sel.id); return; }
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { ev.preventDefault(); doUndo(); }
 });
 $('zoom').addEventListener('click', ev => {
@@ -1167,6 +1196,144 @@ $('copyBtn').addEventListener('click', async () => {
 });
 let toastT = 0;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200); }
+
+/* ───────── 엑셀에서 가져오기 ───────── */
+const LV_OF = t => { t = String(t || '').replace(/\s/g, ''); return t === '대분류' ? 'cat' : t === '작업항목' ? 'item' : 'det'; };
+function cellDay(v) {                                     // 날짜 칸 : 2026-11-28 / 2026.11.28 / 11/28/2026 / 일련번호
+  v = String(v == null ? '' : v).trim(); if (!v) return null;
+  let m = /(\d{4})\D+(\d{1,2})\D+(\d{1,2})/.exec(v); if (m) return toDay(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); if (m) return toDay(+m[3], +m[1], +m[2]);
+  if (/^\d+(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000) return Math.floor(+v) - 25569;
+  return null;
+}
+/* 줄 목록 [구분, 공종, 작업내용, 하단표기, 시작일, 기간, 종료일] → 작업 줄 */
+function rowsFromCells(list) {
+  const out = [];
+  list.forEach(c => {
+    const lvT = String(c[0] || '').trim(), name = String(c[2] || '').trim();
+    if (lvT === '구분' || (!name && !lvT)) return;        // 머리글 · 빈 줄
+    if (!name) return;
+    const lvl = LV_OF(lvT);
+    let s = cellDay(c[4]), d = parseInt(c[5], 10); const e = cellDay(c[6]);
+    if (!(d > 0)) d = (s != null && e != null && e >= s) ? e - s + 1 : null;
+    if (lvl === 'cat') { s = null; d = null; }
+    if (s == null) d = null; else if (!d) d = 1;
+    out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+  });
+  // 세부작업에 날짜가 있는 작업항목의 날짜는 엑셀이 계산해 넣은 요약 값 → 비워 두고 자동으로
+  out.forEach((r, i) => {
+    if (r.lvl !== 'item') return;
+    for (let j = i + 1; j < out.length && out[j].lvl === 'det'; j++) if (out[j].s != null) { r.s = null; r.d = null; break; }
+  });
+  return out;
+}
+function importRows(rows, from) {
+  if (!rows.length) { $('impMsg').textContent = '가져올 작업 줄을 찾지 못했습니다. 구분 · 공종 · 작업내용 · 하단표기 · 시작일 · 기간 순서의 줄이어야 합니다.'; return false; }
+  pushUndo();
+  if ($('impAppend').checked && !state.sample) state.rows = state.rows.concat(rows); else state.rows = rows;
+  state.sample = false; sel.id = null; sel.field = null;
+  renderAll(false, rows.slice(0, 40).map(r => r.id)); save(); showMode();
+  if ($('imp').open) $('imp').close();
+  $('impText').value = ''; $('impFile').value = ''; $('impMsg').textContent = '';
+  toast(`${from}에서 ${rows.length}줄을 가져왔습니다. [되돌리기]로 이전 초안으로 돌아갈 수 있습니다.`);
+  return true;
+}
+const tsvCells = text => text.replace(/\r/g, '').split('\n').filter(l => l.trim()).map(l => l.split('\t'));
+const looksLikeSheet = text => /(^|\n)\s*(대분류|작업항목|세부작업)\t/.test(text);
+
+/* xlsx / xlsm 은 zip : 목록을 읽고 필요한 XML 만 풀어 [작업입력] 시트를 찾음 */
+async function unzip(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder('utf-8');
+  let eo = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+  if (eo < 0) throw new Error('엑셀 파일이 아닙니다.');
+  const n = dv.getUint16(eo + 10, true); let p = dv.getUint32(eo + 16, true); const files = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true),
+      xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    files[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { method, csize, off };
+    p += 46 + nl + xl + cl;
+  }
+  return async name => {
+    const f = files[name]; if (!f) return null;
+    const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true), raw = u8.subarray(start, start + f.csize);
+    if (f.method === 0) return td.decode(raw);
+    if (typeof DecompressionStream === 'undefined') throw new Error('이 브라우저는 파일을 바로 읽지 못합니다. 방법 2(복사해서 붙여넣기)를 써 주세요.');
+    const ab = await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return td.decode(ab);
+  };
+}
+const xml = t => new DOMParser().parseFromString(t, 'application/xml');
+async function readWorkbook(buf) {
+  const get = await unzip(buf);
+  const wbT = await get('xl/workbook.xml'), relT = await get('xl/_rels/workbook.xml.rels');
+  if (!wbT || !relT) throw new Error('엑셀 파일(.xlsm / .xlsx)이 아닙니다.');
+  const sheets = Array.from(xml(wbT).getElementsByTagName('sheet'));
+  const sh = sheets.find(x => x.getAttribute('name') === '작업입력');
+  if (!sh) throw new Error('이 파일에는 [작업입력] 시트가 없습니다. 엑셀에서 초기 설정을 마치고 저장한 파일을 골라 주세요.');
+  const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+  const rel = Array.from(xml(relT).getElementsByTagName('Relationship')).find(x => x.getAttribute('Id') === rid);
+  let path = rel.getAttribute('Target'); path = path.startsWith('/') ? path.slice(1) : 'xl/' + path;
+  const ssT = await get('xl/sharedStrings.xml'), strs = [];
+  if (ssT) Array.from(xml(ssT).getElementsByTagName('si')).forEach(si => {
+    strs.push(Array.from(si.getElementsByTagName('t')).filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join(''));
+  });
+  const list = [];
+  Array.from(xml(await get(path)).getElementsByTagName('row')).forEach(row => {
+    if (+row.getAttribute('r') < 5) return;                // 작업은 5행부터
+    const c = [];
+    Array.from(row.getElementsByTagName('c')).forEach(cell => {
+      const col = (/^[A-Z]+/.exec(cell.getAttribute('r') || '') || [''])[0];
+      if (col.length !== 1 || col > 'G') return;           // A~G 만
+      const t = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0];
+      let val = '';
+      if (t === 's') val = v ? strs[+v.textContent] || '' : '';
+      else if (t === 'inlineStr') val = Array.from(cell.getElementsByTagName('t')).map(x => x.textContent).join('');
+      else val = v ? v.textContent : '';
+      c[col.charCodeAt(0) - 65] = val;
+    });
+    if (c.length) list.push(c);
+  });
+  return list;
+}
+async function importFile(file) {
+  try {
+    $('impMsg').textContent = '';
+    const list = await readWorkbook(await file.arrayBuffer());
+    if (!importRows(rowsFromCells(list), '「' + file.name + '」')) { if (!$('imp').open) openImp(); }
+  } catch (e) { if (!$('imp').open) openImp(); $('impMsg').textContent = e.message || '파일을 읽지 못했습니다.'; }
+}
+function openImp(text) {
+  $('impMsg').textContent = ''; if (text != null) $('impText').value = text;
+  if ($('imp').showModal) $('imp').showModal(); else $('imp').setAttribute('open', '');
+}
+$('impBtn').addEventListener('click', () => openImp());
+$('impClose').addEventListener('click', () => $('imp').close());
+$('impFile').addEventListener('change', () => { const f = $('impFile').files[0]; if (f) importFile(f); });
+$('impGo').addEventListener('click', () => {
+  const t = $('impText').value;
+  if (!t.trim()) { $('impMsg').textContent = '파일을 고르거나, 엑셀에서 복사한 줄을 위 칸에 붙여 넣어 주세요.'; return; }
+  importRows(rowsFromCells(tsvCells(t)), '붙여 넣은 내용');
+});
+// 화면 아무 데나 엑셀 줄을 붙여 넣으면 가져오기 창을 채워서 엶
+document.addEventListener('paste', ev => {
+  if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+  const t = (ev.clipboardData || window.clipboardData).getData('text');
+  if (t && looksLikeSheet(t)) { ev.preventDefault(); openImp(t); }
+});
+// 표 위로 엑셀 파일 끌어다 놓기
+(() => {
+  const card = document.querySelector('.sheet-card');
+  const isFile = ev => ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files');
+  card.addEventListener('dragover', ev => { if (isFile(ev)) { ev.preventDefault(); card.classList.add('dropping'); } });
+  card.addEventListener('dragleave', () => card.classList.remove('dropping'));
+  card.addEventListener('drop', ev => {
+    if (!isFile(ev)) return;
+    ev.preventDefault(); card.classList.remove('dropping');
+    const f = ev.dataTransfer.files[0]; if (f) importFile(f);
+  });
+})();
 
 /* 용어 사전 */
 $('dictBtn').addEventListener('click', () => {
@@ -1210,6 +1377,6 @@ function sampleRows() {
   renderAll(); showMode();
   if (!SR) { $('mic').disabled = true; $('mic').title = '이 브라우저는 음성 인식을 지원하지 않습니다'; say(MIC_HELP); }
 })();
-window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel };
+window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel, rowsFromCells, tsvCells };
 })();
 </script>

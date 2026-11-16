@@ -13,7 +13,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 SRC = os.path.join(ROOT, "voice", "app_src.html")
-OUT = os.path.join(ROOT, "download", "공정받아쓰기_v0.3_줄지우기.html")
+OUT = os.path.join(ROOT, "download", "공정받아쓰기_v0.4_엑셀가져오기.html")
 
 
 def main():
