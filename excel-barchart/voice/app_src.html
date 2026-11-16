@@ -30,13 +30,14 @@
   --mono: "IBM Plex Mono", "D2Coding", Consolas, "Malgun Gothic", monospace;
   --dw: 26px;          /* 하루 폭 */
   --rowh: 44px;
-  --cellw: 664px;      /* 왼쪽 표 폭 */
+  --w-grip: 26px; --w-lvl: 84px; --w-trade: 70px; --w-name: 240px; --w-start: 132px; --w-dur: 52px; --w-end: 72px; --w-act: 52px;
+  --grid: #e1e5ea;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
     --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
-    --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830;
+    --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830; --grid: #2a333d;
     --cat: #1e2a39; --bar: #e5eaf0;
     --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
     color-scheme: dark;
@@ -45,7 +46,7 @@
 :root[data-theme="dark"] {
   --bg: #11151a; --surface: #192027; --surface-2: #202831; --ink: #e5eaf0; --ink-2: #a2aebb; --ink-3: #6c7885;
   --rule: #333d49; --rule-2: #27303a; --accent: #6ba6ff; --accent-ink: #0c1622; --accent-soft: #1b2b45;
-  --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830;
+  --rec: #ff6f60; --rec-soft: #3b201d; --ok: #4fc487; --sat: #6ba6ff; --sun: #ff7d70; --weekend: #25272a; --night: #212830; --grid: #2a333d;
   --cat: #1e2a39; --bar: #e5eaf0;
   --head: #22303f; --lift: 0 10px 30px rgba(0, 0, 0, .55);
   color-scheme: dark;
@@ -60,7 +61,9 @@ body {
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+/* 왼쪽 표 폭 = 열 너비의 합 (탭마다 시작·기간·종료 칸 너비가 달라 .wrap 에서 계산) */
+.wrap { --cellw: calc(var(--w-grip) + var(--w-lvl) + var(--w-trade) + var(--w-name) + var(--w-start) + var(--w-dur) + var(--w-end) + var(--w-act)); }
+.wrap { max-width: none; margin: 0 auto; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 /* ── 머리 ── */
@@ -129,40 +132,49 @@ button { cursor: pointer; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .sample { margin: 0; padding: 8px 14px; background: var(--accent-soft); font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-.sheet { overflow-x: auto; position: relative; -webkit-overflow-scrolling: touch; }
+.sheet { overflow: auto; position: relative; -webkit-overflow-scrolling: touch; max-height: max(340px, calc(100vh - 124px)); }
 .grid { position: relative; width: max-content; min-width: 100%; }
 .cols { position: absolute; top: 0; bottom: 0; left: var(--cellw); pointer-events: none; }
 .cols i { position: absolute; top: 0; bottom: 0; width: var(--dw); background: var(--weekend); }
 .cols b { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--rule); }
+.cols b.m { border-left-color: var(--ink-3); }
 .cols u { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px dashed var(--rec); opacity: .7; }
 .hrow, .row { display: flex; position: relative; }
-.hrow { border-bottom: 1.5px solid var(--ink); }
-.cells { flex: none; width: var(--cellw); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px;
+.hrow { border-bottom: 1.5px solid var(--ink); position: sticky; top: 0; z-index: 4; }
+.cells { flex: none; width: var(--cellw); display: flex; align-items: stretch; gap: 0; padding: 0;
   position: sticky; left: 0; z-index: 2; background: var(--surface); border-right: 1.5px solid var(--ink); }
+.cells > * { flex: none; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 0 3px; border-left: 1px solid var(--rule); text-align: center; }
+.cells > :first-child { border-left: 0; }
 .hrow { background: var(--head); }
-.hrow .cells { background: var(--head); font-size: 12px; font-weight: 600; color: var(--ink); height: 46px; }
+.hrow .cells { background: var(--head); font-size: 12px; font-weight: 600; color: var(--ink); height: 46px; z-index: 5; }
+.hrow .cells > * { position: relative; }
 .track { flex: none; position: relative; }
-.c-grip { width: 24px; flex: none; } .c-lvl { width: 84px; flex: none; } .c-trade { width: 70px; flex: none; }
-.c-name { flex: 1; min-width: 0; } .c-start { width: 128px; flex: none; } .c-dur { width: 52px; flex: none; text-align: center; }
-.c-end { width: 68px; flex: none; text-align: center; } .c-del { width: 26px; flex: none; }
+.row .track { background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px); background-size: var(--dw) 100%; }
+.c-grip { width: var(--w-grip); } .c-lvl { width: var(--w-lvl); } .c-trade { width: var(--w-trade); } .c-name { width: var(--w-name); }
+.c-start { width: var(--w-start); } .c-dur { width: var(--w-dur); } .c-end { width: var(--w-end); } .c-del { width: var(--w-act); gap: 2px; }
+/* 열 너비 조절 손잡이 */
+.rz { position: absolute; right: -5px; top: 0; bottom: 0; width: 9px; cursor: col-resize; z-index: 7; touch-action: none; }
+.rz::after { content: ""; position: absolute; left: 3px; top: 0; bottom: 0; width: 3px; background: var(--accent); opacity: 0; transition: opacity .12s; }
+.rz:hover::after, .rz.on::after { opacity: .75; }
 .months, .days { display: flex; height: 23px; }
-.months span { flex: none; font-size: 12px; font-weight: 600; padding-left: 6px; line-height: 23px; border-left: 1px solid var(--rule); white-space: nowrap; overflow: hidden; }
-.days span { flex: none; width: var(--dw); text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 23px; color: var(--ink-2); }
+.months span { flex: none; font-size: 12px; font-weight: 600; padding-left: 6px; line-height: 23px; border-left: 1px solid var(--ink-3); border-bottom: 1px solid var(--rule); white-space: nowrap; overflow: hidden; }
+.days span { flex: none; width: var(--dw); text-align: center; font-family: var(--mono); font-size: 10.5px; line-height: 23px; color: var(--ink-2); border-left: 1px solid var(--rule); }
 .days span.sat, .months span.sat { color: var(--sat); } .days span.sun, .months span.sun { color: var(--sun); }
 /* 시간 단위 탭 : 시작 칸이 날짜+시각이라 넓음, 머리글 윗줄은 날짜 */
-.tm { --cellw: 800px; }
-.tm .c-start { width: 208px; } .tm .c-dur { width: 58px; } .tm .c-end { width: 96px; }
+.tm { --w-start: 212px; --w-dur: 58px; --w-end: 98px; }
 .tm .months span { text-align: center; padding-left: 0; }
 .tm .cols i { background: var(--night); }
 .days span.today { background: var(--rec); color: #fff; border-radius: 3px; }
 
-.row { height: var(--rowh); border-bottom: 1px solid var(--rule-2); }
+.row { height: var(--rowh); border-bottom: 1px solid var(--rule); scroll-margin-top: 52px; }
 #rows > .row:last-child { border-bottom: 0; }
-.row.lv-cat { background: var(--cat); }
 .row.lv-cat .cells { background: var(--cat); }
+.row.lv-cat .track { background-color: color-mix(in srgb, var(--cat) 82%, transparent); }   /* 주말 · 월 경계선이 비쳐 보이게 */
 .row.lv-cat .name { font-weight: 700; }
-.row.lv-item .name { padding-left: 14px; font-weight: 500; }
-.row.lv-det .name { padding-left: 30px; color: var(--ink-2); }
+.row.lv-item .name { font-weight: 500; }
+.row.lv-det .name { color: var(--ink-2); }
+.row .name { text-align: center; }
+.row select { text-align: center; text-align-last: center; }
 .row input, .row select { height: 30px; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0 6px; min-width: 0; width: 100%; }
 .row select { padding: 0 2px; font-size: 12.5px; }
 .row input:hover, .row select:hover { border-color: var(--rule); }
@@ -172,14 +184,19 @@ button { cursor: pointer; }
 .row .dur::-webkit-outer-spin-button, .row .dur::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .row .end { font-family: var(--mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
 .row .auto { color: var(--ink-3); font-size: 12px; }
-.grip { width: 24px; height: 30px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: grab; touch-action: none; border-radius: 4px; }
+.grip { width: var(--w-grip); height: 30px; align-self: center; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: grab; touch-action: none; border-radius: 4px; }
 .grip:hover { background: var(--rule-2); }
 .grip svg { width: 10px; height: 16px; fill: var(--ink-3); }
-.del { width: 24px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; }
+.row .add { width: 22px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; padding: 0; }
+.row:hover .add, .row .add:focus-visible { opacity: 1; }
+.row .add:hover { background: var(--accent-soft); color: var(--accent); }
+@media (hover: none) { .row .add { opacity: 1; } }
+.del { padding: 0; width: 22px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; }
 .row:hover .del, .del:focus-visible { opacity: 1; }
 .del:hover { background: var(--rec-soft); color: var(--rec); }
 @media (hover: none) { .del { opacity: 1; } }
-.row.sel, .row.sel .cells { background: var(--accent-soft); }
+.row.sel .cells { background: var(--accent-soft); }
+.row.sel .track { background-color: color-mix(in srgb, var(--accent-soft) 80%, transparent); }
 .row.sel .cells { box-shadow: inset 3px 0 0 var(--accent); }
 .row input.target { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
 .bar.sel .line { background: var(--accent); height: 5px; top: 29px; }
@@ -271,12 +288,15 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 #impText { height: 110px; font-family: var(--mono); font-size: 12px; white-space: pre; }
 .sheet-card.dropping { outline: 3px dashed var(--accent); outline-offset: -3px; }
 
+/* 오른쪽 단추 차림표 */
+.menu { position: fixed; z-index: 40; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 4px; box-shadow: var(--lift); padding: 4px; display: grid; min-width: 170px; }
+.menu button { border: 0; background: none; text-align: left; padding: 7px 12px; border-radius: 3px; font-size: 13.5px; }
+.menu button:hover, .menu button:focus-visible { background: var(--accent-soft); }
+.menu button.danger:hover { background: var(--rec-soft); color: var(--rec); }
+.menu hr { border: 0; border-top: 1px solid var(--rule); margin: 4px 0; }
 @media (max-width: 900px) {
-  :root { --cellw: 600px; }
-  .tm { --cellw: 740px; }
-  .c-name { min-width: 150px; }
+  :root { --w-lvl: 76px; --w-trade: 62px; --w-name: 160px; --w-start: 124px; }
   .cells { position: static; }
-  .c-trade { width: 62px; } .c-lvl { width: 76px; } .c-start { width: 122px; }
   .say-foot label { margin-left: 0; }
   .top .ver { margin-left: 0; }
 }
@@ -289,7 +309,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.6</span>
+    <span class="ver">v0.7</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -343,7 +363,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
         <div class="cols" id="cols"></div>
         <div class="hrow">
           <div class="cells">
-            <span class="c-grip"></span><span class="c-lvl">구분</span><span class="c-trade">공종</span><span class="c-name">작업내용</span>
+            <span class="c-grip"></span><span class="c-lvl">구분<i class="rz" data-c="lvl" title="끌어서 너비 조절"></i></span><span class="c-trade">공종<i class="rz" data-c="trade" title="끌어서 너비 조절"></i></span><span class="c-name">작업내용<i class="rz" data-c="name" title="끌어서 너비 조절 · 두 번 누르면 가장 긴 이름에 맞춤"></i></span>
             <span class="c-start" id="hStart">시작일</span><span class="c-dur" id="hDur">기간</span><span class="c-end">종료</span><span class="c-del"></span>
           </div>
           <div class="track" id="htrack"><div class="months" id="months"></div><div class="days" id="days"></div></div>
@@ -356,7 +376,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <button class="ghost" type="button" id="impBtn">엑셀에서 가져오기</button>
       <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
-      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고치고, Delete 키나 줄 끝의 ×로 그 줄을 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
+      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고칩니다. 줄 끝의 +(또는 오른쪽 단추)로 그 아래에 줄을 넣고, ×나 Delete 키로 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가 바뀝니다.</span>
     </div>
   </section>
 
@@ -418,6 +438,12 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     <div class="acts"><button class="ghost" type="button" id="impClose">닫기</button><button class="primary" type="button" id="impGo" style="font-size:14px;padding:7px 16px">가져오기</button></div>
   </div>
 </dialog>
+<div class="menu" id="menu" role="menu" hidden>
+  <button type="button" role="menuitem" data-a="below">아래에 줄 추가</button>
+  <button type="button" role="menuitem" data-a="above">위에 줄 추가</button>
+  <hr>
+  <button type="button" role="menuitem" data-a="del" class="danger">이 줄 지우기</button>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -838,7 +864,8 @@ const DAYM = {
     const monthSpan = (key, n) => { const [y, m] = key.split('-'); return `<span style="width:${n * dw}px">${n * dw > 70 ? y + '년 ' : ''}${m}월</span>`; };
     for (let i = 0; i < range.len; i++) {
       const day = range.a + i, o = fromDay(day), key = o.y + '-' + o.m;
-      if (key !== cur) { if (cur) mh += monthSpan(cur, run); cur = key; run = 0; if (i) ch += `<b style="left:${i * dw}px"></b>`; }
+      if (key !== cur) { if (cur) mh += monthSpan(cur, run); cur = key; run = 0; if (i) ch += `<b class="m" style="left:${i * dw}px"></b>`; }
+      else if (o.w === 1) ch += `<b style="left:${i * dw}px"></b>`;                     // 월요일 : 주 구분선
       run++;
       const cls = (o.w === 6 ? 'sat' : o.w === 0 ? 'sun' : '') + (day === todayDay ? ' today' : '');
       dh += `<span class="${cls}" title="${o.m}/${o.d} (${WD[o.w]})">${dw >= 22 || o.d === 1 || o.w === 1 ? o.d : ''}</span>`;
@@ -1299,8 +1326,16 @@ $('live').addEventListener('click', ev => { if (ev.target.hasAttribute('data-und
 /* ───────── 시트 그리기 ───────── */
 let range = { a: 0, len: 1 };
 const px = v => (v - range.a) * M.ppu();
+/* 그릴 범위 : 작업 범위를 기본으로, 화면이 더 넓으면 오른쪽 끝까지 채움 */
+function viewRange() {
+  const r = M.range(), cells = document.querySelector('.hrow .cells');
+  const avail = $('sheet').clientWidth - (cells ? cells.offsetWidth : 0), unit = M.key === 'time' ? 1440 : 1;
+  const need = Math.ceil(avail / M.ppu() / unit) * unit;
+  if (need > r.len && need < r.len * 6 + 400 * unit) r.len = need;
+  return r;
+}
 function drawHead() {
-  range = M.range();
+  range = viewRange();
   document.documentElement.style.setProperty('--dw', state.dw + 'px');
   const W = range.len * M.ppu(), h = M.head();
   $('htrack').style.width = W + 'px';
@@ -1337,15 +1372,27 @@ function rowHtml(r, i) {
       <button class="grip c-grip" type="button" aria-label="${esc(r.name)} 순서 바꾸기 (Alt+위·아래 화살표)"><svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg></button>
       <span class="c-lvl"><select class="lvl" id="lv_${r.id}" aria-label="구분">${lv}</select></span>
       <span class="c-trade"><select class="trade" id="tr_${r.id}" aria-label="공종">${tr}</select></span>
-      <span class="c-name"><input class="name" id="nm_${r.id}" value="${esc(r.name)}" aria-label="작업내용" spellcheck="false"></span>
+      <span class="c-name"><input class="name" id="nm_${r.id}" value="${esc(r.name)}" title="${esc(r.name)}" aria-label="작업내용" spellcheck="false"></span>
       ${auto ? `<span class="c-start auto">${sp ? M.fmt(sp.a) + ' ~' : '아래 작업 범위'}</span><span class="c-dur auto">${sp ? M.durNum(sp.b - sp.a + M.inc) : ''}</span><span class="c-end auto">${sp ? M.fmt(sp.b) : '자동'}</span>`
         : `<span class="c-start">${M.startInput(r)}</span><span class="c-dur">${M.durInput(r)}</span>
            <span class="c-end end">${r.s != null && r.d ? M.fmtW(M.endOf(r)) : ''}</span>`}
-      <span class="c-del"><button class="del" type="button" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
+      <span class="c-del"><button class="add" type="button" title="이 줄 아래에 줄 추가" aria-label="${esc(r.name)} 아래에 줄 추가">+</button><button class="del" type="button" title="이 줄 지우기" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
     </div>
     <div class="track" style="width:${range.len * M.ppu()}px">${barHtml(r, i)}</div>
   </div>`;
 }
+/* 긴 작업내용 : 한 줄에 다 보이도록 글자를 줄임 (가장 작게 9px) */
+const meas = document.createElement('canvas').getContext('2d');
+function fitName(inp) {
+  inp.style.fontSize = '';
+  const cs = getComputedStyle(inp), base = parseFloat(cs.fontSize) || 14, avail = inp.clientWidth - 12;
+  meas.font = `${cs.fontWeight} ${base}px ${cs.fontFamily}`;
+  const w = meas.measureText(inp.value).width;
+  if (avail > 20 && w > avail) inp.style.fontSize = Math.max(9, Math.floor(base * avail / w * 10) / 10) + 'px';
+  inp.title = inp.value;
+}
+const fitNames = () => $('rows').querySelectorAll('input.name').forEach(fitName);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitNames());
 const rowEl = id => $('rows').querySelector(`.row[data-id="${id}"]`);
 const rowIdx = id => state.rows.findIndex(r => r.id === id);
 function renderAll(flip, enterIds) {
@@ -1358,6 +1405,7 @@ function renderAll(flip, enterIds) {
   let a = null, b = null, n = 0;
   state.rows.forEach(r => { if (r.s != null && r.d) { n++; const e = M.endOf(r); a = a == null ? r.s : Math.min(a, r.s); b = b == null ? e : Math.max(b, e); } });
   const hid = folded() ? state.rows.filter(r => r.lvl === M.leaf).length : 0;
+  fitNames();
   $('sum').textContent = state.rows.length ? `${state.rows.length}줄 · ${M.key === 'day' ? '날짜' : '시각'} 있는 작업 ${n}개${n ? ' · ' + M.sumTxt(a, b) : ''}${hid ? ` · ${M.LV[M.leaf]} ${hid}줄 접힘` : ''}` : '';
   applySel();
   if (enterIds) enterIds.forEach(id => { const el = rowEl(id); if (el) { el.classList.add('enter'); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); scrollToBar(el); } });
@@ -1377,7 +1425,7 @@ function scrollToBar(el) {
 }
 /* 값만 바뀐 줄 : 표는 그대로 두고 바와 요약만 다시 */
 function refreshBars() {
-  const before = range.a + ':' + range.len, nr = M.range();
+  const before = range.a + ':' + range.len, nr = viewRange();
   if (before !== nr.a + ':' + nr.len) drawHead();
   state.rows.forEach((r, i) => {
     const el = rowEl(r.id); if (!el) return;
@@ -1415,6 +1463,7 @@ $('rows').addEventListener('input', ev => {
   if (!ev.target.classList.contains('name')) return;
   const el = ev.target.closest('.row'), lbl = el.querySelector(`.bar[data-rid="${el.dataset.id}"] .lbl`);
   if (lbl) lbl.firstChild.textContent = ev.target.value;
+  fitName(ev.target);
 });
 function deleteRow(id) {                                  // 한 줄만 지움 (딸린 줄은 남아 위 줄에 붙음)
   const i = rowIdx(id); if (i < 0) return;
@@ -1428,6 +1477,8 @@ $('delSel').addEventListener('click', () => { if (sel.id) deleteRow(sel.id); });
 $('rows').addEventListener('click', ev => {
   const d = ev.target.closest('.del');
   if (d) { deleteRow(d.closest('.row').dataset.id); return; }
+  const ad = ev.target.closest('.add');
+  if (ad) { insertRow(rowIdx(ad.closest('.row').dataset.id), 'below'); return; }
   if (ev.target.closest('input, select, button')) return;
   const bar = ev.target.closest('.bar'), el = ev.target.closest('.row'); if (!el) return;
   setSel(bar ? bar.dataset.rid : el.dataset.id, null);
@@ -1506,13 +1557,78 @@ $('rows').addEventListener('pointerdown', ev => {
 });
 
 /* ───────── 단추들 ───────── */
+/* 줄 넣기 : i 줄의 아래(또는 위). 아래에 넣을 때 딸린 줄이 있으면 그 줄들과 같은 단계로 */
+function insertRow(i, where) {
+  pushUndo(); dropSample();
+  const ref = state.rows[i]; let at, lvl;
+  if (where === 'above') { at = i; lvl = ref.lvl; }
+  else { at = i + 1; lvl = blockEnd(i) > i + 1 ? state.rows[i + 1].lvl : (ref.lvl === 'cat' ? 'item' : ref.lvl); }
+  const row = { id: newId(), lvl, trade: '', name: lvl === 'cat' ? '새 대분류' : '새 작업', low: '', s: null, d: null };
+  if (lvl !== 'cat') {
+    row.d = M.defDur;
+    if (where === 'above') row.s = ref.s;
+    else if (ref.s != null && ref.d && !isAuto(i)) row.s = ref.s + ref.d;       // 그 줄이 끝난 바로 뒤
+  } else row.trade = '공사';
+  state.rows.splice(at, 0, row);
+  if (lvl !== 'cat' && row.s == null) {                      // 앞에 날짜 있는 줄이 없으면 바로 다음 줄의 시작에 맞춤
+    const nx = state.rows.slice(at + 1).find(r => r.s != null), hasPrev = !!lastDated(at);
+    row.s = (!hasPrev && nx) ? nx.s : M.defStart(at);
+  }
+  if (folded() && lvl === M.leaf) { state.fold[state.tab] = false; press($('fold'), x => x.dataset.f === '0'); store.set('fold2', state.fold); }
+  renderAll(true, [row.id]); save();
+  const inp = $('nm_' + row.id); if (inp) { inp.focus(); inp.select(); }
+}
 $('addRow').addEventListener('click', () => {
+  const t = target();
+  if (t) { insertRow(t.i, 'below'); return; }               // 줄을 골라 두었으면 그 아래에
   pushUndo(); dropSample();
   const row = { id: newId(), lvl: M.nextLevel(), trade: '', name: '새 작업', low: '', s: null, d: M.defDur };
   state.rows.push(row); row.s = M.defStart(state.rows.length - 1);
   renderAll(false, [row.id]); save();
   const inp = $('nm_' + row.id); if (inp) { inp.focus(); inp.select(); }
 });
+/* 오른쪽 단추 차림표 */
+let menuId = null;
+const closeMenu = () => { $('menu').hidden = true; menuId = null; };
+$('rows').addEventListener('contextmenu', ev => {
+  const el = ev.target.closest('.row'); if (!el) return;
+  ev.preventDefault();
+  menuId = el.dataset.id; setSel(menuId, null);
+  const m = $('menu'); m.hidden = false;
+  const w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = Math.max(4, Math.min(ev.clientX, window.innerWidth - w - 6)) + 'px';
+  m.style.top = Math.max(4, Math.min(ev.clientY, window.innerHeight - h - 6)) + 'px';
+  m.querySelector('button').focus();
+});
+$('menu').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b || !menuId) return;
+  const id = menuId, i = rowIdx(id); closeMenu(); if (i < 0) return;
+  if (b.dataset.a === 'del') deleteRow(id); else insertRow(i, b.dataset.a);
+});
+document.addEventListener('pointerdown', ev => { if (!$('menu').hidden && !ev.target.closest('#menu')) closeMenu(); });
+document.addEventListener('wheel', closeMenu, { passive: true }); window.addEventListener('resize', closeMenu);
+/* 열 너비 조절 : 구분 · 공종 · 작업내용 */
+const COLW = { lvl: [60, 200], trade: [50, 200], name: [90, 700] };
+function setColW(c, w) { document.documentElement.style.setProperty('--w-' + c, Math.round(Math.max(COLW[c][0], Math.min(COLW[c][1], w))) + 'px'); }
+const getColW = c => parseFloat(getComputedStyle(document.querySelector('.hrow .c-' + c)).width);
+const saveColW = () => { const o = {}; Object.keys(COLW).forEach(c => { const v = document.documentElement.style.getPropertyValue('--w-' + c); if (v) o[c] = parseFloat(v); }); store.set('cw', o); };
+document.querySelector('.hrow').addEventListener('pointerdown', ev => {
+  const h = ev.target.closest('.rz'); if (!h) return;
+  ev.preventDefault();
+  const c = h.dataset.c, w0 = getColW(c), x0 = ev.clientX;
+  h.setPointerCapture(ev.pointerId); h.classList.add('on');
+  const move = mv => setColW(c, w0 + mv.clientX - x0);
+  const up = () => { h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); h.classList.remove('on'); saveColW(); renderAll(); };
+  h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+});
+document.querySelector('.hrow').addEventListener('dblclick', ev => {
+  const h = ev.target.closest('.rz'); if (!h || h.dataset.c !== 'name') return;
+  let mx = 90;
+  $('rows').querySelectorAll('input.name').forEach(inp => { const cs = getComputedStyle(inp); meas.font = `${cs.fontWeight} 14px ${cs.fontFamily}`; mx = Math.max(mx, meas.measureText(inp.value).width + 26); });
+  setColW('name', mx); saveColW(); renderAll();
+});
+let rsT = 0;
+window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { if (!document.activeElement.closest('#rows')) renderAll(); }, 200); });
 let clearArmed = 0;
 $('clearAll').addEventListener('click', () => {
   if (!state.rows.length) return;
@@ -1524,6 +1640,7 @@ $('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; 
 $('undoBtn').addEventListener('click', doUndo);
 document.addEventListener('keydown', ev => {
   const dlg = $('dict').open || $('imp').open, tag = document.activeElement.tagName;
+  if (ev.key === 'Escape' && !$('menu').hidden) { closeMenu(); return; }
   if (ev.key === 'Escape' && sel.id && !dlg) { setSel(null); if (document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
   if (ev.key === 'Delete' && sel.id && !dlg && !/^(INPUT|TEXTAREA)$/.test(tag)) { ev.preventDefault(); deleteRow(sel.id); return; }
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) { ev.preventDefault(); doUndo(); }
@@ -1794,7 +1911,7 @@ $('fileName').addEventListener('change', () => store.set('name', $('fileName').v
 
 /* 그림 : 지금 보이는 탭의 표와 바차트를 밝은 색으로 다시 그림 */
 function drawPng() {
-  const T = M.key === 'time';
+  const T = M.key === 'time', range = M.range();           // 그림은 작업 범위까지만
   const vis = []; state.rows.forEach((r, i) => { if (!(folded() && r.lvl === M.leaf)) vis.push(i); });
   const C = { ink: '#17212c', ink2: '#536070', ink3: '#8894a1', rule: '#d3d9e0', rule2: '#e7ebef', head: '#dce8f4', cat: '#e3edf8', wk: '#fbf5dd', night: '#f1f3f5', sat: '#1b6cc2', sun: '#cf3d2e' };
   const W1 = 240, W2 = T ? 92 : 62, W3 = T ? 46 : 40, W4 = T ? 92 : 62, L = W1 + W2 + W3 + W4, pad0 = 18, titleH = 46, hh = 22, rh = 36;
@@ -1919,6 +2036,7 @@ $('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (
   $('baseMonth').value = state.base || `${t.y}-${pad(t.m)}`;
   $('fileName').value = store.get('name', '공정초안') || '공정초안';
   state.dw = store.get('dw', 26); state.slotH = store.get('slotH', 2); state.barMode = store.get('barMode', 'ink');
+  const cw = store.get('cw', null); if (cw) Object.keys(COLW).forEach(c => { if (cw[c]) setColW(c, cw[c]); });
   const f = store.get('fold2', null); if (f) state.fold = { day: !!f.day, time: !!f.time };
   press($('zoom'), x => +x.dataset.z === state.dw); press($('slot'), x => +x.dataset.h === state.slotH); press($('barMode'), x => x.dataset.m === state.barMode);
   const saved = store.get('tabs', null), oldRows = store.get('rows', null);          // rows = v0.5 까지의 저장 (일 단위만)
