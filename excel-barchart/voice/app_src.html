@@ -165,7 +165,7 @@ button { cursor: pointer; }
 .grip { width: 24px; height: 30px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: grab; touch-action: none; border-radius: 4px; }
 .grip:hover { background: var(--rule-2); }
 .grip svg { width: 10px; height: 16px; fill: var(--ink-3); }
-.del { width: 24px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: 0; transition: opacity .12s; }
+.del { width: 24px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; }
 .row:hover .del, .del:focus-visible { opacity: 1; }
 .del:hover { background: var(--rec-soft); color: var(--rec); }
 @media (hover: none) { .del { opacity: 1; } }
@@ -261,7 +261,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.2</span>
+    <span class="ver">v0.3</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -325,8 +325,9 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
     </div>
     <div class="addrow">
       <button class="ghost" type="button" id="addRow">+ 줄 추가</button>
+      <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
-      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고칩니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
+      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고치고, Delete 키나 줄 끝의 ×로 그 줄을 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
     </div>
   </section>
 
@@ -678,7 +679,8 @@ function applySel() {
 const short = n => n.length > 14 ? n.slice(0, 13) + '…' : n;
 function showMode() {
   const t = target(), chip = $('modeChip'), inp = $('sayInput');
-  $('unsel').hidden = !t;
+  $('unsel').hidden = !t; $('delSel').disabled = !t;
+  $('delSel').textContent = t ? `「${short(t.r.name)}」 줄 지우기` : '선택한 줄 지우기';
   if (!t) {
     chip.textContent = '새 작업 추가'; chip.className = 'mode add'; $('sayBtn').textContent = '추가';
     inp.placeholder = '말하는 대신 여기에 적고 Enter · 예) 불기어 기초작업 11월 28일부터 30일, 이어서 패딩작업 이틀';
@@ -1020,11 +1022,18 @@ $('rows').addEventListener('input', ev => {
   const el = ev.target.closest('.row'), lbl = el.querySelector(`.bar[data-rid="${el.dataset.id}"] .lbl`);
   if (lbl) lbl.firstChild.textContent = ev.target.value;
 });
+function deleteRow(id) {                                  // 한 줄만 지움 (딸린 줄은 남아 위 줄에 붙음)
+  const i = rowIdx(id); if (i < 0) return;
+  const nm = state.rows[i].name;
+  pushUndo(); state.rows.splice(i, 1);
+  if (sel.id === id) { sel.id = null; sel.field = null; }
+  renderAll(true); save(); showMode();
+  toast(`「${nm}」 줄을 지웠습니다. [되돌리기]로 살릴 수 있습니다.`);
+}
+$('delSel').addEventListener('click', () => { if (sel.id) deleteRow(sel.id); });
 $('rows').addEventListener('click', ev => {
   const d = ev.target.closest('.del'); if (!d) return;
-  const el = d.closest('.row'), i = rowIdx(el.dataset.id);
-  pushUndo(); state.rows.splice(i, 1); if (sel.id === el.dataset.id) { sel.id = null; sel.field = null; }
-  renderAll(true); save(); showMode(); toast('줄을 지웠습니다. [되돌리기]로 살릴 수 있습니다.');
+  deleteRow(d.closest('.row').dataset.id);
 });
 $('rows').addEventListener('keydown', ev => {
   const g = ev.target.closest('.grip');
@@ -1120,6 +1129,7 @@ $('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; 
 $('undoBtn').addEventListener('click', doUndo);
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && sel.id && !$('dict').open) { setSel(null); if (document.activeElement && document.activeElement.closest('#rows')) document.activeElement.blur(); return; }
+  if (ev.key === 'Delete' && sel.id && !$('dict').open && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) { ev.preventDefault(); deleteRow(sel.id); return; }
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { ev.preventDefault(); doUndo(); }
 });
 $('zoom').addEventListener('click', ev => {
