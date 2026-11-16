@@ -213,6 +213,15 @@ button { cursor: pointer; }
 .addrow { display: flex; gap: 8px; padding: 10px 14px; border-top: 1.5px solid var(--ink); flex-wrap: wrap; align-items: center; }
 .addrow .hint { color: var(--ink-3); font-size: 12.5px; margin-left: auto; }
 
+/* ── 저장 ── */
+.keep { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; }
+.keep .fname { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.keep .fname input { width: 190px; max-width: 100%; height: 32px; border: 1px solid var(--rule); border-radius: 5px; background: var(--surface); padding: 0 9px; color: var(--ink); }
+.keep .fname input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.ghost.strong { border-color: var(--ink); font-weight: 600; }
+.keep .saved { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
+.keep .saved.warn { color: var(--rec); }
+.keep-note { flex-basis: 100%; margin: 0; font-size: 12.5px; color: var(--ink-3); }
 /* ── 엑셀로 ── */
 .out { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px;
   display: flex; gap: 12px 22px; align-items: center; flex-wrap: wrap; }
@@ -269,7 +278,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.4</span>
+    <span class="ver">v0.5</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -338,6 +347,16 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
       <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고치고, Delete 키나 줄 끝의 ×로 그 줄을 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가, 바 끝 원을 끌면 기간이 바뀝니다.</span>
     </div>
+  </section>
+
+  <section class="keep" aria-label="저장">
+    <label class="fname" for="fileName">초안 이름 <input id="fileName" type="text" value="공정초안" maxlength="40" spellcheck="false"></label>
+    <button class="ghost strong" type="button" id="saveFile">파일로 저장 (.xlsx)</button>
+    <button class="ghost" type="button" id="openFile">저장한 파일 열기</button>
+    <button class="ghost" type="button" id="savePng">그림으로 저장 (.png)</button>
+    <input type="file" id="openInput" accept=".xlsx,.xlsm" hidden aria-label="저장한 파일">
+    <span class="saved" id="saved"></span>
+    <p class="keep-note">저장한 .xlsx 는 이 프로그램에서 다시 열 수 있고, 엑셀 바차트 파일의 메인 → [이전 파일에서 가져오기]로도 읽을 수 있습니다. 그림은 지금 보이는 공정 초안을 그대로 담습니다.</p>
   </section>
 
   <section class="out" aria-label="엑셀로 보내기">
@@ -410,7 +429,7 @@ const TRADES = { '': '', '공사': '#3b5b92', '조업': '#df4439', '토목': '#1
 const DEFAULT_TERMS = ['불기어', '트러니언', '그라우팅', '컨베이어', '감속기', '커플링', '센터링', '내화물', '시운전', '거푸집', '터파기', '되메우기', '라이닝'];
 const store = {
   get(k, d) { try { const v = localStorage.getItem('vs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('vs.' + k, JSON.stringify(v)); } catch (e) { /* 저장 불가 환경 */ } }
+  set(k, v) { try { localStorage.setItem('vs.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 let seq = 1;
 const newId = () => 'r' + (seq++) + Math.random().toString(36).slice(2, 6);
@@ -427,7 +446,13 @@ function doUndo() {
   const s = JSON.parse(undo.pop()); state.rows = s.rows; state.sample = s.sample;
   $('undoBtn').disabled = !undo.length; renderAll(true); save(); showMode(); return true;
 }
-function save() { store.set('rows', state.rows); store.set('sample', state.sample); }
+function save() {
+  const ok = store.set('rows', state.rows); store.set('sample', state.sample);
+  const el = document.getElementById('saved'); if (!el) return;
+  const t = new Date();
+  el.classList.toggle('warn', !ok);
+  el.textContent = ok ? `이 브라우저에 자동 저장됨 · ${pad(t.getHours())}:${pad(t.getMinutes())}` : '이 화면에서는 자동 저장이 안 됩니다. [파일로 저장]을 눌러 두세요.';
+}
 const $ = id => document.getElementById(id);
 
 /* ───────── 문장 → 작업 ───────── */
@@ -930,19 +955,25 @@ function drawHead() {
   $('months').innerHTML = mh; $('days').innerHTML = dh; $('cols').innerHTML = ch; $('cols').style.width = W + 'px';
   function monthSpan(key, n) { const [y, m] = key.split('-'); return `<span style="width:${n * dw}px">${n * dw > 70 ? y + '년 ' : ''}${m}월</span>`; }
 }
-function oneBar(r, i) {
-  const dw = state.dw;
+function oneBar(r, i, maxW) {
+  const dw = state.dw, lim = maxW ? ` style="max-width:${maxW}px;overflow:hidden;text-overflow:ellipsis"` : '';
   const clr = (state.barMode === 'trade' && TRADES[effTrade(i)]) ? `--barc:${TRADES[effTrade(i)]}` : '';
   return `<div class="bar" data-rid="${r.id}" style="left:${(r.s - range.a) * dw}px;width:${r.d * dw}px;${clr}">
-      <span class="lbl">${esc(r.name)}<small>${r.d}일</small></span><span class="line"></span><i class="dot s" data-h="s"></i><i class="dot e" data-h="e"></i></div>`;
+      <span class="lbl"${lim}>${esc(r.name)}<small>${r.d}일</small></span><span class="line"></span><i class="dot s" data-h="s"></i><i class="dot e" data-h="e"></i></div>`;
+}
+/* 접힌 작업항목 줄에 그릴 세부작업 바와, 다음 바 앞까지 쓸 수 있는 글자 폭 */
+function foldBars(i) {
+  const list = [];
+  for (let j = i + 1, e = blockEnd(i); j < e; j++) { const c = state.rows[j]; if (c.s != null && c.d) list.push({ c, j }); }
+  const starts = list.map(x => x.c.s).sort((a, b) => a - b);
+  list.forEach(x => { const nx = starts.find(v => v > x.c.s); x.maxW = nx == null ? 0 : Math.max(18, (nx - x.c.s) * state.dw - 12); });
+  return list;
 }
 function barHtml(r, i) {
   const dw = state.dw, sp = spanOf(i);
   if (r.lvl !== 'cat' && r.s != null && r.d && !(r.lvl === 'item' && sp)) return oneBar(r, i);
   if (sp && state.fold && r.lvl === 'item') {            // 접힘 : 세부작업 바를 작업항목 줄에
-    let h = '';
-    for (let j = i + 1, e = blockEnd(i); j < e; j++) { const c = state.rows[j]; if (c.s != null && c.d) h += oneBar(c, j); }
-    return h;
+    return foldBars(i).map(x => oneBar(x.c, x.j, x.maxW)).join('');
   }
   if (sp) return `<div class="span" style="left:${(sp.a - range.a) * dw}px;width:${(sp.b - sp.a + 1) * dw}px"><span class="lbl">${md(sp.a)} ~ ${md(sp.b)} · ${sp.b - sp.a + 1}일</span><i></i></div>`;
   return '';
@@ -1335,6 +1366,163 @@ document.addEventListener('paste', ev => {
   });
 })();
 
+/* ───────── 파일로 저장 · 그림으로 저장 ───────── */
+const stamp = () => { const t = new Date(); return `${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}_${pad(t.getHours())}${pad(t.getMinutes())}`; };
+const baseName = () => ($('fileName').value.trim() || '공정초안').replace(/[\\/:*?"<>|]/g, '_');
+function download(blob, name) {
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  let framed = true; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  toast(framed ? `「${name}」 내려받기를 요청했습니다. 이 웹 화면에서 막혀 있으면, 내려받은 프로그램 파일(html)을 열어서 저장하세요.`
+    : `「${name}」 을 내려받았습니다. (브라우저의 다운로드 폴더)`);
+}
+/* 압축하지 않는 zip (xlsx 는 zip) */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) {
+  const te = new TextEncoder(), parts = [], cd = []; let off = 0;
+  const t = new Date(), dosT = (t.getHours() << 11) | (t.getMinutes() << 5) | (t.getSeconds() >> 1), dosD = ((t.getFullYear() - 1980) << 9) | ((t.getMonth() + 1) << 5) | t.getDate();
+  files.forEach(f => {
+    const name = te.encode(f.name), data = te.encode(f.text), crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dosT, true); lh.setUint16(12, dosD, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, dosT, true); ch.setUint16(14, dosD, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    cd.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  });
+  const cdSize = cd.reduce((n, x) => n + x.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob(parts.concat(cd, [new Uint8Array(end.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+/* [작업입력] 양식 그대로 : 4행 머리글, 5행부터 구분/공종/작업내용/하단표기/시작일/기간/종료일 */
+function buildXlsx() {
+  const x = v => String(v).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  const H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const str = (ref, v, st) => v === '' ? '' : `<c r="${ref}" t="inlineStr"${st ? ` s="${st}"` : ''}><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+  const num = (ref, v, st) => `<c r="${ref}"${st ? ` s="${st}"` : ''}><v>${v}</v></c>`;
+  let rowsXml = `<row r="1">${str('A1', baseName() + ' (공정 받아쓰기에서 저장 · ' + iso(todayDay) + ')', 3)}</row>`;
+  rowsXml += '<row r="4">' + ['구분', '공종', '작업내용 (선 위)', '하단표기', '시작일', '기간', '종료일', '비고'].map((h, i) => str('ABCDEFGH'[i] + '4', h, 2)).join('') + '</row>';
+  state.rows.forEach((r, i) => {
+    const n = 5 + i, auto = isAuto(i);
+    let c = str('A' + n, LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
+    if (!auto && r.s != null && r.d) c += num('E' + n, r.s + 25569, 1) + num('F' + n, r.d) + num('G' + n, r.s + r.d - 1 + 25569, 1);
+    rowsXml += `<row r="${n}">${c}</row>`;
+  });
+  const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', RN = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', PR = 'http://schemas.openxmlformats.org/package/2006/relationships';
+  return zipStore([
+    { name: '[Content_Types].xml', text: H + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>' },
+    { name: '_rels/.rels', text: H + `<Relationships xmlns="${PR}"><Relationship Id="rId1" Type="${RN}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { name: 'xl/workbook.xml', text: H + `<workbook xmlns="${NS}" xmlns:r="${RN}"><sheets><sheet name="작업입력" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    { name: 'xl/_rels/workbook.xml.rels', text: H + `<Relationships xmlns="${PR}"><Relationship Id="rId1" Type="${RN}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${RN}/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', text: H + `<styleSheet xmlns="${NS}"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/></numFmts><fonts count="3"><font><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="10"/><name val="맑은 고딕"/></font><font><b/><sz val="13"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFBDD7EE"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+    { name: 'xl/worksheets/sheet1.xml', text: H + `<worksheet xmlns="${NS}"><cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="8" customWidth="1"/><col min="3" max="3" width="34" customWidth="1"/><col min="4" max="4" width="12" customWidth="1"/><col min="5" max="5" width="12" customWidth="1"/><col min="6" max="6" width="6" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/><col min="8" max="8" width="12" customWidth="1"/></cols><sheetData>${rowsXml}</sheetData></worksheet>` }
+  ]);
+}
+$('saveFile').addEventListener('click', () => {
+  if (!state.rows.length) { toast('저장할 작업이 없습니다.'); return; }
+  download(buildXlsx(), `${baseName()}_${stamp()}.xlsx`);
+});
+$('openFile').addEventListener('click', () => $('openInput').click());
+$('openInput').addEventListener('change', () => {
+  const f = $('openInput').files[0]; if (!f) return;
+  $('impReplace').checked = true; importFile(f); $('openInput').value = '';
+});
+$('fileName').addEventListener('change', () => store.set('name', $('fileName').value));
+
+/* 그림 : 지금 보이는 표와 바차트를 밝은 색으로 다시 그림 */
+function drawPng() {
+  const vis = []; state.rows.forEach((r, i) => { if (!(state.fold && r.lvl === 'det')) vis.push(i); });
+  const C = { ink: '#17212c', ink2: '#536070', ink3: '#8894a1', rule: '#d3d9e0', rule2: '#e7ebef', head: '#dce8f4', cat: '#e3edf8', wk: '#fbf5dd', sat: '#1b6cc2', sun: '#cf3d2e' };
+  const W1 = 240, W2 = 62, W3 = 40, W4 = 62, L = W1 + W2 + W3 + W4, pad0 = 18, titleH = 46, hh = 22, rh = 36;
+  const dw = Math.max(8, Math.min(state.dw, Math.floor((7000 - L) / range.n)));
+  const TW = range.n * dw, W = pad0 * 2 + L + TW, Hh = pad0 * 2 + titleH + hh * 2 + rh * vis.length;
+  const sc = (W * 2 > 16000 || Hh * 2 > 16000) ? 1 : 2;
+  const cv = document.createElement('canvas'); cv.width = W * sc; cv.height = Hh * sc;
+  const g = cv.getContext('2d'); g.scale(sc, sc);
+  const font = (px, w) => { g.font = `${w || 400} ${px}px "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`; };
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, Hh);
+  const x0 = pad0, y0 = pad0 + titleH, xt = x0 + L, yb = y0 + hh * 2;
+  // 제목
+  g.fillStyle = C.ink; font(18, 700); g.textBaseline = 'alphabetic'; g.fillText(baseName(), x0, pad0 + 20);
+  let a = null, b = null; state.rows.forEach(r => { if (r.s != null && r.d) { a = a == null ? r.s : Math.min(a, r.s); b = b == null ? r.s + r.d - 1 : Math.max(b, r.s + r.d - 1); } });
+  font(11.5); g.fillStyle = C.ink2;
+  g.fillText((a != null ? `${iso(a)} ~ ${iso(b)} · ${b - a + 1}일 · ` : '') + `작성 ${iso(todayDay)} · 초안`, x0, pad0 + 38);
+  // 머리글 띠, 주말, 월 경계
+  g.fillStyle = C.head; g.fillRect(x0, y0, L + TW, hh * 2);
+  for (let i = 0; i < range.n; i++) { const o = fromDay(range.a + i); if (o.w === 0 || o.w === 6) { g.fillStyle = C.wk; g.fillRect(xt + i * dw, yb, dw, rh * vis.length); } }
+  // 줄 바탕 · 구분선
+  vis.forEach((ri, k) => {
+    const r = state.rows[ri], y = yb + k * rh;
+    if (r.lvl === 'cat') { g.fillStyle = C.cat; g.fillRect(x0, y, L + TW, rh); }
+    g.strokeStyle = C.rule2; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y + rh + .5); g.lineTo(x0 + L + TW, y + rh + .5); g.stroke();
+  });
+  // 날짜 머리글
+  let cur = null, mx = 0;
+  g.textBaseline = 'middle';
+  for (let i = 0; i <= range.n; i++) {
+    const o = i < range.n ? fromDay(range.a + i) : null, key = o ? o.y + '-' + o.m : null;
+    if (key !== cur) {
+      if (cur) { const [yy, mm] = cur.split('-'); font(11.5, 600); g.fillStyle = C.ink; const tx = (i * dw - mx > 70 ? yy + '년 ' : '') + mm + '월'; if (i * dw - mx > 26) g.fillText(tx, xt + mx + 5, y0 + hh / 2); }
+      if (o && i) { g.strokeStyle = C.rule; g.beginPath(); g.moveTo(xt + i * dw + .5, y0); g.lineTo(xt + i * dw + .5, yb + rh * vis.length); g.stroke(); }
+      cur = key; mx = i * dw;
+    }
+    if (o && (dw >= 15 || o.d === 1 || o.w === 1)) {
+      font(dw >= 15 ? 10 : 9); g.fillStyle = o.w === 6 ? C.sat : o.w === 0 ? C.sun : C.ink2; g.textAlign = 'center';
+      g.fillText(String(o.d), xt + i * dw + dw / 2, y0 + hh + hh / 2); g.textAlign = 'left';
+    }
+  }
+  font(11.5, 600); g.fillStyle = C.ink;
+  g.fillText('작업내용', x0 + 10, y0 + hh); g.textAlign = 'center';
+  g.fillText('시작', x0 + W1 + W2 / 2, y0 + hh); g.fillText('기간', x0 + W1 + W2 + W3 / 2, y0 + hh); g.fillText('종료', x0 + W1 + W2 + W3 + W4 / 2, y0 + hh); g.textAlign = 'left';
+  // 바
+  const bar = (r, y, clr, maxW) => {
+    const bx = xt + (r.s - range.a) * dw, bw = r.d * dw, ly = y + 25;
+    g.strokeStyle = clr; g.lineWidth = 3; g.beginPath(); g.moveTo(bx, ly); g.lineTo(bx + bw, ly); g.stroke();
+    [bx, bx + bw].forEach(cx => { g.beginPath(); g.arc(cx, ly, 4.5, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.8; g.stroke(); });
+    font(11.5); g.fillStyle = C.ink; g.textBaseline = 'alphabetic';
+    const nm = maxW ? clip(r.name, maxW * dw / state.dw) : r.name, tw = g.measureText(nm).width;
+    g.fillText(nm, bx + 7, y + 17);
+    if (!maxW || tw + 30 < maxW * dw / state.dw) { font(9.5); g.fillStyle = C.ink3; g.fillText(r.d + '일', bx + 13 + tw, y + 17); }
+    g.textBaseline = 'middle';
+  };
+  function clip(t, w) { if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; }
+  vis.forEach((ri, k) => {
+    const r = state.rows[ri], y = yb + k * rh, sp = spanOf(ri), auto = isAuto(ri);
+    const ind = r.lvl === 'cat' ? 10 : r.lvl === 'item' ? 22 : 38;
+    font(12, r.lvl === 'cat' ? 700 : r.lvl === 'item' ? 500 : 400); g.fillStyle = r.lvl === 'det' ? C.ink2 : C.ink;
+    g.fillText(clip(r.name, W1 - ind - 6), x0 + ind, y + rh / 2);
+    const s = auto ? (sp ? sp.a : null) : r.s, e = auto ? (sp ? sp.b : null) : (r.s != null && r.d ? r.s + r.d - 1 : null);
+    if (s != null && e != null) {
+      font(11); g.fillStyle = auto ? C.ink3 : C.ink2; g.textAlign = 'center';
+      g.fillText(md(s), x0 + W1 + W2 / 2, y + rh / 2); g.fillText(String(e - s + 1), x0 + W1 + W2 + W3 / 2, y + rh / 2); g.fillText(md(e), x0 + W1 + W2 + W3 + W4 / 2, y + rh / 2); g.textAlign = 'left';
+    }
+    const clr = j => (state.barMode === 'trade' && TRADES[effTrade(j)]) ? TRADES[effTrade(j)] : C.ink;
+    if (!auto && r.s != null && r.d) bar(r, y, clr(ri));
+    else if (sp && state.fold && r.lvl === 'item') foldBars(ri).forEach(x => bar(x.c, y, clr(x.j), x.maxW));
+    else if (sp) {
+      const bx = xt + (sp.a - range.a) * dw, bw = (sp.b - sp.a + 1) * dw;
+      g.strokeStyle = C.ink3; g.lineWidth = 1.5; g.beginPath(); g.moveTo(bx, y + 22); g.lineTo(bx, y + 27); g.lineTo(bx + bw, y + 27); g.lineTo(bx + bw, y + 22); g.stroke();
+    }
+  });
+  // 테두리
+  g.strokeStyle = C.ink; g.lineWidth = 1.5;
+  g.strokeRect(x0, y0, L + TW, hh * 2 + rh * vis.length);
+  g.beginPath(); g.moveTo(x0, yb); g.lineTo(x0 + L + TW, yb); g.moveTo(xt, y0); g.lineTo(xt, yb + rh * vis.length); g.stroke();
+  return cv;
+}
+$('savePng').addEventListener('click', () => {
+  if (!state.rows.length) { toast('저장할 작업이 없습니다.'); return; }
+  const cv = drawPng();
+  cv.toBlob(blob => { if (blob) download(blob, `${baseName()}_${stamp()}.png`); else toast('그림을 만들지 못했습니다. 날짜 칸을 [좁게] 하고 다시 눌러 주세요.'); }, 'image/png');
+});
+
 /* 용어 사전 */
 $('dictBtn').addEventListener('click', () => {
   $('terms').value = state.terms.join('\n'); drawFixes();
@@ -1367,6 +1555,7 @@ function sampleRows() {
 (function init() {
   const t = fromDay(todayDay);
   $('baseMonth').value = state.base || `${t.y}-${pad(t.m)}`;
+  $('fileName').value = store.get('name', '공정초안') || '공정초안';
   state.dw = store.get('dw', 26); state.barMode = store.get('barMode', 'ink'); state.fold = !!store.get('fold', false);
   $('fold').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', (x.dataset.f === '1') === state.fold));
   $('zoom').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', +x.dataset.z === state.dw));
@@ -1374,9 +1563,9 @@ function sampleRows() {
   const saved = store.get('rows', null);
   if (saved && saved.length) { state.rows = saved; state.sample = !!store.get('sample', false); }
   else { state.rows = sampleRows(); state.sample = true; }
-  renderAll(); showMode();
+  renderAll(); showMode(); save();
   if (!SR) { $('mic').disabled = true; $('mic').title = '이 브라우저는 음성 인식을 지원하지 않습니다'; say(MIC_HELP); }
 })();
-window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel, rowsFromCells, tsvCells };
+window.__vs = { parseText, parseEdit, parseDur, state, toTsv, handleSentence, fixName, toDay, iso, sel, rowsFromCells, tsvCells, buildXlsx, drawPng };
 })();
 </script>
