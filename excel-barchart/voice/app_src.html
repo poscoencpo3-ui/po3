@@ -30,7 +30,7 @@
   --mono: "IBM Plex Mono", "D2Coding", Consolas, "Malgun Gothic", monospace;
   --dw: 26px;          /* 하루 폭 */
   --rowh: 44px;
-  --w-grip: 26px; --w-lvl: 84px; --w-trade: 70px; --w-name: 240px; --w-start: 132px; --w-dur: 52px; --w-end: 72px; --w-act: 52px;
+  --w-grip: 26px; --w-lvl: 84px; --w-trade: 70px; --w-name: 240px; --w-start: 132px; --w-dur: 52px; --w-end: 72px; --w-act: 76px;
   --grid: #e1e5ea;
 }
 @media (prefers-color-scheme: dark) {
@@ -132,7 +132,9 @@ button { cursor: pointer; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .sample { margin: 0; padding: 8px 14px; background: var(--accent-soft); font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-.sheet { overflow: auto; position: relative; -webkit-overflow-scrolling: touch; max-height: max(340px, calc(100vh - 124px)); }
+.sheet { overflow: auto; position: relative; -webkit-overflow-scrolling: touch; max-height: 70vh; }
+/* [표만 크게] : 제목과 말하기 칸을 접어 표를 창 가득 */
+.big .top, .big .say { display: none; }
 .grid { position: relative; width: max-content; min-width: 100%; }
 .cols { position: absolute; top: 0; bottom: 0; left: var(--cellw); pointer-events: none; }
 .cols i { position: absolute; top: 0; bottom: 0; width: var(--dw); background: var(--weekend); }
@@ -187,6 +189,19 @@ button { cursor: pointer; }
 .grip { width: var(--w-grip); height: 30px; align-self: center; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: grab; touch-action: none; border-radius: 4px; }
 .grip:hover { background: var(--rule-2); }
 .grip svg { width: 10px; height: 16px; fill: var(--ink-3); }
+.row .lnk { width: 22px; height: 24px; border: 0; background: none; border-radius: 4px; padding: 0; display: grid; place-items: center; opacity: .5; transition: opacity .12s; }
+.row .lnk svg { width: 14px; height: 14px; stroke: var(--ink-3); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.row:hover .lnk, .row .lnk:focus-visible { opacity: 1; }
+.row .lnk:hover { background: var(--accent-soft); }
+.row .lnk[aria-pressed="true"] { opacity: 1; background: var(--accent-soft); }
+.row .lnk[aria-pressed="true"] svg, .row .lnk:hover svg { stroke: var(--accent); }
+.row .lnk:disabled { opacity: .18; cursor: default; background: none; }
+.row .lnk:disabled svg { stroke: var(--ink-3); }
+@media (hover: none) { .row .lnk { opacity: 1; } }
+/* 연결선 : 앞 작업의 끝 → 뒤 작업의 시작 */
+#links { position: absolute; left: var(--cellw); pointer-events: none; z-index: 1; overflow: visible; }
+#links path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; opacity: .85; }
+#links circle { fill: var(--accent); }
 .row .add { width: 22px; height: 24px; border: 0; background: none; border-radius: 4px; color: var(--ink-3); font-size: 16px; line-height: 1; opacity: .55; transition: opacity .12s; padding: 0; }
 .row:hover .add, .row .add:focus-visible { opacity: 1; }
 .row .add:hover { background: var(--accent-soft); color: var(--accent); }
@@ -309,7 +324,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.7</span>
+    <span class="ver">v0.8</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -356,6 +371,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
         <button type="button" data-m="ink" aria-pressed="true">검정</button><button type="button" data-m="trade">공종색</button>
       </div>
       <button class="ghost" type="button" id="undoBtn" disabled>되돌리기</button>
+      <button class="ghost" type="button" id="bigBtn" aria-pressed="false" title="제목과 말하기 칸을 접고 표를 창 가득 보기">표만 크게</button>
     </div>
     <p class="sample" id="sample" hidden>아래는 <b>예시</b>입니다. 말하기 시작하면 예시 뒤에 붙습니다. <button class="ghost" type="button" id="clearSample">예시 지우고 시작</button></p>
     <div class="sheet" id="sheet">
@@ -369,6 +385,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
           <div class="track" id="htrack"><div class="months" id="months"></div><div class="days" id="days"></div></div>
         </div>
         <div id="rows"></div>
+        <svg id="links" aria-hidden="true"><path id="linkPath" d=""/><g id="linkDots"></g></svg>
       </div>
     </div>
     <div class="addrow">
@@ -376,7 +393,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <button class="ghost" type="button" id="impBtn">엑셀에서 가져오기</button>
       <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
-      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고칩니다. 줄 끝의 +(또는 오른쪽 단추)로 그 아래에 줄을 넣고, ×나 Delete 키로 지웁니다. 손잡이를 끌면 순서가, 바를 끌면 날짜가 바뀝니다.</span>
+      <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고칩니다. 줄 끝의 고리 단추로 앞 작업에 연결하면 앞 작업이 바뀔 때 같이 움직입니다. +(또는 오른쪽 단추)로 그 아래에 줄을 넣고, ×나 Delete 키로 지웁니다.</span>
     </div>
   </section>
 
@@ -441,6 +458,8 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 <div class="menu" id="menu" role="menu" hidden>
   <button type="button" role="menuitem" data-a="below">아래에 줄 추가</button>
   <button type="button" role="menuitem" data-a="above">위에 줄 추가</button>
+  <hr>
+  <button type="button" role="menuitem" data-a="link" id="menuLink">앞 작업에 연결</button>
   <hr>
   <button type="button" role="menuitem" data-a="del" class="danger">이 줄 지우기</button>
 </div>
@@ -808,6 +827,48 @@ function effTrade(i) {                                    // 공종이 비면 �
   for (let j = i - 1; j >= 0; j--) { const r = state.rows[j]; if (RANK[r.lvl] < lv) { if (r.trade) return r.trade; lv = RANK[r.lvl]; } }
   return '';
 }
+/* ───────── 작업 연결 : r.after = 앞 작업 id, r.lag = 앞 작업이 끝난 뒤부터의 간격 ─────────
+   앞 작업의 끝이 바뀌면 뒤 작업의 시작이 (끝 + 간격) 으로 따라 움직인다. */
+const byId = id => state.rows.find(r => r.id === id);
+const nextStart = p => p.s + p.d;                        // 그 작업이 끝난 바로 뒤 (일 단위 : 다음 날, 시간 단위 : 끝난 시각)
+function relink() {
+  for (let pass = 0; pass <= state.rows.length; pass++) {
+    let changed = false;
+    state.rows.forEach((r, i) => {
+      if (!r.after) return;
+      const p = byId(r.after);
+      if (!p || p === r || p.s == null || !p.d || r.s == null || !r.d || M.auto(r, i)) { delete r.after; delete r.lag; return; }
+      const t = nextStart(p) + (r.lag || 0);
+      if (r.s !== t) { r.s = t; changed = true; }
+    });
+    if (!changed) break;
+  }
+}
+/* 뒤 작업을 직접 옮겼으면 그 자리를 새 간격으로 기억 */
+function movedRow(r) { if (r.after) { const p = byId(r.after); if (p && p.s != null && p.d && r.s != null) r.lag = r.s - nextStart(p); } }
+/* 줄을 지울 때 : 그 줄에 이어지던 작업은 그 줄의 앞 작업에 다시 연결 (지금 자리 그대로) */
+function bridgeLinks(x) {
+  const pp = x.after ? byId(x.after) : null;
+  state.rows.forEach(q => {
+    if (q.after !== x.id) return;
+    if (pp && pp.s != null && pp.d && q.s != null) { q.after = pp.id; q.lag = q.s - nextStart(pp); } else { delete q.after; delete q.lag; }
+  });
+}
+function prevTask(i) {                                    // i 줄 위에서 가장 가까운, 날짜가 있는 작업
+  for (let j = i - 1; j >= 0; j--) { const p = state.rows[j]; if (p.s != null && p.d && !M.auto(p, j)) return p; }
+  return null;
+}
+function chainHas(p, r) { for (let k = 0; p && k < 500; k++) { if (p === r) return true; p = p.after ? byId(p.after) : null; } return false; }
+function setLink(i, on) {
+  const r = state.rows[i];
+  if (!on) { if (!r.after) return '연결되어 있지 않습니다.'; pushUndo(); delete r.after; delete r.lag; return `「${esc(r.name)}」의 연결을 끊었습니다.`; }
+  if (r.s == null || !r.d || isAuto(i)) return '날짜가 있는 작업 줄만 연결할 수 있습니다.';
+  const p = prevTask(i);
+  if (!p) return '위쪽에 연결할 작업(날짜가 있는 줄)이 없습니다.';
+  if (chainHas(p, r)) return '서로 물고 물리는 연결은 만들 수 없습니다.';
+  pushUndo(); r.after = p.id; r.lag = r.s - nextStart(p);
+  return `「${esc(r.name)}」을 앞 작업 「${esc(p.name)}」에 연결했습니다${r.lag ? ` (간격 ${r.lag > 0 ? '+' : '−'}${M.durTxt(Math.abs(r.lag))} 유지)` : ''}. 앞 작업이 바뀌면 같이 움직입니다.`;
+}
 const baseYM = () => { const b = /^(\d{4})-(\d{2})$/.exec($('baseMonth').value) || [], t = fromDay(todayDay); return { y: +b[1] || t.y, m: +b[2] || t.m }; };
 const lastDated = upTo => { for (let i = (upTo == null ? state.rows.length : upTo) - 1; i >= 0; i--) { const r = state.rows[i]; if (r.s != null && r.d) return r; } return null; };
 
@@ -890,8 +951,9 @@ const DAYM = {
       if (!(d > 0)) d = (s != null && e != null && e >= s) ? e - s + 1 : null;
       if (lvl === 'cat') { s = null; d = null; }
       if (s == null) d = null; else if (!d) d = 1;
-      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d, _no: c.rowNo, _lk: c[8] });
     });
+    restoreLinks(out);
     // 세부작업에 날짜가 있는 작업항목의 날짜는 엑셀이 계산해 넣은 요약 값 → 비워 두고 자동으로
     out.forEach((r, i) => {
       if (r.lvl !== 'item') return;
@@ -987,8 +1049,9 @@ const TIMEM = {
       let s = day != null ? day * 1440 + (t || 0) : null, d = hrs > 0 ? Math.round(hrs * 60) : dys > 0 ? Math.round(dys * 1440) : null;
       if (lvl === 'cat') { s = null; d = null; }
       if (s == null) d = null; else if (!d) d = 60;
-      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d });
+      out.push({ id: newId(), lvl, trade: String(c[1] || '').trim(), name, low: String(c[3] || '').trim(), s, d, _no: c.rowNo, _lk: c[8] });
     });
+    restoreLinks(out);
     return out;
   },
   looks: t => /(^|\n)\s*(대분류|작업)\t/.test(t),
@@ -1007,6 +1070,14 @@ const TIMEM = {
     ].map(r => Object.assign({ id: newId(), low: '' }, r));
   }
 };
+function restoreLinks(out) {                              // 저장 파일의 Z 열 "행 번호:간격" → 연결
+  const at = {}; out.forEach(r => { if (r._no) at[r._no] = r; });
+  out.forEach(r => {
+    const m = /^(\d+):(-?\d+)$/.exec(String(r._lk || '').trim()), p = m && at[+m[1]];
+    if (p && p !== r && p.s != null && r.s != null) { r.after = p.id; r.lag = +m[2]; }
+    delete r._no; delete r._lk;
+  });
+}
 function cellDay(v) {                                     // 날짜 칸 : 2026-11-28 / 2026.11.28 / 11/28/2026 / 일련번호
   v = String(v == null ? '' : v).trim(); if (!v) return null;
   let m = /(\d{4})\D+(\d{1,2})\D+(\d{1,2})/.exec(v); if (m) return toDay(+m[1], +m[2], +m[3]);
@@ -1056,7 +1127,12 @@ function handleSentence(alts, fromVoice) {
     const lvl = (r.level && r.level !== 'cat' && M.LV[r.level]) ? r.level : M.nextLevel();
     const name = fixName(t.name) || '작업';
     const row = { id: newId(), lvl, trade: guessTrade(name), name, low: '', s: t.s, d: t.d, heard: name };
-    state.rows.push(row); ids.push(row.id); added.push(`「${esc(name)}」 ${M.spanTxt(t.s, t.d)}`);
+    let lk = '';
+    if (t.kind === 'dur' || t.kind === 'until') {             // 날짜 없이 기간만 말함 = 앞 작업에 이어지는 작업
+      const pv = lastDated();
+      if (pv && nextStart(pv) === t.s) { row.after = pv.id; row.lag = 0; lk = ' (앞 작업에 연결)'; }
+    }
+    state.rows.push(row); ids.push(row.id); added.push(`「${esc(name)}」 ${M.spanTxt(t.s, t.d)}${lk}`);
   });
   renderAll(false, ids); save();
   say(`${r.tasks.length}줄 추가: ${added.join(', ')}${UNDO_BTN}`);
@@ -1224,7 +1300,12 @@ TIMEM.fieldStart = (x, i) => {
   const m = /(\d{1,2})/.exec(normalizeT(x)), c = TIMEM.rowCtx(i);
   return (m && +m[1] <= 24) ? c.day * 1440 + (+m[1]) * 60 : null;
 };
+const RE_LINK = /^(?:앞\s*(?:작업|줄|공정)?\s*(?:에|과|와|이랑|하고)?\s*)?(?:연결|이어\s*붙여|이어\s*줘)(?:\s*해)?(?:\s*줘)?\s*$/, RE_UNLINK = /^연결\s*(?:끊기|끊어|해제|취소|풀어)(?:\s*줘)?\s*$/;
 function applyEdit(tg, alts) {
+  for (const x of alts) {
+    const t = normalize(x), on = RE_LINK.test(t), off = RE_UNLINK.test(t);
+    if (on || off) { const msg = setLink(tg.i, on); renderAll(true); save(); showMode(); say(msg + UNDO_BTN); $('sayInput').value = ''; return; }
+  }
   let a = null;
   for (const x of alts) { const c = M.edit(x, tg.i); if (c && !(Object.keys(c).length === 1 && c.name)) { a = c; break; } if (!a) a = c; }
   const r = tg.r, i = tg.i;
@@ -1235,10 +1316,11 @@ function applyEdit(tg, alts) {
   }
   pushUndo(); dropSample();
   let msg;
-  if (a.del) { state.rows.splice(i, 1); sel.id = null; sel.field = null; msg = `「${esc(r.name)}」 줄을 지웠습니다.`; }
+  if (a.del) { bridgeLinks(r); state.rows.splice(i, 1); sel.id = null; sel.field = null; msg = `「${esc(r.name)}」 줄을 지웠습니다.`; }
   else if (a.shift != null) {
     let n = 0;
     for (let j = i, e = blockEnd(i); j < e; j++) if (state.rows[j].s != null) { state.rows[j].s += a.shift; n++; }
+    for (let j = i, e = blockEnd(i); j < e; j++) movedRow(state.rows[j]);
     msg = `「${esc(r.name)}」${n > 1 ? ` 아래 ${n}줄` : ''}을 ${M.durTxt(Math.abs(a.shift))} ${a.shift > 0 ? '뒤로' : '앞으로'} 옮겼습니다.`;
   } else if (a.lvl) { r.lvl = a.lvl; if (a.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } msg = `「${esc(r.name)}」을 ${M.LV[a.lvl]}(으)로 바꿨습니다.`; }
   else if (a.trade) { r.trade = a.trade; msg = `「${esc(r.name)}」 공종을 ${a.trade}(으)로 바꿨습니다.`; }
@@ -1246,7 +1328,7 @@ function applyEdit(tg, alts) {
     if (a.name) { r.name = a.name; r.heard = a.name; }
     if (!auto) {
       if (a.grow != null) r.d = Math.max(M.snap(), (r.d || M.defDur) + a.grow);
-      if (a.s != null) { r.s = a.s; if (!r.d) r.d = M.defDur; }
+      if (a.s != null) { r.s = a.s; if (!r.d) r.d = M.defDur; movedRow(r); }
       if (a.d != null) { r.d = a.d; if (r.s == null) r.s = M.defStart(i); }
     }
     msg = `「${esc(r.name)}」` + (r.s != null && r.d ? ` ${M.spanTxt(r.s, r.d)} (${M.durTxt(r.d)})` : '') + '로 고쳤습니다.';
@@ -1261,7 +1343,7 @@ function applyField(tg, alts, fromVoice) {
     const v = fixName(cleanName(normalize(alts[0]).replace(/[.?!]$/, '')));
     if (v) { pushUndo(); r.name = v; r.heard = v; msg = `작업내용을 「${esc(v)}」로 넣었습니다.`; }
   } else if (f === 'start') {
-    for (const x of alts) { const v = M.fieldStart(x, tg.i); if (v != null) { pushUndo(); r.s = v; if (!r.d) r.d = M.defDur; msg = `${M.FIELD.start}을 ${M.fmtW(v)}(으)로 넣었습니다.`; break; } }
+    for (const x of alts) { const v = M.fieldStart(x, tg.i); if (v != null) { pushUndo(); r.s = v; if (!r.d) r.d = M.defDur; movedRow(r); msg = `${M.FIELD.start}을 ${M.fmtW(v)}(으)로 넣었습니다.`; break; } }
   } else {
     for (const x of alts) { const n = M.fieldDur(x); if (n) { pushUndo(); r.d = Math.min(n, M.key === 'day' ? 3650 : 1440 * 400); msg = `${M.FIELD.dur}을 ${M.durTxt(r.d)}(으)로 넣었습니다.`; break; } }
   }
@@ -1376,7 +1458,7 @@ function rowHtml(r, i) {
       ${auto ? `<span class="c-start auto">${sp ? M.fmt(sp.a) + ' ~' : '아래 작업 범위'}</span><span class="c-dur auto">${sp ? M.durNum(sp.b - sp.a + M.inc) : ''}</span><span class="c-end auto">${sp ? M.fmt(sp.b) : '자동'}</span>`
         : `<span class="c-start">${M.startInput(r)}</span><span class="c-dur">${M.durInput(r)}</span>
            <span class="c-end end">${r.s != null && r.d ? M.fmtW(M.endOf(r)) : ''}</span>`}
-      <span class="c-del"><button class="add" type="button" title="이 줄 아래에 줄 추가" aria-label="${esc(r.name)} 아래에 줄 추가">+</button><button class="del" type="button" title="이 줄 지우기" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
+      <span class="c-del"><button class="lnk" type="button" aria-pressed="${r.after ? 'true' : 'false'}"${(!auto && r.s != null && r.d && (r.after || prevTask(i))) ? '' : ' disabled'} title="${r.after ? '앞 작업에 연결됨 · 누르면 끊기' : '앞 작업에 연결 (앞 작업이 바뀌면 같이 움직임)'}" aria-label="${esc(r.name)} 앞 작업에 연결"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.6 9.4l2.8-2.8M7.2 4.6l1.1-1.1a2.6 2.6 0 0 1 3.7 3.7L10.9 8.3M8.8 11.4l-1.1 1.1A2.6 2.6 0 0 1 4 8.8l1.1-1.1"/></svg></button><button class="add" type="button" title="이 줄 아래에 줄 추가" aria-label="${esc(r.name)} 아래에 줄 추가">+</button><button class="del" type="button" title="이 줄 지우기" aria-label="${esc(r.name)} 줄 지우기">×</button></span>
     </div>
     <div class="track" style="width:${range.len * M.ppu()}px">${barHtml(r, i)}</div>
   </div>`;
@@ -1392,10 +1474,35 @@ function fitName(inp) {
   inp.title = inp.value;
 }
 const fitNames = () => $('rows').querySelectorAll('input.name').forEach(fitName);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitNames());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitNames(); fitSheet(); });
+/* 표 높이를 창에 맞춤 : 페이지 맨 위에서 표의 아래 끝(가로 스크롤바)과 단추 줄이 화면 안에 들어오게 */
+function fitSheet() {
+  const sh = $('sheet');
+  if (window.innerWidth <= 900) { sh.style.maxHeight = ''; return; }          // 좁은 화면은 CSS (70vh)
+  const top = sh.getBoundingClientRect().top + window.scrollY, add = document.querySelector('.addrow').offsetHeight;
+  sh.style.maxHeight = Math.max(240, window.innerHeight - top - add - 14) + 'px';
+}
 const rowEl = id => $('rows').querySelector(`.row[data-id="${id}"]`);
 const rowIdx = id => state.rows.findIndex(r => r.id === id);
+function drawLinks() {
+  const svg = $('links'), box = $('rows'), br = box.getBoundingClientRect();
+  svg.setAttribute('width', range.len * M.ppu()); svg.setAttribute('height', box.offsetHeight);
+  svg.style.top = box.offsetTop + 'px';
+  let d = '', dots = '';
+  const yOf = id => { const b = box.querySelector(`.bar[data-rid="${id}"]`); return b ? b.closest('.row').getBoundingClientRect().top - br.top + 31.5 : null; };
+  state.rows.forEach(r => {
+    if (!r.after || r.s == null) return;
+    const p = byId(r.after); if (!p) return;
+    const ya = yOf(p.id), yb = yOf(r.id); if (ya == null || yb == null || ya === yb) return;
+    const dir = yb > ya ? 1 : -1, xe = px(nextStart(p)), xs = px(r.s);
+    d += `M${xe} ${ya + 7 * dir}V${yb - 15 * dir}H${xs}V${yb - 7 * dir}`;
+    dots += `<circle cx="${xs}" cy="${yb - 7 * dir}" r="2.2"/>`;
+  });
+  $('linkPath').setAttribute('d', d); $('linkDots').innerHTML = dots;
+}
 function renderAll(flip, enterIds) {
+  relink();
+  fitSheet();
   const box = $('rows'), old = {};
   if (flip) box.querySelectorAll('.row').forEach(el => { old[el.dataset.id] = el.getBoundingClientRect().top; });
   drawHead();
@@ -1407,14 +1514,14 @@ function renderAll(flip, enterIds) {
   const hid = folded() ? state.rows.filter(r => r.lvl === M.leaf).length : 0;
   fitNames();
   $('sum').textContent = state.rows.length ? `${state.rows.length}줄 · ${M.key === 'day' ? '날짜' : '시각'} 있는 작업 ${n}개${n ? ' · ' + M.sumTxt(a, b) : ''}${hid ? ` · ${M.LV[M.leaf]} ${hid}줄 접힘` : ''}` : '';
-  applySel();
+  applySel(); drawLinks();
   if (enterIds) enterIds.forEach(id => { const el = rowEl(id); if (el) { el.classList.add('enter'); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); scrollToBar(el); } });
   if (flip) box.querySelectorAll('.row').forEach(el => {
     const o = old[el.dataset.id]; if (o == null) return;
     const dy = o - el.getBoundingClientRect().top; if (!dy) return;
     el.style.transition = 'none'; el.style.transform = `translateY(${dy}px)`;
     requestAnimationFrame(() => { el.style.transition = 'transform .24s cubic-bezier(.2,.7,.2,1)'; el.style.transform = ''; });
-    el.addEventListener('transitionend', () => { el.style.transition = ''; }, { once: true });
+    el.addEventListener('transitionend', () => { el.style.transition = ''; drawLinks(); }, { once: true });
   });
 }
 function scrollToBar(el) {
@@ -1425,6 +1532,7 @@ function scrollToBar(el) {
 }
 /* 값만 바뀐 줄 : 표는 그대로 두고 바와 요약만 다시 */
 function refreshBars() {
+  relink();
   const before = range.a + ':' + range.len, nr = viewRange();
   if (before !== nr.a + ':' + nr.len) drawHead();
   state.rows.forEach((r, i) => {
@@ -1436,8 +1544,9 @@ function refreshBars() {
       cur.style.cssText = nx.style.cssText; cur.querySelector('.lbl').innerHTML = nx.querySelector('.lbl').innerHTML;
     } else tr.innerHTML = tmp.innerHTML;
     const e = el.querySelector('.end'); if (e) e.textContent = r.s != null && r.d ? M.fmtW(M.endOf(r)) : '';
+    const st = el.querySelector('.start'); if (st && r.s != null && document.activeElement !== st) st.value = M.startVal(r);
   });
-  applySel();
+  applySel(); drawLinks();
 }
 
 /* ───────── 표 고치기 ───────── */
@@ -1446,7 +1555,7 @@ $('rows').addEventListener('change', ev => {
   const i = rowIdx(el.dataset.id), r = state.rows[i], t = ev.target;
   pushUndo();
   if (t.classList.contains('name')) { const v = t.value.trim(); learnFix(r.heard, v); r.name = v; r.heard = null; refreshBars(); }
-  else if (t.classList.contains('start')) { r.s = M.readStart(t.value); if (r.s != null && !r.d) r.d = M.defDur; renderAll(); }
+  else if (t.classList.contains('start')) { r.s = M.readStart(t.value); if (r.s != null && !r.d) r.d = M.defDur; movedRow(r); renderAll(); }
   else if (t.classList.contains('dur')) { r.d = M.readDur(t.value); renderAll(); }
   else if (t.classList.contains('lvl')) { r.lvl = t.value; if (r.lvl === 'cat') { r.s = null; r.d = null; if (!r.trade) r.trade = '공사'; } renderAll(); }
   else if (t.classList.contains('trade')) { r.trade = t.value; refreshBars(); }
@@ -1468,7 +1577,7 @@ $('rows').addEventListener('input', ev => {
 function deleteRow(id) {                                  // 한 줄만 지움 (딸린 줄은 남아 위 줄에 붙음)
   const i = rowIdx(id); if (i < 0) return;
   const nm = state.rows[i].name;
-  pushUndo(); state.rows.splice(i, 1);
+  pushUndo(); bridgeLinks(state.rows[i]); state.rows.splice(i, 1);
   if (sel.id === id) { sel.id = null; sel.field = null; }
   renderAll(true); save(); showMode();
   toast(`「${nm}」 줄을 지웠습니다. [되돌리기]로 살릴 수 있습니다.`);
@@ -1477,6 +1586,8 @@ $('delSel').addEventListener('click', () => { if (sel.id) deleteRow(sel.id); });
 $('rows').addEventListener('click', ev => {
   const d = ev.target.closest('.del');
   if (d) { deleteRow(d.closest('.row').dataset.id); return; }
+  const lk = ev.target.closest('.lnk');
+  if (lk) { const i = rowIdx(lk.closest('.row').dataset.id), msg = setLink(i, !state.rows[i].after); renderAll(); save(); say(msg + UNDO_BTN); return; }
   const ad = ev.target.closest('.add');
   if (ad) { insertRow(rowIdx(ad.closest('.row').dataset.id), 'below'); return; }
   if (ev.target.closest('input, select, button')) return;
@@ -1543,7 +1654,10 @@ $('rows').addEventListener('pointerdown', ev => {
     if (h === 'm') r.s = s0 + dd;
     else if (h === 's') { const ns = Math.min(s0 + dd, s0 + d0 - sn); r.s = ns; r.d = s0 + d0 - ns; }
     else r.d = Math.max(sn, d0 + dd);
-    bar.style.left = px(r.s) + 'px'; bar.style.width = r.d * p + 'px';
+    if (h !== 'e') movedRow(r);
+    relink();                                               // 이 줄에 연결된 뒤 작업들도 같이
+    $('rows').querySelectorAll('.bar').forEach(b2 => { const q = byId(b2.dataset.rid); if (q && q !== r && q.s != null) b2.style.left = px(q.s) + 'px'; });
+    bar.style.left = px(r.s) + 'px'; bar.style.width = r.d * p + 'px'; drawLinks();
     bar.querySelector('small').textContent = M.live(r);
     const st = el && el.querySelector('.start'), du = el && el.querySelector('.dur'), en = el && el.querySelector('.end');
     if (st) st.value = M.startVal(r); if (du) du.value = M.durVal(r); if (en) en.textContent = M.fmtW(M.endOf(r));
@@ -1567,7 +1681,7 @@ function insertRow(i, where) {
   if (lvl !== 'cat') {
     row.d = M.defDur;
     if (where === 'above') row.s = ref.s;
-    else if (ref.s != null && ref.d && !isAuto(i)) row.s = ref.s + ref.d;       // 그 줄이 끝난 바로 뒤
+    else if (ref.s != null && ref.d && !isAuto(i)) { row.s = ref.s + ref.d; row.after = ref.id; row.lag = 0; }   // 그 줄이 끝난 바로 뒤 + 연결
   } else row.trade = '공사';
   state.rows.splice(at, 0, row);
   if (lvl !== 'cat' && row.s == null) {                      // 앞에 날짜 있는 줄이 없으면 바로 다음 줄의 시작에 맞춤
@@ -1583,7 +1697,9 @@ $('addRow').addEventListener('click', () => {
   if (t) { insertRow(t.i, 'below'); return; }               // 줄을 골라 두었으면 그 아래에
   pushUndo(); dropSample();
   const row = { id: newId(), lvl: M.nextLevel(), trade: '', name: '새 작업', low: '', s: null, d: M.defDur };
+  const pv = lastDated();
   state.rows.push(row); row.s = M.defStart(state.rows.length - 1);
+  if (pv && nextStart(pv) === row.s) { row.after = pv.id; row.lag = 0; }
   renderAll(false, [row.id]); save();
   const inp = $('nm_' + row.id); if (inp) { inp.focus(); inp.select(); }
 });
@@ -1594,6 +1710,8 @@ $('rows').addEventListener('contextmenu', ev => {
   const el = ev.target.closest('.row'); if (!el) return;
   ev.preventDefault();
   menuId = el.dataset.id; setSel(menuId, null);
+  { const i = rowIdx(menuId), r = state.rows[i], ok = !isAuto(i) && r.s != null && r.d && (r.after || prevTask(i));
+    $('menuLink').textContent = r.after ? '앞 작업과 연결 끊기' : '앞 작업에 연결'; $('menuLink').disabled = !ok; $('menuLink').style.opacity = ok ? '' : '.4'; }
   const m = $('menu'); m.hidden = false;
   const w = m.offsetWidth, h = m.offsetHeight;
   m.style.left = Math.max(4, Math.min(ev.clientX, window.innerWidth - w - 6)) + 'px';
@@ -1603,7 +1721,9 @@ $('rows').addEventListener('contextmenu', ev => {
 $('menu').addEventListener('click', ev => {
   const b = ev.target.closest('button'); if (!b || !menuId) return;
   const id = menuId, i = rowIdx(id); closeMenu(); if (i < 0) return;
-  if (b.dataset.a === 'del') deleteRow(id); else insertRow(i, b.dataset.a);
+  if (b.dataset.a === 'del') deleteRow(id);
+  else if (b.dataset.a === 'link') { const msg = setLink(i, !state.rows[i].after); renderAll(); save(); say(msg + UNDO_BTN); }
+  else insertRow(i, b.dataset.a);
 });
 document.addEventListener('pointerdown', ev => { if (!$('menu').hidden && !ev.target.closest('#menu')) closeMenu(); });
 document.addEventListener('wheel', closeMenu, { passive: true }); window.addEventListener('resize', closeMenu);
@@ -1628,7 +1748,13 @@ document.querySelector('.hrow').addEventListener('dblclick', ev => {
   setColW('name', mx); saveColW(); renderAll();
 });
 let rsT = 0;
-window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { if (!document.activeElement.closest('#rows')) renderAll(); }, 200); });
+window.addEventListener('resize', () => { fitSheet(); clearTimeout(rsT); rsT = setTimeout(() => { if (!document.activeElement.closest('#rows')) renderAll(); }, 200); });
+$('bigBtn').addEventListener('click', () => {
+  const on = !document.querySelector('.wrap').classList.contains('big');
+  document.querySelector('.wrap').classList.toggle('big', on);
+  $('bigBtn').setAttribute('aria-pressed', on); $('bigBtn').textContent = on ? '입력 칸 보이기' : '표만 크게';
+  store.set('big', on); window.scrollTo(0, 0); renderAll();
+});
 let clearArmed = 0;
 $('clearAll').addEventListener('click', () => {
   if (!state.rows.length) return;
@@ -1758,15 +1884,15 @@ async function readWorkbook(buf, want) {
       const c = [];
       Array.from(row.getElementsByTagName('c')).forEach(cell => {
         const col = (/^[A-Z]+/.exec(cell.getAttribute('r') || '') || [''])[0];
-        if (col.length !== 1 || col > 'H') return;           // A~H 만
+        if (col.length !== 1 || (col > 'H' && col !== 'Z')) return;   // A~H 와 Z(연결)
         const t = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0];
         let val = '';
         if (t === 's') val = v ? strs[+v.textContent] || '' : '';
         else if (t === 'inlineStr') val = Array.from(cell.getElementsByTagName('t')).map(x => x.textContent).join('');
         else val = v ? v.textContent : '';
-        c[col.charCodeAt(0) - 65] = val;
+        c[col === 'Z' ? 8 : col.charCodeAt(0) - 65] = val;
       });
-      if (c.length) list.push(c);
+      if (c.length) { c.rowNo = +row.getAttribute('r'); list.push(c); }
     });
     out[w.name] = list;
   }
@@ -1868,6 +1994,7 @@ function buildXlsx() {
   const num = (ref, v, st) => `<c r="${ref}"${st ? ` s="${st}"` : ''}><v>${v}</v></c>`;
   const title = baseName() + ' (공정 받아쓰기에서 저장 · ' + iso(todayDay) + ')';
   const hdr = (n, list) => `<row r="${n}">` + list.map((h, i) => str('ABCDEFGHI'[i] + n, h, 2)).join('') + '</row>';
+  const linkCell = (r, n, first) => { const k = r.after ? state.rows.findIndex(q => q.id === r.after) : -1; return k < 0 ? '' : str('Z' + n, (first + k) + ':' + (r.lag || 0)); };
   const cur = state.tab;
   // 일 단위
   state.tab = 'day'; M = DAYM;
@@ -1876,6 +2003,7 @@ function buildXlsx() {
     const n = 5 + i, auto = isAuto(i);
     let c = str('A' + n, DAYM.LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
     if (!auto && r.s != null && r.d) c += num('E' + n, r.s + 25569, 1) + num('F' + n, r.d) + num('G' + n, r.s + r.d - 1 + 25569, 1);
+    c += linkCell(r, n, 5);
     dayX += `<row r="${n}">${c}</row>`;
   });
   // 시간 단위
@@ -1885,6 +2013,7 @@ function buildXlsx() {
     const n = 15 + i, auto = isAuto(i);
     let c = str('A' + n, TIMEM.LV[r.lvl]) + str('B' + n, r.trade) + str('C' + n, r.name) + str('D' + n, r.low || '');
     if (!auto && r.s != null && r.d) c += num('E' + n, dayOf(r.s) + 25569, 1) + num('F' + n, ((r.s % 1440) / 1440).toFixed(8), 4) + num('G' + n, numTxt(r.d / 60)) + num('I' + n, ((r.s + r.d) / 1440 + 25569).toFixed(8), 5);
+    c += linkCell(r, n, 15);
     timeX += `<row r="${n}">${c}</row>`;
   });
   state.tab = cur; M = cur === 'time' ? TIMEM : DAYM;
@@ -2004,6 +2133,16 @@ function drawPng() {
       g.strokeStyle = C.ink3; g.lineWidth = 1.5; g.beginPath(); g.moveTo(bx, y + 22); g.lineTo(bx, y + 27); g.lineTo(bx + bw, y + 27); g.lineTo(bx + bw, y + 22); g.stroke();
     }
   });
+  // 연결선
+  const rowY = {}; vis.forEach((ri, k) => { const r = state.rows[ri]; rowY[r.id] = yb + k * rh + 25; if (folded() && r.lvl === M.parent) foldBars(ri).forEach(x => { rowY[x.c.id] = yb + k * rh + 25; }); });
+  g.strokeStyle = '#1b5ec2'; g.lineWidth = 1.3; g.fillStyle = '#1b5ec2';
+  state.rows.forEach(r => {
+    const pr = r.after && byId(r.after); if (!pr || r.s == null) return;
+    const ya = rowY[pr.id], y2 = rowY[r.id]; if (ya == null || y2 == null || ya === y2) return;
+    const dir = y2 > ya ? 1 : -1, xe = X(nextStart(pr)), xs = X(r.s);
+    g.beginPath(); g.moveTo(xe, ya + 6 * dir); g.lineTo(xe, y2 - 13 * dir); g.lineTo(xs, y2 - 13 * dir); g.lineTo(xs, y2 - 6 * dir); g.stroke();
+    g.beginPath(); g.arc(xs, y2 - 6 * dir, 2, 0, Math.PI * 2); g.fill();
+  });
   g.strokeStyle = C.ink; g.lineWidth = 1.5;
   g.strokeRect(x0, y0, L + TW, hh * 2 + bodyH);
   g.beginPath(); g.moveTo(x0, yb); g.lineTo(x0 + L + TW, yb); g.moveTo(xt, y0); g.lineTo(xt, yb + bodyH); g.stroke();
@@ -2047,11 +2186,12 @@ $('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (
     state.tab = k; M = k === 'time' ? TIMEM : DAYM;
     state.tabs[k] = { rows: M.sample(), sample: true };
   });
+  if (store.get('big', false)) { document.querySelector('.wrap').classList.add('big'); $('bigBtn').setAttribute('aria-pressed', 'true'); $('bigBtn').textContent = '입력 칸 보이기'; }
   setTab(store.get('tab', 'day') === 'time' ? 'time' : 'day');
   save();
   if (!SR) { $('mic').disabled = true; $('mic').title = '이 브라우저는 음성 인식을 지원하지 않습니다'; say(MIC_HELP); }
 })();
-window.__vs = { parseText, parseTimeText, parseEdit, parseEditT, parseDur, parseDurT, state, toTsv, handleSentence, fixName, toDay, iso, mdhm, sel, tsvCells, buildXlsx, drawPng, setTab,
+window.__vs = { relink, setLink, parseText, parseTimeText, parseEdit, parseEditT, parseDur, parseDurT, state, toTsv, handleSentence, fixName, toDay, iso, mdhm, sel, tsvCells, buildXlsx, drawPng, setTab,
   rowsFromCells: l => DAYM.fromCells(l), timeFromCells: l => TIMEM.fromCells(l) };
 })();
 </script>
