@@ -1,6 +1,6 @@
 Attribute VB_Name = "TimeChart"
 '===================================================================
-'  시간 단위 공정표 (SD·정비) + 인원·장비 산적표 모듈       v0.8.1 (초안)
+'  시간 단위 공정표 (SD·정비) + 인원·장비 산적표 모듈       v0.8.3 (초안)
 '-------------------------------------------------------------------
 '  기존 바차트(BarChart 모듈)와 따로 동작하는 추가 기능.
 '  기존 메인 / 작업입력 / 바차트 시트는 건드리지 않음.
@@ -135,7 +135,12 @@ Private tTrColor() As Long
 '===================================================================
 ' 새 파일 (배포용 xlsm) 최초 실행 : 바차트 시트 + 시간 시트
 Public Sub AutoSetupAllIfNeeded()
-    If Not TSheetExists(TS_MAIN) Then SetupAll
+    If Not TSheetExists(TS_MAIN) Then
+        SetupAll
+    Else
+        On Error Resume Next
+        BarChart.RefreshDayFlags         ' 날짜가 바뀌었으면 작업입력 간트의 '오늘' 표시 옮기기
+    End If
 End Sub
 
 Public Sub SetupAll()
@@ -143,7 +148,9 @@ Public Sub SetupAll()
     q = gQuiet
     gQuiet = True
     gLog = ""
+    gSeedLater = True                    ' 미리 넣어 둔 공정은 시간 시트까지 만든 뒤에 불러옴
     BarChart.SetupWorkbook
+    gSeedLater = False
     gQuiet = q
     If Not TSheetExists(TS_MAIN) Or InStr(gLog, "오류") > 0 Then
         TNotify "초기 설정 중 문제가 있었습니다." & vbCrLf & gLog
@@ -151,6 +158,7 @@ Public Sub SetupAll()
     End If
     If Not TSetupSheets() Then Exit Sub
     ThisWorkbook.Worksheets(TS_MAIN).Activate
+    If BarChart.LoadSeedAndBuild() > 0 Then Exit Sub     ' 파일에 들어 있던 공정을 넣고 바차트까지 그림
     TNotify "초기 설정이 끝났습니다." & vbCrLf & vbCrLf & _
             "1) [작업입력] 시트 : 일 단위 작업 입력 → [바차트 생성]" & vbCrLf & _
             "2) [시간입력] 시트 : 시간 단위(SD 등) 작업과 인원·장비 입력 → [시간공정표 생성]" & vbCrLf & vbCrLf & _
@@ -542,6 +550,7 @@ End Sub
 Private Sub TClearSheet(ByVal ws As Worksheet)
     Dim i As Long, lr As Long, lc As Long
     On Error Resume Next
+    If ws.Shapes.Count > 0 Then ws.DrawingObjects.Delete      ' 한 번에 지우고, 남으면 하나씩
     For i = ws.Shapes.Count To 1 Step -1
         ws.Shapes(i).Delete
     Next i
