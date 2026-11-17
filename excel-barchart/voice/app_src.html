@@ -324,7 +324,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   <header class="top">
     <h1>공정 받아쓰기</h1>
     <p>말하거나 적으면 작업 줄과 바차트 초안이 생깁니다. 다듬은 뒤 엑셀 바차트 파일의 작업입력에 붙여 넣으세요.</p>
-    <span class="ver">v0.8</span>
+    <span class="ver">v0.9</span>
   </header>
 
   <section class="say" aria-label="말하기">
@@ -393,6 +393,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
       <button class="ghost" type="button" id="impBtn">엑셀에서 가져오기</button>
       <button class="ghost" type="button" id="delSel" disabled>선택한 줄 지우기</button>
       <button class="ghost" type="button" id="clearAll">모두 지우기</button>
+      <button class="ghost" type="button" id="seedReset" hidden title="이 파일에 들어 있던 처음 공정으로 되돌립니다 ([되돌리기] 가능)">처음 공정으로</button>
       <span class="hint">줄을 누르고 마이크로 말하면 그 줄을 고칩니다. 줄 끝의 고리 단추로 앞 작업에 연결하면 앞 작업이 바뀔 때 같이 움직입니다. +(또는 오른쪽 단추)로 그 아래에 줄을 넣고, ×나 Delete 키로 지웁니다.</span>
     </div>
   </section>
@@ -490,9 +491,18 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 /* ───────── 상태 ───────── */
 const TRADES = { '': '', '공사': '#3b5b92', '조업': '#df4439', '토목': '#1f9d55', '건축': '#b3860e', '기계': '#2b7fd0', '전기': '#d9a300', '배관': '#8a4fc0', '철골': '#e07b2c', '기타': '#8b949e' };
 const DEFAULT_TERMS = ['불기어', '트러니언', '그라우팅', '컨베이어', '감속기', '커플링', '센터링', '내화물', '시운전', '거푸집', '터파기', '되메우기', '라이닝'];
+/* 공정이 미리 들어 있는 파일은 window.__SEED 를 가짐 : { id, title, base, rows:[{lvl,trade,name,low,s,d,after(줄 번호),lag}] }
+   그런 파일은 자동 저장 칸을 따로 써서(다른 초안과 섞이지 않음), 처음 열 때 그 공정으로 시작한다. */
+const SEED = window.__SEED || null;
+const NS = SEED ? 'vs.' + SEED.id + '.' : 'vs.';
+function seedRows() {
+  const out = SEED.rows.map(r => ({ id: newId(), lvl: r.lvl, trade: r.trade || '', name: r.name, low: r.low || '', s: r.s == null ? null : r.s, d: r.d == null ? null : r.d }));
+  SEED.rows.forEach((r, i) => { if (r.after != null && out[r.after]) { out[i].after = out[r.after].id; out[i].lag = r.lag || 0; } });
+  return out;
+}
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('vs.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('vs.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  get(k, d) { try { const v = localStorage.getItem(NS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(NS + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 let seq = 1;
 const newId = () => 'r' + (seq++) + Math.random().toString(36).slice(2, 6);
@@ -1762,6 +1772,12 @@ $('clearAll').addEventListener('click', () => {
   clearArmed = 0; $('clearAll').textContent = '모두 지우기';
   pushUndo(); state.rows = []; state.sample = false; sel.id = null; sel.field = null; renderAll(); save(); showMode(); toast('이 탭의 줄을 모두 지웠습니다. [되돌리기]로 살릴 수 있습니다.');
 });
+$('seedReset').addEventListener('click', () => {
+  if (!SEED) return;
+  pushUndo(); if (state.tab !== 'day') setTab('day');
+  state.tabs.day = { rows: seedRows(), sample: false }; sel.id = null; sel.field = null;
+  renderAll(); save(); showMode(); toast('이 파일의 처음 공정으로 되돌렸습니다. [되돌리기]로 방금 상태로 돌아갈 수 있습니다.');
+});
 $('clearSample').addEventListener('click', () => { pushUndo(); state.rows = []; state.sample = false; sel.id = null; sel.field = null; renderAll(); save(); showMode(); $('sayInput').focus(); });
 $('undoBtn').addEventListener('click', doUndo);
 document.addEventListener('keydown', ev => {
@@ -2172,8 +2188,9 @@ $('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (
 /* ───────── 시작 ───────── */
 (function init() {
   const t = fromDay(todayDay);
-  $('baseMonth').value = state.base || `${t.y}-${pad(t.m)}`;
-  $('fileName').value = store.get('name', '공정초안') || '공정초안';
+  $('baseMonth').value = state.base || (SEED && SEED.base) || `${t.y}-${pad(t.m)}`;
+  $('fileName').value = store.get('name', (SEED && SEED.title) || '공정초안') || '공정초안';
+  if (SEED) { $('seedReset').hidden = false; document.title = SEED.title + ' · 공정 받아쓰기'; }
   state.dw = store.get('dw', 26); state.slotH = store.get('slotH', 2); state.barMode = store.get('barMode', 'ink');
   const cw = store.get('cw', null); if (cw) Object.keys(COLW).forEach(c => { if (cw[c]) setColW(c, cw[c]); });
   const f = store.get('fold2', null); if (f) state.fold = { day: !!f.day, time: !!f.time };
@@ -2183,6 +2200,7 @@ $('fixes').addEventListener('click', ev => { const k = ev.target.dataset.k; if (
   else if (oldRows && oldRows.length) state.tabs.day = { rows: oldRows, sample: !!store.get('sample', false) };
   ['day', 'time'].forEach(k => {
     if (state.tabs[k].rows.length || (saved && saved[k])) return;
+    if (SEED) { state.tabs[k] = k === 'day' ? { rows: seedRows(), sample: false } : { rows: [], sample: false }; return; }
     state.tab = k; M = k === 'time' ? TIMEM : DAYM;
     state.tabs[k] = { rows: M.sample(), sample: true };
   });
