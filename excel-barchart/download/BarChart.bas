@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.7 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.8 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -2376,7 +2376,7 @@ Private Function SetTaskDate(ByVal wsIn As Worksheet, ByVal inRow As Long, ByVal
     If hasS Then wsIn.Cells(inRow, IN_S).Value = dS
     wsIn.Cells(inRow, IN_DUR).Value = nDur
     wsIn.Cells(inRow, IN_SUMFLAG).ClearContents          ' 직접 고친 일정 (요약 아님)
-    wsIn.Cells(inRow, IN_E).FormulaR1C1 = END_FORMULA
+    wsIn.Cells(inRow, IN_E).FormulaR1C1 = IN_END_FORMULA  ' 작업입력의 종료일 수식 (바차트 시트용 END_FORMULA 와 칸 배치가 다름)
     SetTaskDate = True
 End Function
 
@@ -2716,7 +2716,7 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
     Dim i As Long, k As Long, r As Long, ra As Long, rb As Long, lv() As Integer
     Dim catT As String, itemT As String, t As String, txt As String, d As Date
     Dim cS As String, cD As String, cE As String, fS As String, fD As String
-    Dim isOurs As Boolean, eBlank As Boolean, changed As Boolean
+    Dim isOurs As Boolean, eBlank As Boolean, changed As Boolean, cN As String, f3 As String
 
     lastRow = LastInputRow(wsIn)
     If lastRow < IN_FIRST_ROW Then Exit Sub
@@ -2730,6 +2730,7 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
     cS = ColLetter(IN_S)
     cD = ColLetter(IN_DUR)
     cE = ColLetter(IN_E)
+    cN = ColLetter(IN_NOTE)
 
     ' 전체 다시 : 먼저 모든 줄을 세부작업 들여쓰기로 두고, 대분류·작업항목 줄만 따로 맞춤
     If indentFrom = 0 Then
@@ -2756,6 +2757,17 @@ Private Sub RecalcInputHelpers(ByVal wsIn As Worksheet, Optional ByVal indentFro
                 outv(i, 1) = ""
         End Select
         If VarText(te(i, 1)) <> CStr(outv(i, 1)) Then changed = True
+        ' v0.7.7 까지 : 바차트에서 날짜를 고치면 종료일 칸에 바차트 시트용 수식(기간+비고)이 잘못 들어갔음 → 바로잡기
+        f3 = CStr(fm(i, 3))
+        If Left$(f3, 1) = "=" Then
+            If InStr(f3, cN) > 0 Then
+                r = IN_FIRST_ROW + i - 1
+                If Replace(UCase$(f3), " ", "") = "=IF(OR(" & cD & r & "=""""," & cN & r & "="""")," & """""," & _
+                                                  cD & r & "+" & cN & r & "-1)" Then
+                    wsIn.Cells(r, IN_E).FormulaR1C1 = IN_END_FORMULA
+                End If
+            End If
+        End If
         If lv(i) > 0 Then
             r = IN_FIRST_ROW + i - 1
             If indentFrom = 0 Then
@@ -3848,6 +3860,7 @@ End Sub
 Public Function ImportInputFrom(ByVal src As Worksheet, ByVal dst As Worksheet) As Long
     Dim lastRow As Long, lr As Long, r As Long, c As Long, w As Long
     Dim oldFmt As Boolean, hasDt As Boolean, vA As String, vB As String, vC As String, vEnd As Variant
+    Dim vS As Variant, vDur As Variant
     ClearInputData dst
     oldFmt = (Trim$(CellText(src.Cells(IN_HDR_ROW, 1))) = "대분류")   ' v0.4 이전 양식 (대분류/작업항목/세부작업 3칸)
     lastRow = IN_FIRST_ROW - 1
@@ -3886,11 +3899,17 @@ Public Function ImportInputFrom(ByVal src As Worksheet, ByVal dst As Worksheet) 
             ' 새 양식 : 그대로 복사 (종료일은 기간이 없을 때만 값으로)
             vEnd = Empty
             If Not src.Cells(r, IN_E).HasFormula Then vEnd = src.Cells(r, IN_E).Value
-            hasDt = Not IsEmpty(src.Cells(r, IN_S).Value) Or Not IsEmpty(vEnd) Or Not IsEmpty(src.Cells(r, IN_DUR).Value)
+            vS = src.Cells(r, IN_S).Value
+            vDur = src.Cells(r, IN_DUR).Value
+            If src.Cells(r, IN_S).HasFormula Then
+                ' 요약(아래 작업 범위로 자동 계산) 줄 : 값으로 굳히지 않고 비워 둠 → 가져온 뒤 다시 계산
+                vS = Empty: vDur = Empty: vEnd = Empty
+            End If
+            hasDt = Not IsEmpty(vS) Or Not IsEmpty(vEnd) Or Not IsEmpty(vDur)
             If CellText(src.Cells(r, IN_LVL)) & CellText(src.Cells(r, IN_TEXT)) <> "" Or hasDt Then
                 ImportPut dst, w, CellText(src.Cells(r, IN_LVL)), CellText(src.Cells(r, IN_TEXT)), _
-                          CellText(src.Cells(r, IN_LOW)), src.Cells(r, IN_S).Value, vEnd, _
-                          src.Cells(r, IN_DUR).Value, CellText(src.Cells(r, IN_NOTE))
+                          CellText(src.Cells(r, IN_LOW)), vS, vEnd, _
+                          vDur, CellText(src.Cells(r, IN_NOTE))
                 dst.Cells(w - 1, IN_TRADE).Value = CellText(src.Cells(r, IN_TRADE))
             Else
                 w = w + 1                         ' 빈 행 유지
