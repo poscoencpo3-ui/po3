@@ -3,8 +3,8 @@
   python3 tools/build.py
 
   파일 이름 = 바차트_v<버전>_<바뀐 내용>.xlsm  (이전 버전 파일도 함께 유지)
-  download/바차트_v0.7.6_속도개선.xlsm   : 바차트 기본판 (BarChart 모듈만)
-  download/바차트_v0.8.3_속도개선.xlsm   : 기본판 + 시간입력/시간공정표 시트 (TimeChart 모듈)
+  download/바차트_v0.7.7_입력순서유지.xlsm   : 바차트 기본판 (BarChart 모듈만)
+  download/바차트_v0.8.4_입력순서유지.xlsm   : 기본판 + 시간입력/시간공정표 시트 (TimeChart 모듈)
   (이전 버전 xlsm 은 지우지 않고 download/ 에 그대로 둔다. 버전을 올릴 때는 아래 파일 이름도 함께 바꿀 것 —
    같은 이름으로 다시 만들면 이미 배포한 파일이 바뀐다)
   download/BarChart.bas, TimeChart.bas          : 직접 가져오기용 모듈 (한국어 Windows 용 CP949 인코딩)
@@ -35,8 +35,8 @@ from vba_bin import build_vba_project  # noqa: E402
 SRC = os.path.join(ROOT, "src", "BarChart.bas")
 SRC_TIME = os.path.join(ROOT, "src", "TimeChart.bas")
 DIST = os.path.join(ROOT, "download")
-XLSM_BASE = os.path.join(DIST, "바차트_v0.7.6_속도개선.xlsm")
-XLSM_TIME = os.path.join(DIST, "바차트_v0.8.3_속도개선.xlsm")
+XLSM_BASE = os.path.join(DIST, "바차트_v0.7.7_입력순서유지.xlsm")
+XLSM_TIME = os.path.join(DIST, "바차트_v0.8.4_입력순서유지.xlsm")
 OLD_FILES = ["바차트_자동작성.xlsm"]      # 예전 이름 (버전 붙은 이름으로 바뀜)
 BAS = os.path.join(DIST, "BarChart.bas")
 BAS_TIME = os.path.join(DIST, "TimeChart.bas")
@@ -134,7 +134,7 @@ def build_xlsm(path, vba_bin, with_time, seed=None):
     title = wb.add_format({"bold": True, "font_size": 18, "font_name": "맑은 고딕"})
     body = wb.add_format({"font_size": 11, "font_name": "맑은 고딕"})
     warn = wb.add_format({"font_size": 11, "font_name": "맑은 고딕", "font_color": "#C00000", "bold": True})
-    head = "BAR CHART 공정표 자동 작성" + ("  (v0.8.3 : 시간공정표 · 산적표 포함)" if with_time else "")
+    head = "BAR CHART 공정표 자동 작성" + ("  (v0.8.4 : 시간공정표 · 산적표 포함)" if with_time else "")
     macro = "SetupAll" if with_time else "SetupWorkbook"
     if seed:
         seed_start_sheet(wb, ws, seed, head, macro, title, body, warn)

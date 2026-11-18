@@ -1,6 +1,6 @@
 Attribute VB_Name = "BarChart"
 '===================================================================
-'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.6 (초안)
+'  BAR CHART(바차트) 공정표 자동 작성 모듈            v0.7.7 (초안)
 '-------------------------------------------------------------------
 '  [시트 구성]
 '    메인      : 표시 단위(일/주/10일/월), 기간, 기준일, D-DAY, 바 색상 등 설정 + 버튼
@@ -169,6 +169,9 @@ Private Const CLR_NO_TRADE As Long = 10921638  ' RGB(166,166,166) 공종 없는 간트
 Private mN As Long
 Private mCat() As String
 Private mItem() As String
+Private mCatId() As Long              ' 대분류 묶음 번호 (작업입력에 나온 순서, 이름이 같아도 줄마다 따로)
+Private mItemId() As Long             ' 작업항목 묶음 번호 (0 = 대분류 줄)
+Private mCatN As Long                 ' 대분류 묶음 수
 Private mDet() As String
 Private mLow() As String
 Private mStart() As Date
@@ -544,6 +547,7 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
     Dim dS As Date, dE As Date, nDur As Long, ok As Boolean, res As Integer
     Dim va As Variant, fg As Variant, vDur As Variant, ci As Variant
     Dim isSum As Boolean, fast As Boolean, anyFill As Boolean, d As Date, nn As Long
+    Dim itemSeq As Long, curItemId As Long
 
     nWarn = 0
     mN = 0
@@ -559,6 +563,10 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
 
     cnt = lastRow - IN_FIRST_ROW + 1
     ReDim mCat(1 To cnt): ReDim mItem(1 To cnt): ReDim mDet(1 To cnt)
+    ReDim mCatId(1 To cnt): ReDim mItemId(1 To cnt)
+    mCatN = 0
+    itemSeq = 0
+    curItemId = 0
     ReDim mLow(1 To cnt): ReDim mStart(1 To cnt): ReDim mEnd(1 To cnt)
     ReDim mHas(1 To cnt): ReDim mRow(1 To cnt): ReDim mDurV(1 To cnt)
     ReDim mTrade(1 To cnt)
@@ -638,6 +646,8 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
                     If vTxt = "" Then vTxt = "(대분류)"
                     curCat = vTxt
                     curItem = ""
+                    mCatN = mCatN + 1                ' 대분류 줄마다 새 묶음 (이름이 같아도 합치지 않음)
+                    curItemId = 0
                     catTrade = vTrade
                     itemTrade = vTrade
                     effTrade = vTrade
@@ -660,20 +670,29 @@ Private Function LoadTasks(ByVal wsIn As Worksheet, ByRef nWarn As Long) As Bool
                     effTrade = itemTrade
                     mItem(mN) = vTxt
                     mDet(mN) = ""
+                    If mCatN = 0 Then mCatN = 1      ' 대분류 없이 시작한 경우
+                    itemSeq = itemSeq + 1            ' 작업항목 줄마다 새 묶음
+                    curItemId = itemSeq
+                    mItemId(mN) = curItemId
                 Case Else   ' 세부작업
                     If vTxt = "" Then vTxt = "(세부작업)"
                     If vTrade <> "" Then effTrade = vTrade Else effTrade = itemTrade
+                    If mCatN = 0 Then mCatN = 1      ' 대분류 없이 시작한 경우
                     If curItem = "" Then
-                        ' 작업항목 없이 바로 세부작업 → 그 자체를 작업항목으로 표시
+                        ' 작업항목 없이 바로 세부작업 → 그 자체를 작업항목으로 표시 (줄마다 따로)
                         mItem(mN) = vTxt
                         mDet(mN) = ""
+                        itemSeq = itemSeq + 1
+                        mItemId(mN) = itemSeq
                     Else
                         mItem(mN) = curItem
                         mDet(mN) = vTxt
+                        mItemId(mN) = curItemId
                     End If
             End Select
             If curCat = "" Then curCat = "(대분류 미입력)"
             mCat(mN) = curCat
+            mCatId(mN) = mCatN
             mTrade(mN) = effTrade
         End If
     Next i
@@ -1008,7 +1027,7 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
     '   대분류 줄        → 바 없음 (이름과 아래 작업 기간만)
     '   작업항목만       → 작업항목 자체 일정
     '   작업항목+세부작업 → 세부작업 바들 (작업항목 자체 바 없음, 겹치지 않게)
-    Dim cats() As String, nCat As Long, items() As String, nItem As Long
+    Dim catName As String, itemIds() As Long, itemNames() As String, nItem As Long, lastId As Long
     Dim ci As Long, ii As Long, k As Long, r As Long, rItem As Long, rDetail As Long
     Dim cMin As Date, cMax As Date, cHas As Boolean
     Dim iMin As Date, iMax As Date, iHas As Boolean, hasDetBar As Boolean
@@ -1019,45 +1038,53 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
     ReDim mBL(1 To mBCap, 1 To 1): ReDim mBS(1 To mBCap, 1 To 1): ReDim mBE(1 To mBCap, 1 To 1)
     ReDim mBD(1 To mBCap, 1 To 1): ReDim mBM(1 To mBCap, 1 To 1)
 
-    nCat = 0
-    ReDim cats(1 To mN)
-    For k = 1 To mN
-        AddUnique cats, nCat, mCat(k)
-    Next k
-
+    ' 대분류·작업항목은 작업입력에 나온 순서 그대로, 줄마다 한 묶음 (이름이 같아도 합치지 않음)
     r = CH_BODY
-    For ci = 1 To nCat
+    For ci = 1 To mCatN
+        catName = ""
+        For k = 1 To mN
+            If mCatId(k) = ci Then
+                catName = mCat(k)
+                Exit For
+            End If
+        Next k
         ' --- 대분류 행 (1행, 바 없음) ---
-        cHas = RangeOf(cats(ci), "", False, cMin, cMax)
+        cHas = RangeOf(ci, 0, cMin, cMax)
         AddBlock r
-        mBL(r - CH_BODY + 1, 1) = "○ " & cats(ci)
+        mBL(r - CH_BODY + 1, 1) = "○ " & catName
         ws.Range(ws.Cells(r, COL_LABEL), ws.Cells(r, COL_D)).Font.Bold = True
         ws.Cells(r, COL_LABEL).Font.Size = 10
         If cHas Then WriteDates r, cMin, cMax
         ws.Rows(r).RowHeight = ROW_CAT_H
-        mBM(r - CH_BODY + 1, 1) = "K|" & RowsOf(cats(ci), "", False) & "|" & cats(ci)
+        mBM(r - CH_BODY + 1, 1) = "K|" & RowsOf(ci, 0) & "|" & catName
         r = r + 1
 
         ' --- 작업항목 ---
         nItem = 0
-        ReDim items(1 To mN)
+        lastId = 0
+        ReDim itemIds(1 To mN): ReDim itemNames(1 To mN)
         For k = 1 To mN
-            If mCat(k) = cats(ci) And mItem(k) <> "" Then AddUnique items, nItem, mItem(k)
+            If mCatId(k) = ci And mItemId(k) > lastId Then
+                nItem = nItem + 1
+                itemIds(nItem) = mItemId(k)
+                itemNames(nItem) = mItem(k)
+                lastId = mItemId(k)
+            End If
         Next k
 
         For ii = 1 To nItem
             rItem = r
-            iHas = RangeOf(cats(ci), items(ii), True, iMin, iMax)
-            WriteBlock ws, rItem, " - " & items(ii), iHas, iMin, iMax, False
+            iHas = RangeOf(ci, itemIds(ii), iMin, iMax)
+            WriteBlock ws, rItem, " - " & itemNames(ii), iHas, iMin, iMax, False
             If Not iHas Then
                 For k = 1 To mN
-                    If mCat(k) = cats(ci) And mItem(k) = items(ii) And mDet(k) = "" And mDurV(k) > 0 Then
+                    If mCatId(k) = ci And mItemId(k) = itemIds(ii) And mDet(k) = "" And mDurV(k) > 0 Then
                         mBD(rItem - CH_BODY + 1, 1) = mDurV(k)       ' 시작일 없이 기간만 입력된 작업항목
                         Exit For
                     End If
                 Next k
             End If
-            mBM(rItem - CH_BODY + 1, 1) = "I|" & RowsOf(cats(ci), items(ii), True) & "|" & items(ii)
+            mBM(rItem - CH_BODY + 1, 1) = "I|" & RowsOf(ci, itemIds(ii)) & "|" & itemNames(ii)
             mBM(rItem - CH_BODY + 2, 1) = "L"
             r = r + 2
             rDetail = r
@@ -1065,14 +1092,14 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
             ' 날짜 있는 세부작업이 있으면 작업항목 자체 바는 그리지 않음
             hasDetBar = False
             For k = 1 To mN
-                If mCat(k) = cats(ci) And mItem(k) = items(ii) And mDet(k) <> "" And mHas(k) Then
+                If mCatId(k) = ci And mItemId(k) = itemIds(ii) And mDet(k) <> "" And mHas(k) Then
                     hasDetBar = True
                     Exit For
                 End If
             Next k
 
             For k = 1 To mN
-                If mCat(k) = cats(ci) And mItem(k) = items(ii) Then
+                If mCatId(k) = ci And mItemId(k) = itemIds(ii) Then
                     If mDet(k) <> "" Then
                         lbl = "      · " & mDet(k)
                         If mLow(k) <> "" Then lbl = lbl & " " & mLow(k)
@@ -1087,7 +1114,7 @@ Private Function LayoutBody(ByVal ws As Worksheet, ByVal mc As Long) As Long
                         r = r + 2
                     ElseIf mHas(k) And Not hasDetBar Then
                         ' 작업항목만 있음 : 작업항목 자체 일정을 작업항목 이름으로
-                        AddSegment rItem, mStart(k), mEnd(k), items(ii), mLow(k), SegColor(k)
+                        AddSegment rItem, mStart(k), mEnd(k), itemNames(ii), mLow(k), SegColor(k)
                     End If
                 End If
             Next k
@@ -1157,12 +1184,16 @@ Private Sub WriteDates(ByVal r As Long, ByVal dS As Date, ByVal dE As Date)
     mBE(i, 1) = END_FORMULA                           ' 종료일 = 시작일 + 기간 - 1
 End Sub
 
-' 대분류(item="") 또는 작업항목의 최초 시작일 ~ 최종 종료일
-Private Function RangeOf(ByVal cat As String, ByVal item As String, ByVal byItem As Boolean, _
+' 대분류 묶음(itemId = 0) 또는 작업항목 묶음의 최초 시작일 ~ 최종 종료일
+Private Function RangeOf(ByVal catId As Long, ByVal itemId As Long, _
                          ByRef dMin As Date, ByRef dMax As Date) As Boolean
-    Dim k As Long, found As Boolean
+    Dim k As Long, found As Boolean, hit As Boolean
     For k = 1 To mN
-        If mHas(k) And mCat(k) = cat And (Not byItem Or mItem(k) = item) Then
+        hit = False
+        If mHas(k) And mCatId(k) = catId Then
+            If itemId = 0 Then hit = True Else hit = (mItemId(k) = itemId)
+        End If
+        If hit Then
             If Not found Then
                 dMin = mStart(k): dMax = mEnd(k): found = True
             Else
@@ -1179,26 +1210,21 @@ Private Function SegColor(ByVal k As Long) As Long
     If mBarByTrade Then SegColor = TradeColor(mTrade(k)) Else SegColor = 0
 End Function
 
-' 대분류/작업항목에 속한 작업입력 행 번호 목록 "5,6,7"
-Private Function RowsOf(ByVal cat As String, ByVal item As String, ByVal byItem As Boolean) As String
-    Dim k As Long, s As String
+' 대분류 묶음(itemId = 0) / 작업항목 묶음에 속한 작업입력 행 번호 목록 "5,6,7"
+Private Function RowsOf(ByVal catId As Long, ByVal itemId As Long) As String
+    Dim k As Long, s As String, hit As Boolean
     For k = 1 To mN
-        If mCat(k) = cat And (Not byItem Or mItem(k) = item) Then
+        hit = False
+        If mCatId(k) = catId Then
+            If itemId = 0 Then hit = True Else hit = (mItemId(k) = itemId)
+        End If
+        If hit Then
             If s <> "" Then s = s & ","
             s = s & mRow(k)
         End If
     Next k
     RowsOf = s
 End Function
-
-Private Sub AddUnique(ByRef arr() As String, ByRef n As Long, ByVal v As String)
-    Dim i As Long
-    For i = 1 To n
-        If arr(i) = v Then Exit Sub
-    Next i
-    n = n + 1
-    arr(n) = v
-End Sub
 
 ' 행 정보(숨김 열)와 시트 정보(숨김 3행) 기록 → 바차트에서 직접 수정할 때 사용
 Private Sub WriteMeta(ByVal ws As Worksheet, ByVal mc As Long)
